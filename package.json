@@ -3,10 +3,11 @@
 	"version": "0.0.1",
 	"description": "react state management. support react 16.8+ only",
 	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "npm run build:ts && npm run build:js",
-		"build:js": "rimraf dist && babel dist-ts --out-dir dist && rimraf dist-ts",
-		"build:ts": "rimraf dist-ts && rimraf @types && tsc",
+		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
+		"build:ts": "rimraf dist && tsc",
 		"dev": "npm run example",
 		"example": "webpack-dev-server --config ./example/webpack.config.js"
 	},
@@ -22,7 +23,7 @@
 	],
 	"author": "empty916",
 	"license": "MIT",
-	"homepage": "https://github.com/empty916/react-natural-store#readme",
+	"homepage": "https://github.com/empty916/react-natural-store",
 	"devDependencies": {
 		"@babel/cli": "^7.5.5",
 		"@babel/core": "^7.4.4",
