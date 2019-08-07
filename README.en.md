@@ -10,11 +10,11 @@ const app = {
 	},
 	actions: {
 		changeName: newName => ({name: newName}), // The returned value will be used as the new state. If the original state or undefined is returned, , the page will not trigger an update.
-		asyncChangeName: newName => Promise.resolve({name: newName}), // Support promise return value, the value returned by promise will be used as the new state, if the original state or undefined is returned, the page will not trigger the update.
+		asyncChangeName: newName => Promise.resolve({name: newName}), // Support promise return value, the value returned by promise will be used as the new state, if the original state or undefined is returned, the page will not trigger the update.
 	},
 	maps: { // The optional parameters, the maps obtained on the page, will be the return value of the function after the run.
 		nameSplit: state => state.name.split(''),
-		addName: state => lastName => state.name + lastName,
+		addName: state => lastName => state.name + lastName,
 	}
 }
 
@@ -37,7 +37,7 @@ const App = ({app, module1}) => {
 		},
 		maps: {
 			splitName: ['t', 'o', 'm'],
-			addName: lastName => state.name + lastName,
+			addName: lastName => state.name + lastName,
 		}
 	*/
 	const {state, actions, maps} = app; // Get the injected app module
@@ -69,7 +69,7 @@ export default Inject('app', 'module1', ...)(App); // Inject the app module in t
 const module1 = () => import('module1'); // Lazy loading module
 
 // The second parameter is the lazy loading module.
-const store = createStore({app}, {module1}); // create store instance
+const store = createStore({app}, {module1}); // create store instance
 
 // The latter usage is the same as before
 

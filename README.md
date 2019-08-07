@@ -2,7 +2,7 @@
 
 [English doc](README.en.md)
 
-1. 创建store实例，配置全局store, 这一步需要在使用Inject方法之前完成，因为inject方法注入依赖store的实例
+1. 创建store实例，配置全局store, 这一步需要在使用Inject方法之前完成，因为inject方法注入依赖store的实例
 
 ````
 import { createStore } from '../react-store'
@@ -11,12 +11,12 @@ const app = {
 		name: 'tom',
 	},
 	actions: {
-		changeName: newName => ({name: newName}), // 返回的参数会作为新的state，如果返回原来的state，或undefined，则页面不会触发更新
-		asyncChangeName: newName => Promise.resolve({name: newName}), // 支持promise，promise返回的参数会作为新的state，如果返回原来的state，或undefined，则页面不会触发更新
+		changeName: newName => ({name: newName}), // 返回的参数会作为新的state，如果返回原来的state，或undefined，则页面不会触发更新
+		asyncChangeName: newName => Promise.resolve({name: newName}), // 支持promise，promise返回的参数会作为新的state，如果返回原来的state，或undefined，则页面不会触发更新
 	},
 	maps: { // 可选的参数，在页面获取的maps，会是运行后的函数返回值
 		nameSplit: state => state.name.split(''),
-		addName: state => lastName => state.name + lastName,
+		addName: state => lastName => state.name + lastName,
 	}
 }
 
@@ -24,7 +24,7 @@ const store = createStore({app}); // 创建store实例
 
 ````
 
-2. 使用inject将app模块注入组件当中
+2. 使用inject将app模块注入组件当中
 
 ````
 
@@ -39,7 +39,7 @@ const App = ({app, module1}) => {
 		},
 		maps: {
 			splitName: ['t', 'o', 'm'],
-			addName: lastName => state.name + lastName,
+			addName: lastName => state.name + lastName,
 		}
 	*/
 	const {state, actions, maps} = app; // 获取注入的的app模块
