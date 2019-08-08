@@ -23,10 +23,10 @@ const isPromise = (obj: any) => obj && typeof obj.then === 'function';
 
 export interface Store {
 	createDispatch: (a: string) => (type: string, data: any) => void | Promise<any>;
-	addModule: (moduleName: string, module: StoreModule) => void;
+	addModule: (moduleName: string, storeModule: StoreModule) => void;
 	getModule: (moduleName: string) => any;
 	getLazyModule: (moduleName: string) => () => Promise<StoreModule>;
-	setModule: (moduleName: string, module: StoreModule) => void;
+	setModule: (moduleName: string, storeModule: StoreModule) => void;
 	hasModule: (moduleName: string) => boolean;
 	subscribe: (moduleName: string, listener: anyFn) => () => void;
 	getAllModuleName: () => string[];
@@ -42,14 +42,14 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	let listeners: {[p: string]: anyFn[]} = {};
 	const setState = (moduleName: string, newState: any) => currentModules[moduleName].state = newState;
 	// 添加module
-	const addModule = (moduleName: string, module: StoreModule) => {
+	const addModule = (moduleName: string, storeModule: StoreModule) => {
 		if(!!currentModules[moduleName]) {
 			console.log(new Error('action module has exist!'));
 			return;
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: module,
+			[moduleName]: storeModule,
 		};
 		runListeners(moduleName);
 	}
@@ -89,11 +89,11 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	const getLazyModule = (moduleName: string) => (currentLazyModules[moduleName] as () => Promise<StoreModule>) || (() => Promise.resolve({actions: {}, state: {}}));
 	const getAllModuleName = () => [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 	// 修改module
-	const setModule = (moduleName: string, module: StoreModule) => {
-		if (currentModules[moduleName] !== module) {
+	const setModule = (moduleName: string, storeModule: StoreModule) => {
+		if (currentModules[moduleName] !== storeModule) {
 			currentModules = {
 				...currentModules,
-				[moduleName]: module,
+				[moduleName]: storeModule,
 			};
 			runListeners(moduleName);
 		};
@@ -109,31 +109,38 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		}
 
 		return (type: string, ...data: any[]) => {
-			let stateFrag;
-			if (!!currentModules[moduleName] && !!currentModules[moduleName].actions[type]) {
-				stateFrag = currentModules[moduleName].actions[type](...data);
-			} else {
+			let newState;
+
+			const moduleIsInvalid = !hasModule(moduleName);
+			const moduleActionIsInvalid = !currentModules[moduleName].actions[type];
+			if (moduleIsInvalid || moduleActionIsInvalid) {
 				return;
 			}
-			if(isPromise(stateFrag)) {
-				return stateFrag.then((ns: any) => {
-					if (ns === currentModules[moduleName].state || ns === undefined) {
-						return Promise.resolve();
+			newState = currentModules[moduleName].actions[type](...data);
+
+			const actionHasNoReturn = newState === undefined;
+			const stateIsNotChanged = newState === currentModules[moduleName].state;
+			if (actionHasNoReturn || stateIsNotChanged) {
+				return;
+			}
+
+			if(isPromise(newState)) {
+				return newState.then((ns: any) => {
+					const asyncActionHasReturn = ns !== undefined;
+					const asyncActionDidChangeState = ns !== currentModules[moduleName].state;
+					if (asyncActionHasReturn && asyncActionDidChangeState) {
+						setState(moduleName, ns);
+						runListeners(moduleName);
 					}
-					setState(moduleName, ns);
-					runListeners(moduleName);
 					return Promise.resolve();
 				});
-			} else if (stateFrag === currentModules[moduleName].state || stateFrag === undefined) {
-				return;
 			} else {
-				setState(moduleName, stateFrag);
+				setState(moduleName, newState);
 				runListeners(moduleName);
 			}
 		};
 	};
 	const subscribe = (moduleName: string, listener: anyFn) => {
-		moduleName = moduleName;
 		if (!listeners[moduleName]) {
 			listeners[moduleName] = [];
 		}

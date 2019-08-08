@@ -1,9 +1,9 @@
-# react-store使用手册
+# react-natural-store cook book
 
 1. Create a store instance, this step needs to be done before using the inject method, because the inject method depends on the instance of the store
 
 ````
-import { createStore } from '../react-store'
+import { createStore } from 'react-natural-store'
 const app = {
 	state: {
 		name: 'tom',

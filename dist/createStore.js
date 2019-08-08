@@ -37,13 +37,13 @@ var createStore = function createStore() {
   }; // 添加module
 
 
-  var addModule = function addModule(moduleName, module) {
+  var addModule = function addModule(moduleName, storeModule) {
     if (!!currentModules[moduleName]) {
       console.log(new Error('action module has exist!'));
       return;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, module));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, storeModule));
     runListeners(moduleName);
   };
 
@@ -109,9 +109,9 @@ var createStore = function createStore() {
   }; // 修改module
 
 
-  var setModule = function setModule(moduleName, module) {
-    if (currentModules[moduleName] !== module) {
-      currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, module));
+  var setModule = function setModule(moduleName, storeModule) {
+    if (currentModules[moduleName] !== storeModule) {
+      currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, storeModule));
       runListeners(moduleName);
     }
 
@@ -136,42 +136,48 @@ var createStore = function createStore() {
     }
 
     return function (type) {
-      var stateFrag;
+      var _currentModules$modul;
 
-      if (!!currentModules[moduleName] && !!currentModules[moduleName].actions[type]) {
-        var _currentModules$modul;
+      var newState;
+      var moduleIsInvalid = !hasModule(moduleName);
+      var moduleActionIsInvalid = !currentModules[moduleName].actions[type];
 
-        for (var _len2 = arguments.length, data = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-          data[_key2 - 1] = arguments[_key2];
-        }
-
-        stateFrag = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
-      } else {
+      if (moduleIsInvalid || moduleActionIsInvalid) {
         return;
       }
 
-      if (isPromise(stateFrag)) {
-        return stateFrag.then(function (ns) {
-          if (ns === currentModules[moduleName].state || ns === undefined) {
-            return Promise.resolve();
+      for (var _len2 = arguments.length, data = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        data[_key2 - 1] = arguments[_key2];
+      }
+
+      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
+      var actionHasNoReturn = newState === undefined;
+      var stateIsNotChanged = newState === currentModules[moduleName].state;
+
+      if (actionHasNoReturn || stateIsNotChanged) {
+        return;
+      }
+
+      if (isPromise(newState)) {
+        return newState.then(function (ns) {
+          var asyncActionHasReturn = ns !== undefined;
+          var asyncActionDidChangeState = ns !== currentModules[moduleName].state;
+
+          if (asyncActionHasReturn && asyncActionDidChangeState) {
+            setState(moduleName, ns);
+            runListeners(moduleName);
           }
 
-          setState(moduleName, ns);
-          runListeners(moduleName);
           return Promise.resolve();
         });
-      } else if (stateFrag === currentModules[moduleName].state || stateFrag === undefined) {
-        return;
       } else {
-        setState(moduleName, stateFrag);
+        setState(moduleName, newState);
         runListeners(moduleName);
       }
     };
   };
 
   var subscribe = function subscribe(moduleName, listener) {
-    moduleName = moduleName;
-
     if (!listeners[moduleName]) {
       listeners[moduleName] = [];
     }

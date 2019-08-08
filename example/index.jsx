@@ -4,9 +4,8 @@ import {inject} from 'react-natural-store'
 import './initStore';
 
 
-const App = (props) => {
+const App = props => {
     const {count: {state, actions, maps}} = props;
-    console.log(props);
     return (
         <>
             <button onClick={() => actions.inc(state)}>+</button>

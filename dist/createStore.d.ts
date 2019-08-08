@@ -18,10 +18,10 @@ declare type Modules = {
 };
 export interface Store {
     createDispatch: (a: string) => (type: string, data: any) => void | Promise<any>;
-    addModule: (moduleName: string, module: StoreModule) => void;
+    addModule: (moduleName: string, storeModule: StoreModule) => void;
     getModule: (moduleName: string) => any;
     getLazyModule: (moduleName: string) => () => Promise<StoreModule>;
-    setModule: (moduleName: string, module: StoreModule) => void;
+    setModule: (moduleName: string, storeModule: StoreModule) => void;
     hasModule: (moduleName: string) => boolean;
     subscribe: (moduleName: string, listener: anyFn) => () => void;
     getAllModuleName: () => string[];

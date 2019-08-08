@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	entry: {
-		index: './example/index.jsx',
+		index: './example/index',
 	},
 	output: {
 		path: path.join(__dirname, 'dist'),
@@ -19,7 +19,7 @@ module.exports = {
 		extensions: ['.js', '.jsx', '.ts', '.tsx'],
 		// import导入时别名
 		alias: {
-			'react-natural-store': path.join(__dirname, '..', 'dist', 'index.js'),
+			'react-natural-store': path.join(__dirname, '..', 'src', 'index.ts'),
 		}
 	},
 	module: {

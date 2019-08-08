@@ -1,11 +1,11 @@
-# react-store使用手册
+# react-natural-store使用手册
 
 [English doc](README.en.md)
 
 1. 创建store实例，配置全局store, 这一步需要在使用Inject方法之前完成，因为inject方法注入依赖store的实例
 
 ````
-import { createStore } from '../react-store'
+import { createStore } from 'react-natural-store'
 const app = {
 	state: {
 		name: 'tom',

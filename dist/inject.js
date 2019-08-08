@@ -139,7 +139,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
 
     var stabelProps = (0, _react.useMemo)(function () {
       /**
-       * why depth is 3?
+       * why is depth 3?
        * because the router props will be:
        * props: {
        * 		// depth: 1
