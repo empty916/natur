@@ -1,6 +1,6 @@
 {
 	"name": "react-natural-store",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "react state management. support react 16.8+ only",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
