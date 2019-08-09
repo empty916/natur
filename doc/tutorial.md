@@ -129,11 +129,11 @@ inject('app')(App, () => <div>loading</div>);
   */
   const app = store.getModule('app');
   /*
-    如果你不确定懒加载模块是否已经加载好了
+    如果你确定，懒加载模块，还没有加载好
     你可以监听懒加载模块，然后获取
   */
   store.subscribe('lazyModuleName', () => {
-	  const lazyModule = store.getModule('lazyModuleName');
+    const lazyModule = store.getModule('lazyModuleName');
   });
 
   /*

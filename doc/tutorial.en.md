@@ -130,7 +130,7 @@ import store from 'my-store-instance';
 */
 const app = store.getModule('app');
 /*
-  If you are not sure if the lazy load module is already loaded
+  If you are sure, lazy loading module, not loaded yet
   You can listen to the lazy load module and get it
 */
 store.subscribe('lazyModuleName', () => {
