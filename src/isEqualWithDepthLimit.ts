@@ -1,3 +1,10 @@
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:13:15
+ * @modify date 2019-08-09 17:13:15
+ * @desc [description]
+ */
 const hasOwn = Object.prototype.hasOwnProperty;
 
 function is(x: any, y: any) {
