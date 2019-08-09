@@ -138,11 +138,12 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 						setState(moduleName, ns);
 						runListeners(moduleName);
 					}
-					return Promise.resolve();
+					return Promise.resolve(ns);
 				});
 			} else {
 				setState(moduleName, newState);
 				runListeners(moduleName);
+				return newState;
 			}
 		};
 	};

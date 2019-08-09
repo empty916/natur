@@ -3,10 +3,29 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = isEqualWithDepthLimit;
+exports.default = isEqualWithDepthLimit;
+
+require("core-js/modules/es7.symbol.async-iterator");
+
+require("core-js/modules/es6.symbol");
+
+require("core-js/modules/web.dom.iterable");
+
+require("core-js/modules/es6.array.iterator");
+
+require("core-js/modules/es6.object.to-string");
+
+require("core-js/modules/es6.object.keys");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:13:15
+ * @modify date 2019-08-09 17:13:15
+ * @desc [description]
+ */
 var hasOwn = Object.prototype.hasOwnProperty;
 
 function is(x, y) {

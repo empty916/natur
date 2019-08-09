@@ -3,7 +3,31 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
+exports.default = void 0;
+
+require("core-js/modules/es6.object.assign");
+
+require("core-js/modules/es7.symbol.async-iterator");
+
+require("core-js/modules/es7.object.get-own-property-descriptors");
+
+require("core-js/modules/es6.symbol");
+
+require("core-js/modules/es6.object.keys");
+
+require("core-js/modules/es6.promise");
+
+require("core-js/modules/web.dom.iterable");
+
+require("core-js/modules/es6.array.iterator");
+
+require("core-js/modules/es6.object.to-string");
+
+require("core-js/modules/es6.string.iterator");
+
+require("core-js/modules/es7.array.includes");
+
+require("core-js/modules/es6.string.includes");
 
 var _react = _interopRequireWildcard(require("react"));
 
@@ -13,9 +37,9 @@ var _createStore = require("./createStore");
 
 var _isEqualWithDepthLimit = _interopRequireDefault(require("./isEqualWithDepthLimit"));
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj["default"] = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
@@ -119,7 +143,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
             });
           });
           setModulesHasLoaded(true);
-        })["catch"](function (e) {
+        }).catch(function (e) {
           setModulesHasLoaded(false);
         });
       }
@@ -151,7 +175,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
        * 		}
        * }
        */
-      var propsChanged = !(0, _isEqualWithDepthLimit["default"])($props.current, props, 3);
+      var propsChanged = !(0, _isEqualWithDepthLimit.default)($props.current, props, 3);
 
       if (propsChanged) {
         $props.current = props;
@@ -170,27 +194,27 @@ var connect = function connect(moduleNames, WrappedComponent) {
     // )
 
     var render = (0, _react.useMemo)(function () {
-      return _react["default"].createElement(WrappedComponent, _extends({}, newProps, {
+      return _react.default.createElement(WrappedComponent, _extends({}, newProps, {
         ref: forwardedRef
       }));
     }, // [props, injectModules]
     [stabelProps, injectModules]); // console.log(performance.now() - s);
 
-    return modulesHasLoaded ? render : _react["default"].createElement(LoadingComponent, null);
+    return modulesHasLoaded ? render : _react.default.createElement(LoadingComponent, null);
   };
 
-  Connect = _react["default"].memo(Connect);
+  Connect = _react.default.memo(Connect);
   Connect.displayName = 'Connect';
 
-  var forwardedConnect = _react["default"].forwardRef(function (props, ref) {
-    return _react["default"].createElement(Connect, _extends({}, props, {
+  var forwardedConnect = _react.default.forwardRef(function (props, ref) {
+    return _react.default.createElement(Connect, _extends({}, props, {
       forwardedRef: ref
     }));
   });
 
   forwardedConnect.displayName = 'forwardedConnect'; // (forwardedConnect as any).WrappedComponent = WrappedComponent;
 
-  return (0, _hoistNonReactStatics["default"])(forwardedConnect, WrappedComponent);
+  return (0, _hoistNonReactStatics.default)(forwardedConnect, WrappedComponent);
 };
 
 var Inject = function Inject() {
@@ -208,4 +232,4 @@ Inject.setLoadingComponent = function (LoadingComponent) {
 };
 
 var _default = Inject;
-exports["default"] = _default;
+exports.default = _default;

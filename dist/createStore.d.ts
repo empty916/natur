@@ -1,3 +1,10 @@
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:12:36
+ * @modify date 2019-08-09 17:12:36
+ * @desc [description]
+ */
 declare type anyFn = (...arg: any[]) => any;
 declare type TActions = {
     [type: string]: anyFn;
