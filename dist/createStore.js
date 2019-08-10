@@ -3,31 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.getStoreInstance = void 0;
-
-require("core-js/modules/es6.array.from");
-
-require("core-js/modules/es6.regexp.to-string");
-
-require("core-js/modules/es7.symbol.async-iterator");
-
-require("core-js/modules/es7.object.get-own-property-descriptors");
-
-require("core-js/modules/es6.symbol");
-
-require("core-js/modules/es6.string.iterator");
-
-require("core-js/modules/es6.set");
-
-require("core-js/modules/es6.promise");
-
-require("core-js/modules/web.dom.iterable");
-
-require("core-js/modules/es6.array.iterator");
-
-require("core-js/modules/es6.object.to-string");
-
-require("core-js/modules/es6.object.keys");
+exports["default"] = exports.getStoreInstance = void 0;
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -179,7 +155,7 @@ var createStore = function createStore() {
       var stateIsNotChanged = newState === currentModules[moduleName].state;
 
       if (actionHasNoReturn || stateIsNotChanged) {
-        return;
+        return newState;
       }
 
       if (isPromise(newState)) {
@@ -235,4 +211,4 @@ var getStoreInstance = function getStoreInstance() {
 
 exports.getStoreInstance = getStoreInstance;
 var _default = createStore;
-exports.default = _default;
+exports["default"] = _default;
