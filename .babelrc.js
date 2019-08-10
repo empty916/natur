@@ -20,12 +20,12 @@ module.exports = {
 	presets: [
 		[
 			'@babel/preset-env',
-			{
-				"targets": {
-					"ie": "10"
-				},
-				useBuiltIns: 'usage',
-			}
+			// {
+			// 	"targets": {
+			// 		"ie": "10"
+			// 	},
+			// 	useBuiltIns: 'usage',
+			// }
 		],
 		['@babel/preset-react'],
 		['@babel/preset-typescript'],

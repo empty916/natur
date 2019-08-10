@@ -6,13 +6,18 @@ import './initStore';
 
 const App = props => {
 	const {count: {state, actions, maps}} = props;
-	const acn = useCallback(e => {
+	console.log('render');
+	const cn = e => {
+		const nn = props.name.actions.changeName(props.name.state);
+		console.log(nn);
+	}
+	const acn = e => {
 		const a = props.name.actions.asyncChangeName(e.target.value)
+			.then((ns) => {
+				console.log(ns);
+			})
 		// console.log(a);
-		.then((ns) => {
-			console.log(props.name, ns);
-		})
-	}, [props]);
+	};
     return (
         <>
             <button onClick={() => actions.inc(state)}>+</button>
@@ -24,11 +29,12 @@ const App = props => {
             <br/>
             <br/>
             <br/>
+			{/* <button onClick={() => cn({value: state.})}>no change</button> */}
             changeName:
             <input
                 type="text"
                 value={props.name.state.name}
-                onChange={e => props.name.actions.changeName(e.target.value)}
+                onChange={cn}
             />
             <br/>
             asyncChangeName:

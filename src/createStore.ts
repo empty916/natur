@@ -127,7 +127,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			const actionHasNoReturn = newState === undefined;
 			const stateIsNotChanged = newState === currentModules[moduleName].state;
 			if (actionHasNoReturn || stateIsNotChanged) {
-				return;
+				return newState;
 			}
 
 			if(isPromise(newState)) {
