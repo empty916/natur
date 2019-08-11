@@ -67,11 +67,12 @@ var connect = function connect(moduleNames, WrappedComponent) {
     return WrappedComponent;
   }
 
-  var Connect = function Connect(_ref) {
+  var Connect = // <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
+  function Connect(_ref) {
     var forwardedRef = _ref.forwardedRef,
         props = _objectWithoutProperties(_ref, ["forwardedRef"]);
 
-    // const s = performance.now();
+    // (props: P) => {
     var newProps = _objectSpread({}, props);
 
     var _useState = (0, _react.useState)({}),
@@ -158,16 +159,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
       }
 
       return $props.current;
-    }, [props]); // const stabelInjectModules = useMemo(
-    // 	() => {
-    // 		const injectModulesChanged = !isEqualWithDepthLimit($injectModules.current, injectModules, 2);
-    // 		if (injectModulesChanged) {
-    // 			$injectModules.current = injectModules;
-    // 		}
-    // 		return $injectModules.current
-    // 	},
-    // 	[injectModules]
-    // )
+    }, [props]); //  ref={forwardedRef}
 
     var render = (0, _react.useMemo)(function () {
       return _react["default"].createElement(WrappedComponent, _extends({}, newProps, {
@@ -177,20 +169,22 @@ var connect = function connect(moduleNames, WrappedComponent) {
     [stabelProps, injectModules]); // console.log(performance.now() - s);
 
     return modulesHasLoaded ? render : _react["default"].createElement(LoadingComponent, null);
-  };
+  }; // const ConnectWithStatics = hoistStatics(Connect as React.FC<P>, WrappedComponent, undefined);
 
-  Connect = _react["default"].memo(Connect);
-  Connect.displayName = 'Connect';
+
+  var MemoConnect = _react["default"].memo(Connect);
+
+  MemoConnect.displayName = 'Connect'; // Pick<P, Exclude<keyof P, 'ref'>>
 
   var forwardedConnect = _react["default"].forwardRef(function (props, ref) {
     return _react["default"].createElement(Connect, _extends({}, props, {
       forwardedRef: ref
     }));
-  });
+  }); // forwardedConnect.displayName = 'forwardedConnect';
+  // (forwardedConnect as any).WrappedComponent = WrappedComponent;
 
-  forwardedConnect.displayName = 'forwardedConnect'; // (forwardedConnect as any).WrappedComponent = WrappedComponent;
 
-  return (0, _hoistNonReactStatics["default"])(forwardedConnect, WrappedComponent);
+  return (0, _hoistNonReactStatics["default"])(forwardedConnect, WrappedComponent); // return MemoConnect as React.FC<P>;
 };
 
 var Inject = function Inject() {

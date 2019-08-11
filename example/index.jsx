@@ -1,6 +1,6 @@
 import React, {useCallback} from 'react';
 import ReactDOM from 'react-dom';
-import {inject} from 'react-natural-store'
+import {inject} from '../src/inject'
 import './initStore';
 
 

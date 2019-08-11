@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = {
 	entry: {
@@ -37,6 +38,14 @@ module.exports = {
 			filename: 'index.html',
 			template: './example/index.html',
 			// inject: true,
+		}),
+		new ForkTsCheckerWebpackPlugin({
+			// tsconfig: './server/tsconfig.json',
+			async: false,
+			useTypescriptIncrementalApi: true,
+			checkSyntacticErrors: true,
+			silent: true,
+			memoryLimit: 1024,
 		}),
 	],
 };

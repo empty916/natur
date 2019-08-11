@@ -19,6 +19,17 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:12:36
+ * @modify date 2019-08-09 17:12:36
+ * @desc [description]
+ */
+;
+;
+;
+
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 };
@@ -150,7 +161,7 @@ var createStore = function createStore() {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
+      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data) || undefined;
       var actionHasNoReturn = newState === undefined;
       var stateIsNotChanged = newState === currentModules[moduleName].state;
 
