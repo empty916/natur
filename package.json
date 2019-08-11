@@ -21,7 +21,7 @@
 		"data"
 	],
 	"author": "empty916",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"homepage": "https://github.com/empty916/react-natural-store",
 	"devDependencies": {
 		"@babel/cli": "^7.5.5",
