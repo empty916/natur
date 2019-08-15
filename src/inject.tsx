@@ -16,7 +16,7 @@ import hoistStatics from 'hoist-non-react-statics'
 import { StoreModule, getStoreInstance, Modules, LazyStoreModules, ModuleName } from './createStore';
 import isEqualWithDepthLimit from './isEqualWithDepthLimit';
 
-type TReactComponent<P, C> = React.FC<P> | React.ComponentClass<P, C>;
+type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 type ModuleNames = ModuleName[];
 
 
@@ -30,11 +30,28 @@ type TProps = {
 	forwardedRef?: React.Ref<unknown>;
 }
 
-const connect = <P, C>(
+type GetModuleProps<
+	P,
+	ModuleKeys = (keyof P)[],
+	MKI extends keyof ModuleKeys = keyof ModuleKeys,
+	MK = ModuleKeys[MKI],
+> = {[K in ModuleKeys]: P[K]};
+
+type P1 = {
+	count: any,
+	name: any,
+	className: string,
+};
+
+type mp = GetModuleProps<P1, ['count', 'name']>;
+type kmp = keyof mp;
+type rq = Exclude<P1, keyof mp>;
+
+const connect = <P, S>(
 	moduleNames: ModuleNames,
-	WrappedComponent: TReactComponent<any, any>,
+	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent: TReactComponent<any, any> = Loading
-): React.FC<P>| React.ComponentClass<P, C> => {
+): React.FC<P> => {
 	const store = getStoreInstance();
 	if (store === undefined) {
 		throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
@@ -48,12 +65,12 @@ const connect = <P, C>(
 		console.warn(`${moduleNames.join()} 模块不存在!`);
 		return WrappedComponent as React.FC<P>;
 	}
-	type NoRefP = Pick<P, Exclude<keyof P, 'ref'>>;
+	type NoRefP = Omit<P, 'ref'>;
 	const Connect =
 		// <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
-		({forwardedRef, ...props}: NoRefP & {forwardedRef: React.Ref<unknown>}) => {
+		({forwardedRef, ...props}: NoRefP & {forwardedRef: React.Ref<any>}) => {
 		// (props: P) => {
-		let newProps = {...props};
+		let newProps = {...props} as any as P;
 		const [stateChanged, setStateChanged] = useState({});
 		// 获取moduleNames中是否存在未加载的模块
 		const unLoadedModules = integralModulesName.filter(mn => !store.hasModule(mn));
@@ -100,6 +117,7 @@ const connect = <P, C>(
 		newProps = {
 			...newProps,
 			...injectModules,
+			ref: forwardedRef,
 		};
 		const $props = useRef(props);
 		// const $injectModules = useRef(injectModules);
@@ -128,7 +146,7 @@ const connect = <P, C>(
 		)
 		//  ref={forwardedRef}
 		const render = useMemo(
-			() => <WrappedComponent {...newProps} ref={forwardedRef} />,
+			() => <WrappedComponent {...newProps} />,
 			// [props, injectModules]
 			[stabelProps, injectModules]
 		);
@@ -139,7 +157,7 @@ const connect = <P, C>(
 	const MemoConnect = React.memo(Connect);
 	MemoConnect.displayName = 'Connect';
 	// Pick<P, Exclude<keyof P, 'ref'>>
-	const forwardedConnect = React.forwardRef<unknown, NoRefP>(
+	const forwardedConnect = React.forwardRef<any, NoRefP>(
 		(props: NoRefP, ref) => <Connect {...props} forwardedRef={ref} />
 	);
 

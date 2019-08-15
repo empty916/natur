@@ -1,10 +1,11 @@
 import React, {useCallback} from 'react';
 import ReactDOM from 'react-dom';
-import {inject} from '../src/inject'
+// import {inject} from 'react-natural-store'
+import inject from '../src/inject'
 import './initStore';
 
 
-const App = props => {
+const App = (props: {count: any, name: any}) => {
 	const {count: {state, actions, maps}} = props;
 	console.log('render');
 	const cn = e => {
