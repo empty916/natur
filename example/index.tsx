@@ -8,13 +8,13 @@ import './initStore';
 const App = (props: {count: any, name: any}) => {
 	const {count: {state, actions, maps}} = props;
 	console.log('render');
-	const cn = e => {
+	const cn = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const nn = props.name.actions.changeName(props.name.state);
 		console.log(nn);
 	}
-	const acn = e => {
+	const acn = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const a = props.name.actions.asyncChangeName(e.target.value)
-			.then((ns) => {
+			.then((ns: any) => {
 				console.log(ns);
 			})
 		// console.log(a);

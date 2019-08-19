@@ -30,28 +30,18 @@ type TProps = {
 	forwardedRef?: React.Ref<unknown>;
 }
 
-type GetModuleProps<
-	P,
-	ModuleKeys = (keyof P)[],
-	MKI extends keyof ModuleKeys = keyof ModuleKeys,
-	MK = ModuleKeys[MKI],
-> = {[K in ModuleKeys]: P[K]};
-
-type P1 = {
-	count: any,
-	name: any,
-	className: string,
-};
-
-type mp = GetModuleProps<P1, ['count', 'name']>;
-type kmp = keyof mp;
-type rq = Exclude<P1, keyof mp>;
+// type GetModuleProps<
+// 	P extends {[p: string]: any},
+// 	ModuleKeys = (keyof P)[],
+// 	// MKI = keyof ModuleKeys,
+// 	MK = {[K in keyof ModuleKeys]: ModuleKeys[K]},
+// > = {[K in ModuleKeys]: ModuleKeys[K]};
 
 const connect = <P, S>(
 	moduleNames: ModuleNames,
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent: TReactComponent<any, any> = Loading
-): React.FC<P> => {
+): React.FC<Partial<P>> => {
 	const store = getStoreInstance();
 	if (store === undefined) {
 		throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
@@ -63,7 +53,7 @@ const connect = <P, S>(
 	if (!integralModulesName.length) {
 		console.warn(`modules: ${moduleNames.join()} is not exits!`);
 		console.warn(`${moduleNames.join()} 模块不存在!`);
-		return WrappedComponent as React.FC<P>;
+		return WrappedComponent as React.FC<Partial<P>>;
 	}
 	type NoRefP = Omit<P, 'ref'>;
 	const Connect =
@@ -163,7 +153,7 @@ const connect = <P, S>(
 
 	// forwardedConnect.displayName = 'forwardedConnect';
 	// (forwardedConnect as any).WrappedComponent = WrappedComponent;
-	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<P>;
+	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<Partial<P>>;
 	// return MemoConnect as React.FC<P>;
 }
 
