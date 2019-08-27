@@ -19,6 +19,18 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:12:36
+ * @modify date 2019-08-09 17:12:36
+ * @desc [description]
+ */
+;
+;
+;
+;
+
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 };
@@ -31,6 +43,18 @@ var createStore = function createStore() {
   var currentModules = modules;
   var currentLazyModules = lazyModules;
   var listeners = {};
+  var currentAsyncModuleStates = {};
+
+  var replaceState = function replaceState(moduleName, storeModule) {
+    if (!!currentAsyncModuleStates[moduleName]) {
+      storeModule = _objectSpread({}, storeModule, {
+        state: currentAsyncModuleStates[moduleName]
+      });
+      delete currentAsyncModuleStates[moduleName];
+    }
+
+    return storeModule;
+  };
 
   var setState = function setState(moduleName, newState) {
     return currentModules[moduleName].state = newState;
@@ -43,7 +67,7 @@ var createStore = function createStore() {
       return;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, storeModule));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceState(moduleName, storeModule)));
     runListeners(moduleName);
   };
 
@@ -93,6 +117,16 @@ var createStore = function createStore() {
     proxyModule.actions = createActionsProxy(moduleName);
     proxyModule.maps = proxyModule.maps ? runMaps(proxyModule.maps, proxyModule.state) : {};
     return proxyModule;
+  }; // 获取原本的module
+
+
+  var getOriginModule = function getOriginModule(moduleName) {
+    if (!currentModules[moduleName]) {
+      console.log(new Error("module: ".concat(moduleName, " is not exist")));
+      return {};
+    }
+
+    return currentModules[moduleName];
   };
 
   var getLazyModule = function getLazyModule(moduleName) {
@@ -111,11 +145,32 @@ var createStore = function createStore() {
 
   var setModule = function setModule(moduleName, storeModule) {
     if (currentModules[moduleName] !== storeModule) {
-      currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, storeModule));
+      currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceState(moduleName, storeModule)));
       runListeners(moduleName);
     }
 
     ;
+  };
+
+  var setStates = function setStates(states) {
+    var syncModuleNames = Object.keys(currentModules);
+    var validSyncModuleNames = Object.keys(states).filter(function (s) {
+      return syncModuleNames.includes(s);
+    });
+    validSyncModuleNames.forEach(function (moduleName) {
+      currentModules[moduleName].state = _objectSpread({}, states[moduleName]);
+    });
+    validSyncModuleNames.forEach(runListeners);
+    var invalidSyncModuleNames = Object.keys(states).filter(function (moduleName) {
+      return !syncModuleNames.includes(moduleName);
+    });
+    var asyncModuleNames = Object.keys(currentLazyModules);
+    var validAsyncModuleNames = invalidSyncModuleNames.filter(function (ismn) {
+      return asyncModuleNames.includes(ismn);
+    });
+    currentAsyncModuleStates = validAsyncModuleNames.reduce(function (asyncModuleStates, asyncModuleName) {
+      return _objectSpread({}, asyncModuleStates, _defineProperty({}, asyncModuleName, states[asyncModuleName]));
+    }, {});
   }; // 查看module是否存在
 
 
@@ -150,7 +205,7 @@ var createStore = function createStore() {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
+      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data) || undefined;
       var actionHasNoReturn = newState === undefined;
       var stateIsNotChanged = newState === currentModules[moduleName].state;
 
@@ -197,8 +252,10 @@ var createStore = function createStore() {
     addModule: addModule,
     getAllModuleName: getAllModuleName,
     getModule: getModule,
+    getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
     setModule: setModule,
+    setStates: setStates,
     hasModule: hasModule,
     subscribe: subscribe
   };

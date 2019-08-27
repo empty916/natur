@@ -13,36 +13,74 @@ import React, {
 	useCallback,
 } from 'react';
 import hoistStatics from 'hoist-non-react-statics'
-import { StoreModule, getStoreInstance } from './createStore';
+import { StoreModule, getStoreInstance, Modules, LazyStoreModules, ModuleName } from './createStore';
 import isEqualWithDepthLimit from './isEqualWithDepthLimit';
 
-let Loading: React.FC | React.ComponentClass = () => null;
-type TReactComponent = React.FC | React.ComponentClass;
+type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
+type ModuleNames = ModuleName[];
 
-const createLoadModulesPromise = (moduleNames: string[]) => moduleNames.map((mn: string) => getStoreInstance().getLazyModule(mn)());
 
-const connect = (
-	moduleNames: string[],
-	WrappedComponent: React.ComponentClass | React.FC,
-	LoadingComponent: TReactComponent = Loading
-): React.FC => {
-	const store = getStoreInstance();
-	if (store === undefined) {
-		throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
-	}
-	const allModuleNames = store.getAllModuleName();
-	// 获取store中存在的模块
-	const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+let Loading: TReactComponent<{}, {}> = () => null;
 
-	if (!integralModulesName.length) {
-		console.warn(`modules: ${moduleNames.join()} is not exits!`);
-		console.warn(`${moduleNames.join()} 模块不存在!`);
-		return WrappedComponent as React.FC<any>;
-	}
+const createLoadModulesPromise = (moduleNames: ModuleNames) => moduleNames.map((mn: ModuleName) => getStoreInstance().getLazyModule(mn)());
 
-	let Connect: React.FC<any> = ({forwardedRef, ...props}: any) => {
-		// const s = performance.now();
-		let newProps = {...props};
+type TProps = {
+	children?: React.ReactNode;
+	ref?: React.Ref<unknown>;
+	forwardedRef?: React.Ref<unknown>;
+}
+
+// type GetModuleProps<
+// 	P extends {[p: string]: any},
+// 	ModuleKeys = (keyof P)[],
+// 	// MKI = keyof ModuleKeys,
+// 	MK = {[K in keyof ModuleKeys]: ModuleKeys[K]},
+// > = {[K in ModuleKeys]: ModuleKeys[K]};
+
+const connect = <P, S>(
+	moduleNames: ModuleNames,
+	WrappedComponent: TReactComponent<P, S>,
+	LoadingComponent: TReactComponent<any, any> = Loading
+): React.FC<P> => {
+	// const store = getStoreInstance();
+	// if (store === undefined) {
+	// 	throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+	// }
+	// const allModuleNames = store.getAllModuleName();
+	// // 获取store中存在的模块
+	// const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+
+	// if (!integralModulesName.length) {
+	// 	console.warn(`modules: ${moduleNames.join()} is not exits!`);
+	// 	console.warn(`${moduleNames.join()} 模块不存在!`);
+	// 	return WrappedComponent as React.FC<P>;
+	// }
+	type NoRefP = Omit<P, 'ref'>;
+	const Connect =
+		// <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
+		({forwardedRef, ...props}: NoRefP & {forwardedRef: React.Ref<any>}) => {
+		// (props: P) => {
+		let newProps = {
+			...props,
+			ref: forwardedRef,
+		} as any as P;
+
+		const {store, integralModulesName} = useMemo(() => {
+			const store = getStoreInstance();
+			if (store === undefined) {
+				throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+			}
+			const allModuleNames = store.getAllModuleName();
+			// 获取store中存在的模块
+			const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+			return {store, integralModulesName};
+		}, [moduleNames]);
+
+		if (!integralModulesName.length) {
+			console.warn(`modules: ${moduleNames.join()} is not exits!`);
+			console.warn(`${moduleNames.join()} 模块不存在!`);
+			return <WrappedComponent {...newProps} />;
+		}
 		const [stateChanged, setStateChanged] = useState({});
 		// 获取moduleNames中是否存在未加载的模块
 		const unLoadedModules = integralModulesName.filter(mn => !store.hasModule(mn));
@@ -77,7 +115,7 @@ const connect = (
 		const injectModules = useMemo(
 			() => {
 				if (modulesHasLoaded) {
-					return integralModulesName.reduce((res, mn: string) => ({
+					return integralModulesName.reduce((res, mn: ModuleName) => ({
 						...res,
 						[mn]: store.getModule(mn),
 					}), {});
@@ -115,39 +153,35 @@ const connect = (
 			},
 			[props]
 		)
-		// const stabelInjectModules = useMemo(
-		// 	() => {
-		// 		const injectModulesChanged = !isEqualWithDepthLimit($injectModules.current, injectModules, 2);
-		// 		if (injectModulesChanged) {
-		// 			$injectModules.current = injectModules;
-		// 		}
-		// 		return $injectModules.current
-		// 	},
-		// 	[injectModules]
-		// )
+		//  ref={forwardedRef}
 		const render = useMemo(
-			() => <WrappedComponent {...newProps} ref={forwardedRef} />,
+			() => <WrappedComponent {...newProps} />,
 			// [props, injectModules]
 			[stabelProps, injectModules]
 		);
 		// console.log(performance.now() - s);
 		return modulesHasLoaded ? render : <LoadingComponent />;
 	};
-	Connect = React.memo(Connect);
-	Connect.displayName = 'Connect';
-	const forwardedConnect = React.forwardRef((props, ref) => <Connect {...props} forwardedRef={ref} />);
+	// const ConnectWithStatics = hoistStatics(Connect as React.FC<P>, WrappedComponent, undefined);
+	const MemoConnect = React.memo(Connect);
+	MemoConnect.displayName = 'Connect';
+	// Pick<P, Exclude<keyof P, 'ref'>>
+	const forwardedConnect = React.forwardRef<any, NoRefP>(
+		(props: NoRefP, ref) => <Connect {...props} forwardedRef={ref} />
+	);
 
-	forwardedConnect.displayName = 'forwardedConnect';
+	// forwardedConnect.displayName = 'forwardedConnect';
 	// (forwardedConnect as any).WrappedComponent = WrappedComponent;
-	return hoistStatics(forwardedConnect, WrappedComponent) as React.FC;
+	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<P>;
+	// return MemoConnect as React.FC<P>;
 }
 
-const Inject = (...moduleNames: string[]) => {
-	return (WrappedComponent: TReactComponent, LoadingComponent?: TReactComponent) =>
-		connect(moduleNames, WrappedComponent, LoadingComponent);
+const Inject = (...moduleNames: ModuleName[]) => {
+	return <P, C>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
+		connect<P, C>(moduleNames, WrappedComponent, LoadingComponent);
 }
 
-Inject.setLoadingComponent = (LoadingComponent: TReactComponent) => Loading = LoadingComponent;
+Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}, {}>) => Loading = LoadingComponent;
 
 export default Inject;
 

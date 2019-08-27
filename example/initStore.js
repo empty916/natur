@@ -18,7 +18,18 @@ const count = {
     }
 };
 
-const store = createStore({count}, {name});
+// const store = createStore({count}, {name});
 
-export default store;
+// setTimeout(() => {
+// 	store.setStates({
+// 		count: {
+// 			count: 100,
+// 		},
+// 		name: {
+// 			name: 'jerry',
+// 		}
+// 	});
+// }, 1000);
+export default () => createStore({count}, {name});
+// export default store;
 

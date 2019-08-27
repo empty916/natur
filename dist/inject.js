@@ -45,34 +45,59 @@ var createLoadModulesPromise = function createLoadModulesPromise(moduleNames) {
   return moduleNames.map(function (mn) {
     return (0, _createStore.getStoreInstance)().getLazyModule(mn)();
   });
-};
+}; // type GetModuleProps<
+// 	P extends {[p: string]: any},
+// 	ModuleKeys = (keyof P)[],
+// 	// MKI = keyof ModuleKeys,
+// 	MK = {[K in keyof ModuleKeys]: ModuleKeys[K]},
+// > = {[K in ModuleKeys]: ModuleKeys[K]};
+
 
 var connect = function connect(moduleNames, WrappedComponent) {
   var LoadingComponent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Loading;
-  var store = (0, _createStore.getStoreInstance)();
 
-  if (store === undefined) {
-    throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
-  }
-
-  var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
-
-  var integralModulesName = moduleNames.filter(function (mn) {
-    return allModuleNames.includes(mn);
-  });
-
-  if (!integralModulesName.length) {
-    console.warn("modules: ".concat(moduleNames.join(), " is not exits!"));
-    console.warn("".concat(moduleNames.join(), " \u6A21\u5757\u4E0D\u5B58\u5728!"));
-    return WrappedComponent;
-  }
-
-  var Connect = function Connect(_ref) {
+  // const store = getStoreInstance();
+  // if (store === undefined) {
+  // 	throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+  // }
+  // const allModuleNames = store.getAllModuleName();
+  // // 获取store中存在的模块
+  // const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+  var Connect = // <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
+  function Connect(_ref) {
     var forwardedRef = _ref.forwardedRef,
         props = _objectWithoutProperties(_ref, ["forwardedRef"]);
 
-    // const s = performance.now();
-    var newProps = _objectSpread({}, props);
+    // (props: P) => {
+    var newProps = _objectSpread({}, props, {
+      ref: forwardedRef
+    });
+
+    var _useMemo = (0, _react.useMemo)(function () {
+      var store = (0, _createStore.getStoreInstance)();
+
+      if (store === undefined) {
+        throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+      }
+
+      var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
+
+      var integralModulesName = moduleNames.filter(function (mn) {
+        return allModuleNames.includes(mn);
+      });
+      return {
+        store: store,
+        integralModulesName: integralModulesName
+      };
+    }, [moduleNames]),
+        store = _useMemo.store,
+        integralModulesName = _useMemo.integralModulesName;
+
+    if (!integralModulesName.length) {
+      console.warn("modules: ".concat(moduleNames.join(), " is not exits!"));
+      console.warn("".concat(moduleNames.join(), " \u6A21\u5757\u4E0D\u5B58\u5728!"));
+      return _react["default"].createElement(WrappedComponent, newProps);
+    }
 
     var _useState = (0, _react.useState)({}),
         _useState2 = _slicedToArray(_useState, 2),
@@ -158,39 +183,30 @@ var connect = function connect(moduleNames, WrappedComponent) {
       }
 
       return $props.current;
-    }, [props]); // const stabelInjectModules = useMemo(
-    // 	() => {
-    // 		const injectModulesChanged = !isEqualWithDepthLimit($injectModules.current, injectModules, 2);
-    // 		if (injectModulesChanged) {
-    // 			$injectModules.current = injectModules;
-    // 		}
-    // 		return $injectModules.current
-    // 	},
-    // 	[injectModules]
-    // )
+    }, [props]); //  ref={forwardedRef}
 
     var render = (0, _react.useMemo)(function () {
-      return _react["default"].createElement(WrappedComponent, _extends({}, newProps, {
-        ref: forwardedRef
-      }));
+      return _react["default"].createElement(WrappedComponent, newProps);
     }, // [props, injectModules]
     [stabelProps, injectModules]); // console.log(performance.now() - s);
 
     return modulesHasLoaded ? render : _react["default"].createElement(LoadingComponent, null);
-  };
+  }; // const ConnectWithStatics = hoistStatics(Connect as React.FC<P>, WrappedComponent, undefined);
 
-  Connect = _react["default"].memo(Connect);
-  Connect.displayName = 'Connect';
+
+  var MemoConnect = _react["default"].memo(Connect);
+
+  MemoConnect.displayName = 'Connect'; // Pick<P, Exclude<keyof P, 'ref'>>
 
   var forwardedConnect = _react["default"].forwardRef(function (props, ref) {
     return _react["default"].createElement(Connect, _extends({}, props, {
       forwardedRef: ref
     }));
-  });
+  }); // forwardedConnect.displayName = 'forwardedConnect';
+  // (forwardedConnect as any).WrappedComponent = WrappedComponent;
 
-  forwardedConnect.displayName = 'forwardedConnect'; // (forwardedConnect as any).WrappedComponent = WrappedComponent;
 
-  return (0, _hoistNonReactStatics["default"])(forwardedConnect, WrappedComponent);
+  return (0, _hoistNonReactStatics["default"])(forwardedConnect, WrappedComponent); // return MemoConnect as React.FC<P>;
 };
 
 var Inject = function Inject() {
