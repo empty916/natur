@@ -5,7 +5,7 @@
 
 #### STEP1. Create a store instance
 
-**this step needs to be done before using the inject method, because the inject method depends on the instance of the store**
+**This step needs to be done before the component is rendered, because the component wrapped by the inject method depends on the instance of the store when rendering.**
 
 ```js
 import { createStore } from 'react-natural-store'

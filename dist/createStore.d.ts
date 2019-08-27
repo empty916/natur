@@ -11,6 +11,9 @@ export interface Listener {
 export interface State {
     [type: string]: any;
 }
+export interface States {
+    [type: string]: State;
+}
 export interface Action {
     (...arg: any[]): void | undefined | State | Promise<State> | Promise<undefined>;
 }
@@ -36,8 +39,10 @@ export interface Store {
     createDispatch: (a: string) => Action;
     addModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
     getModule: (moduleName: ModuleName) => any;
+    getOriginModule: (moduleName: ModuleName) => StoreModule | {};
     getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
     setModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
+    setStates: (states: States) => void;
     hasModule: (moduleName: ModuleName) => boolean;
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];

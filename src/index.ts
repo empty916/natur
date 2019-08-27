@@ -7,3 +7,13 @@
  */
 export { default as createStore } from './createStore'
 export { default as inject } from './inject'
+
+
+// type Person = {
+// 	name: 'tom',
+// 	age: 22,
+// 	sex: '男',
+// };
+// type PersonProps = ['name', 'age'];
+
+// todo: getRestType<Person, PersonProps> => {sex}; ?

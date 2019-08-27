@@ -45,35 +45,59 @@ var createLoadModulesPromise = function createLoadModulesPromise(moduleNames) {
   return moduleNames.map(function (mn) {
     return (0, _createStore.getStoreInstance)().getLazyModule(mn)();
   });
-};
+}; // type GetModuleProps<
+// 	P extends {[p: string]: any},
+// 	ModuleKeys = (keyof P)[],
+// 	// MKI = keyof ModuleKeys,
+// 	MK = {[K in keyof ModuleKeys]: ModuleKeys[K]},
+// > = {[K in ModuleKeys]: ModuleKeys[K]};
+
 
 var connect = function connect(moduleNames, WrappedComponent) {
   var LoadingComponent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Loading;
-  var store = (0, _createStore.getStoreInstance)();
 
-  if (store === undefined) {
-    throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
-  }
-
-  var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
-
-  var integralModulesName = moduleNames.filter(function (mn) {
-    return allModuleNames.includes(mn);
-  });
-
-  if (!integralModulesName.length) {
-    console.warn("modules: ".concat(moduleNames.join(), " is not exits!"));
-    console.warn("".concat(moduleNames.join(), " \u6A21\u5757\u4E0D\u5B58\u5728!"));
-    return WrappedComponent;
-  }
-
+  // const store = getStoreInstance();
+  // if (store === undefined) {
+  // 	throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+  // }
+  // const allModuleNames = store.getAllModuleName();
+  // // 获取store中存在的模块
+  // const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
   var Connect = // <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
   function Connect(_ref) {
     var forwardedRef = _ref.forwardedRef,
         props = _objectWithoutProperties(_ref, ["forwardedRef"]);
 
     // (props: P) => {
-    var newProps = _objectSpread({}, props);
+    var newProps = _objectSpread({}, props, {
+      ref: forwardedRef
+    });
+
+    var _useMemo = (0, _react.useMemo)(function () {
+      var store = (0, _createStore.getStoreInstance)();
+
+      if (store === undefined) {
+        throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+      }
+
+      var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
+
+      var integralModulesName = moduleNames.filter(function (mn) {
+        return allModuleNames.includes(mn);
+      });
+      return {
+        store: store,
+        integralModulesName: integralModulesName
+      };
+    }, [moduleNames]),
+        store = _useMemo.store,
+        integralModulesName = _useMemo.integralModulesName;
+
+    if (!integralModulesName.length) {
+      console.warn("modules: ".concat(moduleNames.join(), " is not exits!"));
+      console.warn("".concat(moduleNames.join(), " \u6A21\u5757\u4E0D\u5B58\u5728!"));
+      return _react["default"].createElement(WrappedComponent, newProps);
+    }
 
     var _useState = (0, _react.useState)({}),
         _useState2 = _slicedToArray(_useState, 2),
@@ -162,9 +186,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
     }, [props]); //  ref={forwardedRef}
 
     var render = (0, _react.useMemo)(function () {
-      return _react["default"].createElement(WrappedComponent, _extends({}, newProps, {
-        ref: forwardedRef
-      }));
+      return _react["default"].createElement(WrappedComponent, newProps);
     }, // [props, injectModules]
     [stabelProps, injectModules]); // console.log(performance.now() - s);
 

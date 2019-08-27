@@ -1,13 +1,13 @@
 {
 	"name": "react-natural-store",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "react state management. support react 16.8+ only",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "npm run build:ts && npm run build:js",
-		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
 		"build:ts": "rimraf dist && tsc",
+		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
 		"dev": "webpack-dev-server --config ./example/webpack.config.js"
 	},
 	"repository": {

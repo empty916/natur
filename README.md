@@ -9,7 +9,7 @@
 <!-- # react-natural-store 使用手册 -->
 
 #### 第一步 创建 store 实例
-**这一步需要在使用 Inject 方法之前完成，因为 inject 方法注入依赖 store 的实例**
+**这一步需要在渲染组件之前完成，因为 inject方法包裹的组件，在渲染时依赖store的实例**
 
 ```js
 import { createStore } from 'react-natural-store';

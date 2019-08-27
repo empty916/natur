@@ -6,9 +6,9 @@
  * @desc [description]
  */
 import React from 'react';
-declare type TReactComponent<P, C> = React.FC<P> | React.ComponentClass<P, C>;
+declare type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 declare const Inject: {
-    (...moduleNames: (string | number)[]): <P, C>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, {}> | undefined) => TReactComponent<P, C>;
+    (...moduleNames: (string | number)[]): <P, C>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, {}> | undefined) => React.FunctionComponent<P>;
     setLoadingComponent(LoadingComponent: TReactComponent<{}, {}>): TReactComponent<{}, {}>;
 };
 export default Inject;

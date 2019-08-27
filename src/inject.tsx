@@ -41,26 +41,46 @@ const connect = <P, S>(
 	moduleNames: ModuleNames,
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent: TReactComponent<any, any> = Loading
-): React.FC<Partial<P>> => {
-	const store = getStoreInstance();
-	if (store === undefined) {
-		throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
-	}
-	const allModuleNames = store.getAllModuleName();
-	// 获取store中存在的模块
-	const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+): React.FC<P> => {
+	// const store = getStoreInstance();
+	// if (store === undefined) {
+	// 	throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+	// }
+	// const allModuleNames = store.getAllModuleName();
+	// // 获取store中存在的模块
+	// const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
 
-	if (!integralModulesName.length) {
-		console.warn(`modules: ${moduleNames.join()} is not exits!`);
-		console.warn(`${moduleNames.join()} 模块不存在!`);
-		return WrappedComponent as React.FC<Partial<P>>;
-	}
+	// if (!integralModulesName.length) {
+	// 	console.warn(`modules: ${moduleNames.join()} is not exits!`);
+	// 	console.warn(`${moduleNames.join()} 模块不存在!`);
+	// 	return WrappedComponent as React.FC<P>;
+	// }
 	type NoRefP = Omit<P, 'ref'>;
 	const Connect =
 		// <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
 		({forwardedRef, ...props}: NoRefP & {forwardedRef: React.Ref<any>}) => {
 		// (props: P) => {
-		let newProps = {...props} as any as P;
+		let newProps = {
+			...props,
+			ref: forwardedRef,
+		} as any as P;
+
+		const {store, integralModulesName} = useMemo(() => {
+			const store = getStoreInstance();
+			if (store === undefined) {
+				throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+			}
+			const allModuleNames = store.getAllModuleName();
+			// 获取store中存在的模块
+			const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+			return {store, integralModulesName};
+		}, [moduleNames]);
+
+		if (!integralModulesName.length) {
+			console.warn(`modules: ${moduleNames.join()} is not exits!`);
+			console.warn(`${moduleNames.join()} 模块不存在!`);
+			return <WrappedComponent {...newProps} />;
+		}
 		const [stateChanged, setStateChanged] = useState({});
 		// 获取moduleNames中是否存在未加载的模块
 		const unLoadedModules = integralModulesName.filter(mn => !store.hasModule(mn));
@@ -107,7 +127,6 @@ const connect = <P, S>(
 		newProps = {
 			...newProps,
 			...injectModules,
-			ref: forwardedRef,
 		};
 		const $props = useRef(props);
 		// const $injectModules = useRef(injectModules);
@@ -153,7 +172,7 @@ const connect = <P, S>(
 
 	// forwardedConnect.displayName = 'forwardedConnect';
 	// (forwardedConnect as any).WrappedComponent = WrappedComponent;
-	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<Partial<P>>;
+	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<P>;
 	// return MemoConnect as React.FC<P>;
 }
 
