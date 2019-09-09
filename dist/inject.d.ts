@@ -8,7 +8,7 @@
 import React from 'react';
 declare type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 declare const Inject: {
-    (...moduleNames: (string | number)[]): <P, C>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, {}> | undefined) => React.FunctionComponent<P>;
+    <StoreProp>(...moduleNames: (string | number)[]): <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, {}> | undefined) => React.FunctionComponent<Pick<P, Exclude<keyof P, keyof SP>>>;
     setLoadingComponent(LoadingComponent: TReactComponent<{}, {}>): TReactComponent<{}, {}>;
 };
 export default Inject;

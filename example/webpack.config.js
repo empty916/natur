@@ -46,6 +46,13 @@ module.exports = {
 			checkSyntacticErrors: true,
 			silent: true,
 			memoryLimit: 1024,
+			compilerOptions: {
+				"noEmit": true,
+				"baseUrl": "./",                       /* Base directory to resolve non-absolute module names. */
+				"paths": {
+					"react-natural-store": ["src/index.ts"]
+				},
+			}
 		}),
 	],
 };

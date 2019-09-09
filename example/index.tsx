@@ -1,16 +1,17 @@
-import React, {useCallback} from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
-// import {inject} from 'rns'
-import {inject} from '../src/index'
-import {StoreModule} from '../src/createStore'
+// import {inject, Provider, StoreModule} from 'react-natural-store'
+import {inject, Provider, StoreModule} from '../src'
 import initStore from './initStore.js';
 
-type AppProps = {count?: StoreModule, name?: StoreModule};
 
-const App: React.FC<AppProps> = (props: AppProps) => {
-	if (!props.count) {
-		return <>23333</>;
-	}
+type storeProps = {count: StoreModule, name: StoreModule};
+type otherProps = {
+	className: string,
+	style: Object,
+}
+
+const App: React.FC<storeProps & otherProps> = (props) => {
 	const {state, actions, maps} = props.count;
     return (
         <>
@@ -21,12 +22,14 @@ const App: React.FC<AppProps> = (props: AppProps) => {
     )
 }
 
-const a = inject('count', 'name');
-const IApp = a(App);
+const IApp = inject<storeProps>('count', 'name')(App);
 
-initStore();
-
+const app = (
+	<Provider store={initStore()}>
+		<IApp className='1' style={{}} />
+	</Provider>
+);
 ReactDOM.render(
-    <IApp />,
+    app,
     document.querySelector('#app')
 );
