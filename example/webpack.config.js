@@ -48,6 +48,10 @@ module.exports = {
 			memoryLimit: 1024,
 			compilerOptions: {
 				"noEmit": true,
+				"baseUrl": "./",                       /* Base directory to resolve non-absolute module names. */
+				"paths": {
+					"react-natural-store": ["src/index.ts"]
+				},
 			}
 		}),
 	],

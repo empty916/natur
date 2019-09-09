@@ -9,9 +9,9 @@ var _react = _interopRequireWildcard(require("react"));
 
 var _hoistNonReactStatics = _interopRequireDefault(require("hoist-non-react-statics"));
 
-var _createStore = require("./createStore");
-
 var _isEqualWithDepthLimit = _interopRequireDefault(require("./isEqualWithDepthLimit"));
+
+var _Provider = require("./Provider");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -41,28 +41,15 @@ var Loading = function Loading() {
   return null;
 };
 
-var createLoadModulesPromise = function createLoadModulesPromise(moduleNames) {
+var createLoadModulesPromise = function createLoadModulesPromise(moduleNames, store) {
   return moduleNames.map(function (mn) {
-    return (0, _createStore.getStoreInstance)().getLazyModule(mn)();
+    return store.getLazyModule(mn)();
   });
-}; // type GetModuleProps<
-// 	P extends {[p: string]: any},
-// 	ModuleKeys = (keyof P)[],
-// 	// MKI = keyof ModuleKeys,
-// 	MK = {[K in keyof ModuleKeys]: ModuleKeys[K]},
-// > = {[K in ModuleKeys]: ModuleKeys[K]};
-
+};
 
 var connect = function connect(moduleNames, WrappedComponent) {
   var LoadingComponent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Loading;
 
-  // const store = getStoreInstance();
-  // if (store === undefined) {
-  // 	throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
-  // }
-  // const allModuleNames = store.getAllModuleName();
-  // // 获取store中存在的模块
-  // const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
   var Connect = // <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
   function Connect(_ref) {
     var forwardedRef = _ref.forwardedRef,
@@ -73,8 +60,10 @@ var connect = function connect(moduleNames, WrappedComponent) {
       ref: forwardedRef
     });
 
+    var storeContext = (0, _react.useContext)(_Provider.StoreContext);
+
     var _useMemo = (0, _react.useMemo)(function () {
-      var store = (0, _createStore.getStoreInstance)();
+      var store = storeContext;
 
       if (store === undefined) {
         throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
@@ -89,7 +78,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
         store: store,
         integralModulesName: integralModulesName
       };
-    }, [moduleNames]),
+    }, [moduleNames, storeContext]),
         store = _useMemo.store,
         integralModulesName = _useMemo.integralModulesName;
 
@@ -131,7 +120,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
     (0, _react.useEffect)(function () {
       // 动态加载moduleName中还未加载的模块
       if (!modulesHasLoaded) {
-        var loadModulesPromise = createLoadModulesPromise(unLoadedModules);
+        var loadModulesPromise = createLoadModulesPromise(unLoadedModules, storeContext);
         Promise.all(loadModulesPromise).then(function (modules) {
           modules.forEach(function (_ref2, index) {
             var state = _ref2.state,
