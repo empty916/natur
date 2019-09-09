@@ -46,6 +46,9 @@ module.exports = {
 			checkSyntacticErrors: true,
 			silent: true,
 			memoryLimit: 1024,
+			compilerOptions: {
+				"noEmit": true,
+			}
 		}),
 	],
 };

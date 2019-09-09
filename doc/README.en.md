@@ -8,7 +8,7 @@
 **This step needs to be done before the component is rendered, because the component wrapped by the inject method depends on the instance of the store when rendering.**
 
 ```js
-import { createStore } from 'react-natural-store'
+import { createStore, Provider} from 'react-natural-store'
 const app = {
   state: {
     name: 'tom',
@@ -45,6 +45,18 @@ const otherModules = {
 // create store instance
 const store = createStore({app, ...otherModules}); 
 export default store;
+
+
+
+// use Store and Provider 
+
+ReactDom.render(
+  <Provider store={store}>
+    <App/>
+  </Provider>,
+  document.getElementById('app')
+)
+
 ```
 
 #### STEP2. Inject the store module into the component using the inject method
@@ -169,4 +181,46 @@ const unsubscribe = store.subscribe('app', () => {
 
 // cancel listen
 unsubscribe();
+```
+
+
+
+#### - typescript support
+
+```ts
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {inject, Provider, StoreModule} from 'react-natural-store'
+
+type storeProps = {count: StoreModule, name: StoreModule};
+type otherProps = {
+  className: string,
+  style: Object,
+}
+
+const App: React.FC<storeProps & otherProps> = (props) => {
+  const {state, actions, maps} = props.count;
+  return (
+    <>
+      <button onClick={() => actions.inc(state)}>+</button>
+      <span>{state.count}</span>
+      <button onClick={() => actions.dec(state)}>-</button>
+    </>
+  )
+}
+
+const IApp = inject<storeProps>('count', 'name')(App);
+
+const app = (
+  <Provider store={store}>
+    <IApp className='1' style={{}} />
+  </Provider>
+);
+ReactDOM.render(
+  app,
+  document.querySelector('#app')
+);
+
+
 ```

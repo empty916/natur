@@ -56,7 +56,6 @@ export interface Store {
 
 type TCreateStore = (modules: Modules, lazyModules: LazyStoreModules) => Store;
 
-let currentStoreInstance: Store;
 
 const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStoreModules = {}) => {
 	let currentModules = modules;
@@ -207,7 +206,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		return () => listeners[moduleName] = listeners[moduleName].filter((lis: Listener) => listener !== lis);;
 	};
 
-	currentStoreInstance = {
+	return {
 		createDispatch,
 		addModule,
 		getAllModuleName,
@@ -219,7 +218,6 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		hasModule,
 		subscribe,
 	};
-	return currentStoreInstance;
 };
-export const getStoreInstance = () => currentStoreInstance;
+
 export default createStore;

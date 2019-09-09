@@ -12,7 +12,7 @@
 **这一步需要在渲染组件之前完成，因为 inject方法包裹的组件，在渲染时依赖store的实例**
 
 ```js
-import { createStore } from 'react-natural-store';
+import { createStore, Provider } from 'react-natural-store';
 const app = {
   state: {
     name: 'tom',
@@ -45,6 +45,17 @@ const store = createStore({ app, ...otherModules }); // 创建store实例
 
 export default store;
 
+
+// use Store and Provider 
+
+ReactDom.render(
+  <Provider store={store}>
+    <App/>
+  </Provider>,
+  document.getElementById('app')
+)
+
+
 ```
 
 ---
@@ -52,7 +63,7 @@ export default store;
 #### 第二步 使用 inject 将 app 模块注入组件当中
 
 ```jsx
-
+import { inject, Provider } from 'react-natural-store';
 const App = ({app, otherModuleName}) => {
   // 获取注入的的app模块
   const {state, actions, maps} = app;
@@ -79,7 +90,7 @@ const App = ({app, otherModuleName}) => {
 };
 
 // 注入store中的app模块；
-export default Inject('app', 'otherModuleName')(App); 
+export default inject('app', 'otherModuleName')(App); 
 
 ```
 
@@ -181,3 +192,41 @@ inject('app')(App, () => <div>loading</div>);
 
 ```
 
+#### - typescript支持
+```ts
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {inject, Provider, StoreModule} from 'react-natural-store'
+
+type storeProps = {count: StoreModule, name: StoreModule};
+type otherProps = {
+  className: string,
+  style: Object,
+}
+
+const App: React.FC<storeProps & otherProps> = (props) => {
+  const {state, actions, maps} = props.count;
+  return (
+    <>
+      <button onClick={() => actions.inc(state)}>+</button>
+      <span>{state.count}</span>
+      <button onClick={() => actions.dec(state)}>-</button>
+    </>
+  )
+}
+
+const IApp = inject<storeProps>('count', 'name')(App);
+
+const app = (
+  <Provider store={store}>
+    <IApp className='1' style={{}} />
+  </Provider>
+);
+ReactDOM.render(
+  app,
+  document.querySelector('#app')
+);
+
+
+```

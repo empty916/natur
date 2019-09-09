@@ -5,8 +5,21 @@
  * @modify date 2019-08-09 17:12:57
  * @desc [description]
  */
-export { default as createStore } from './createStore'
+export {
+	default as createStore,
+	Listener,
+	State,
+	States,
+	Action,
+	Actions,
+	Maps,
+	StoreModule,
+	LazyStoreModules,
+	Modules,
+	Store,
+ } from './createStore'
 export { default as inject } from './inject'
+export { default as Provider } from './Provider'
 
 
 // type Person = {
