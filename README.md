@@ -12,7 +12,7 @@
 **这一步需要在渲染组件之前完成，因为 inject方法包裹的组件，在渲染时依赖store的实例**
 
 ```js
-import { createStore, Provider } from 'react-natural-store';
+import { createStore } from 'react-natural-store';
 const app = {
   state: {
     name: 'tom',
@@ -46,16 +46,6 @@ const store = createStore({ app, ...otherModules }); // 创建store实例
 export default store;
 
 
-// use Store and Provider 
-
-ReactDom.render(
-  <Provider store={store}>
-    <App/>
-  </Provider>,
-  document.getElementById('app')
-)
-
-
 ```
 
 ---
@@ -63,7 +53,7 @@ ReactDom.render(
 #### 第二步 使用 inject 将 app 模块注入组件当中
 
 ```jsx
-import { inject, Provider } from 'react-natural-store';
+import { inject } from 'react-natural-store';
 const App = ({app, otherModuleName}) => {
   // 获取注入的的app模块
   const {state, actions, maps} = app;
@@ -197,7 +187,7 @@ inject('app')(App, () => <div>loading</div>);
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, Provider, StoreModule} from 'react-natural-store'
+import {inject, StoreModule} from 'react-natural-store'
 
 type storeProps = {count: StoreModule, name: StoreModule};
 type otherProps = {
@@ -219,9 +209,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
 const IApp = inject<storeProps>('count', 'name')(App);
 
 const app = (
-  <Provider store={store}>
-    <IApp className='1' style={{}} />
-  </Provider>
+  <IApp className='1' style={{}} />
 );
 ReactDOM.render(
   app,

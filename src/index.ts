@@ -19,7 +19,7 @@ export {
 	Store,
  } from './createStore'
 export { default as inject } from './inject'
-export { default as Provider } from './Provider'
+// export { default as Provider } from './Provider'
 
 
 // type Person = {

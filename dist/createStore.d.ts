@@ -49,4 +49,5 @@ export interface Store {
 }
 declare type TCreateStore = (modules: Modules, lazyModules: LazyStoreModules) => Store;
 declare const createStore: TCreateStore;
+export declare const getStoreInstance: () => Store;
 export default createStore;

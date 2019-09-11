@@ -9,9 +9,9 @@ var _react = _interopRequireWildcard(require("react"));
 
 var _hoistNonReactStatics = _interopRequireDefault(require("hoist-non-react-statics"));
 
-var _isEqualWithDepthLimit = _interopRequireDefault(require("./isEqualWithDepthLimit"));
+var _createStore = require("./createStore");
 
-var _Provider = require("./Provider");
+var _isEqualWithDepthLimit = _interopRequireDefault(require("./isEqualWithDepthLimit"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -60,7 +60,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
       ref: forwardedRef
     });
 
-    var storeContext = (0, _react.useContext)(_Provider.StoreContext);
+    var storeContext = (0, _createStore.getStoreInstance)();
 
     var _useMemo = (0, _react.useMemo)(function () {
       var store = storeContext;

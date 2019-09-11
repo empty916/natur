@@ -14,9 +14,8 @@ import React, {
 	useContext
 } from 'react';
 import hoistStatics from 'hoist-non-react-statics'
-import { StoreModule, ModuleName, Store } from './createStore';
+import { StoreModule, ModuleName, Store, getStoreInstance } from './createStore';
 import isEqualWithDepthLimit from './isEqualWithDepthLimit';
-import { StoreContext } from './Provider'
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 type ModuleNames = ModuleName[];
@@ -25,7 +24,6 @@ type ModuleNames = ModuleName[];
 let Loading: TReactComponent<{}, {}> = () => null;
 
 const createLoadModulesPromise = (moduleNames: ModuleNames, store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
-
 
 const connect = <P, S, SP>(
 	moduleNames: ModuleNames,
@@ -42,8 +40,7 @@ const connect = <P, S, SP>(
 			ref: forwardedRef,
 		} as any as P;
 
-
-		const storeContext = useContext(StoreContext);
+		const storeContext = getStoreInstance();
 		const {store, integralModulesName} = useMemo(() => {
 			const store = storeContext;
 			if (store === undefined) {

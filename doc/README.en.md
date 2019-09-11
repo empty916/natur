@@ -8,7 +8,7 @@
 **This step needs to be done before the component is rendered, because the component wrapped by the inject method depends on the instance of the store when rendering.**
 
 ```js
-import { createStore, Provider} from 'react-natural-store'
+import { createStore} from 'react-natural-store'
 const app = {
   state: {
     name: 'tom',
@@ -46,16 +46,6 @@ const otherModules = {
 const store = createStore({app, ...otherModules}); 
 export default store;
 
-
-
-// use Store and Provider 
-
-ReactDom.render(
-  <Provider store={store}>
-    <App/>
-  </Provider>,
-  document.getElementById('app')
-)
 
 ```
 
@@ -191,7 +181,7 @@ unsubscribe();
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, Provider, StoreModule} from 'react-natural-store'
+import {inject, StoreModule} from 'react-natural-store'
 
 type storeProps = {count: StoreModule, name: StoreModule};
 type otherProps = {
@@ -213,9 +203,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
 const IApp = inject<storeProps>('count', 'name')(App);
 
 const app = (
-  <Provider store={store}>
-    <IApp className='1' style={{}} />
-  </Provider>
+  <IApp className='1' style={{}} />
 );
 ReactDOM.render(
   app,
