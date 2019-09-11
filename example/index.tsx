@@ -23,11 +23,9 @@ const App: React.FC<storeProps & otherProps> = (props) => {
 }
 
 const IApp = inject<storeProps>('count', 'name')(App);
-
+initStore();
 const app = (
-	<Provider store={initStore()}>
-		<IApp className='1' style={{}} />
-	</Provider>
+	<IApp className='1' style={{}} />
 );
 ReactDOM.render(
     app,

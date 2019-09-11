@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
+exports["default"] = exports.getStoreInstance = void 0;
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -34,6 +34,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 };
+
+var currentStoreInstance;
 
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -245,7 +247,7 @@ var createStore = function createStore() {
     ;
   };
 
-  return {
+  currentStoreInstance = {
     createDispatch: createDispatch,
     addModule: addModule,
     getAllModuleName: getAllModuleName,
@@ -257,7 +259,13 @@ var createStore = function createStore() {
     hasModule: hasModule,
     subscribe: subscribe
   };
+  return currentStoreInstance;
 };
 
+var getStoreInstance = function getStoreInstance() {
+  return currentStoreInstance;
+};
+
+exports.getStoreInstance = getStoreInstance;
 var _default = createStore;
 exports["default"] = _default;
