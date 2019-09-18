@@ -48,7 +48,6 @@ export interface Store {
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-	// setStates: (states: States) => void;
 	hasModule: (moduleName: ModuleName) => boolean;
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
@@ -65,6 +64,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	let currentAsyncModuleStates: States = {};
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const mapsCache: {[p: string]: any} = {};
+	const modulesCache: Modules = {};
 	const replaceState = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!!currentAsyncModuleStates[moduleName]) {
 			storeModule = {
@@ -112,29 +112,28 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		}, {} as {[p: string]: any});
 		return resultMaps;
 	}
-	const getMaps = (moduleName: ModuleName): undefined | {[p:string]: any} => {
-		const theModule = currentModules[moduleName];
-		if (!theModule.maps) {
-			return undefined;
-		}
-		if (!mapsCache[moduleName]) {
-			mapsCache[moduleName] = runMaps(theModule.maps, theModule.state);
-		}
-		return mapsCache[moduleName];
-	}
-	const clearMapsCache = (moduleName: ModuleName) => mapsCache[moduleName] = undefined;
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
 			console.log(new Error(`module: ${moduleName} is not exist`));
 			return {};
 		}
+		if (!!modulesCache[moduleName]) {
+			return modulesCache[moduleName];
+		}
 		const proxyModule = {
 			...currentModules[moduleName]
 		};
 		proxyModule.actions = createActionsProxy(moduleName);
-		proxyModule.maps = getMaps(moduleName);
+		proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps as Maps, currentModules[moduleName].state) : undefined;
+		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
+	}
+	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
+	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
+	const clearAllCache = (moduleName: ModuleName) => {
+		clearModulesCache(moduleName);
+		clearProxyActionsCache(moduleName);
 	}
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
@@ -159,26 +158,10 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 				...currentModules,
 				[moduleName]: replaceState(moduleName, storeModule),
 			};
+			clearAllCache(moduleName);
 			runListeners(moduleName);
 		};
 	}
-	// const setStates = (states: States) => {
-	// 	const syncModuleNames = Object.keys(currentModules);
-	// 	const validSyncModuleNames = Object.keys(states).filter(s => syncModuleNames.includes(s));
-	// 	validSyncModuleNames.forEach(moduleName => {
-	// 		currentModules[moduleName].state = { ...states[moduleName] };
-	// 	});
-	// 	validSyncModuleNames.forEach(runListeners);
-
-	// 	const invalidSyncModuleNames = Object.keys(states).filter(moduleName => !syncModuleNames.includes(moduleName));
-	// 	const asyncModuleNames = Object.keys(currentLazyModules);
-	// 	const validAsyncModuleNames = invalidSyncModuleNames.filter(ismn => asyncModuleNames.includes(ismn));
-
-	// 	currentAsyncModuleStates = validAsyncModuleNames.reduce((asyncModuleStates, asyncModuleName) => ({
-	// 		...asyncModuleStates,
-	// 		[asyncModuleName]: states[asyncModuleName],
-	// 	}), {});
-	// };
 	// 查看module是否存在
 	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
@@ -211,14 +194,14 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 					const asyncActionDidChangeState = ns !== currentModules[moduleName].state;
 					if (asyncActionHasReturn && asyncActionDidChangeState) {
 						setState(moduleName, ns);
-						clearMapsCache(moduleName);
+						clearModulesCache(moduleName);
 						runListeners(moduleName);
 					}
 					return Promise.resolve(ns);
 				});
 			} else {
 				setState(moduleName, newState);
-				clearMapsCache(moduleName);
+				clearModulesCache(moduleName);
 				runListeners(moduleName);
 				return newState;
 			}
@@ -240,7 +223,6 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		getOriginModule,
 		getLazyModule,
 		setModule,
-		// setStates,
 		hasModule,
 		subscribe,
 	};
