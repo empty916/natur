@@ -1,13 +1,13 @@
 {
 	"name": "react-natural-store",
-	"version": "0.0.9-beta.1",
-	"description": "react state management. support react 16.8+ only",
+	"version": "0.0.9-beta.2",
+	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "npm run build:ts && npm run build:js",
 		"build:ts": "rimraf dist && tsc",
-		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
+		"build:js": "babel dist --out-dir dist && rimraf dist/inject_class.jsx",
 		"dev": "webpack-dev-server --config ./example/webpack.config.js"
 	},
 	"repository": {
@@ -16,9 +16,12 @@
 	},
 	"keywords": [
 		"react",
+		"redux",
+		"mobx",
 		"state",
 		"store",
-		"data"
+		"data",
+		"anujs"
 	],
 	"author": "empty916",
 	"license": "Apache-2.0",
@@ -52,7 +55,11 @@
 	},
 	"dependencies": {
 		"hoist-non-react-statics": "^3.3.0",
-		"react": "^16.8.6",
-		"react-dom": "^16.8.6"
+		"react": "^16.9.0",
+		"react-dom": "^16.9.0"
+	},
+	"peerDependencies": {
+		"react": "^15.0.0",
+		"react-dom": "^15.0.0"
 	}
 }

@@ -18,9 +18,8 @@ export {
 	Modules,
 	Store,
  } from './createStore'
-export { default as inject } from './inject'
-// export { default as Provider } from './Provider'
-
+ export { default as inject } from './inject_class'
+// export { default as inject } from './inject_hooks'
 
 // type Person = {
 // 	name: 'tom',

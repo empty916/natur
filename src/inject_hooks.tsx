@@ -30,10 +30,8 @@ const connect = <P, S, SP>(
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent: TReactComponent<any, any> = Loading
 ): React.FC<Omit<P, keyof SP>> => {
-	type NoRefP = Omit<P, 'ref'>;
 	const Connect =
-		// <FPNoRef extends NoRefP & {forwardedRef: React.Ref<unknown>}>
-		({forwardedRef, ...props}: NoRefP & {forwardedRef: React.Ref<any>}) => {
+		({forwardedRef, ...props}: P & {forwardedRef: React.Ref<any>}) => {
 		// (props: P) => {
 		let newProps = {
 			...props,
@@ -138,18 +136,11 @@ const connect = <P, S, SP>(
 		// console.log(performance.now() - s);
 		return modulesHasLoaded ? render : <LoadingComponent />;
 	};
-	// const ConnectWithStatics = hoistStatics(Connect as React.FC<P>, WrappedComponent, undefined);
-	const MemoConnect = React.memo(Connect);
-	MemoConnect.displayName = 'Connect';
-	// Pick<P, Exclude<keyof P, 'ref'>>
-	const forwardedConnect = React.forwardRef<any, NoRefP>(
-		(props: NoRefP, ref) => <Connect {...props} forwardedRef={ref} />
+	const forwardedConnect = React.forwardRef<any, P>(
+		function ForwardConnect(props: P, ref) {return <Connect {...props} forwardedRef={ref} />}
 	);
 
-	// forwardedConnect.displayName = 'forwardedConnect';
-	// (forwardedConnect as any).WrappedComponent = WrappedComponent;
 	return hoistStatics(forwardedConnect as any, WrappedComponent) as React.FC<Omit<P, keyof SP>>;
-	// return MemoConnect as React.FC<P>;
 }
 
 const Inject = <StoreProp,>(...moduleNames: ModuleName[]) => {
