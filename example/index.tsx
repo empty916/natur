@@ -11,10 +11,16 @@ type otherProps = {
 	style: Object,
 }
 
-
+// const Name = React.memo(({name}) => (
+// 	<>
+// 		<div>{name.state.name}</div>
+// 		<div>{name.maps.splitName.join(',')}</div>
+// 	</>
+// ))
 class App extends React.Component<storeProps & otherProps> {
 	componentDidUpdate(prevProps, prevState) {
 		const { count, name } = this.props;
+		console.log(prevProps.count === count);
 	}
 
 	render() {
