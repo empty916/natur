@@ -65,6 +65,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	let currentAsyncModuleStates: States = {};
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const mapsCache: {[p: string]: any} = {};
+	const modulesCache: Modules = {};
 	const replaceState = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!!currentAsyncModuleStates[moduleName]) {
 			storeModule = {
@@ -129,13 +130,18 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			console.log(new Error(`module: ${moduleName} is not exist`));
 			return {};
 		}
+		if (!!modulesCache[moduleName]) {
+			return modulesCache[moduleName];
+		}
 		const proxyModule = {
 			...currentModules[moduleName]
 		};
 		proxyModule.actions = createActionsProxy(moduleName);
 		proxyModule.maps = getMaps(moduleName);
+		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}
+	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
@@ -212,6 +218,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 					if (asyncActionHasReturn && asyncActionDidChangeState) {
 						setState(moduleName, ns);
 						clearMapsCache(moduleName);
+						clearModulesCache(moduleName);
 						runListeners(moduleName);
 					}
 					return Promise.resolve(ns);
@@ -219,6 +226,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			} else {
 				setState(moduleName, newState);
 				clearMapsCache(moduleName);
+				clearModulesCache(moduleName);
 				runListeners(moduleName);
 				return newState;
 			}
