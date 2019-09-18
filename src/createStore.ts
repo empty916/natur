@@ -48,7 +48,7 @@ export interface Store {
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-	setStates: (states: States) => void;
+	// setStates: (states: States) => void;
 	hasModule: (moduleName: ModuleName) => boolean;
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
@@ -63,6 +63,8 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let currentAsyncModuleStates: States = {};
+	const proxyActionsCache: {[p: string]: Actions} = {};
+	const mapsCache: {[p: string]: any} = {};
 	const replaceState = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!!currentAsyncModuleStates[moduleName]) {
 			storeModule = {
@@ -87,9 +89,13 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		runListeners(moduleName);
 	}
 	const createActionsProxy = (moduleName: ModuleName) => {
+		if (!!proxyActionsCache[moduleName]) {
+			return proxyActionsCache[moduleName];
+		}
 		let actionsProxy = {...currentModules[moduleName].actions};
 		const dispatch = createDispatch(moduleName);
 		Object.keys(actionsProxy).forEach(key => actionsProxy[key] = (...data: any[]) => dispatch(key, ...data))
+		proxyActionsCache[moduleName] = actionsProxy;
 		return actionsProxy;
 	};
 	const runMaps = (maps: Maps, state: any) => {
@@ -103,9 +109,20 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		const resultMaps = mapsKeys.reduce((rm, key) => {
 			rm[key] = typeof maps[key] === 'function' ? maps[key](state) : maps[key];
 			return rm;
-		}, {} as {[p: string]: unknown});
+		}, {} as {[p: string]: any});
 		return resultMaps;
 	}
+	const getMaps = (moduleName: ModuleName): undefined | {[p:string]: any} => {
+		const theModule = currentModules[moduleName];
+		if (!theModule.maps) {
+			return undefined;
+		}
+		if (!mapsCache[moduleName]) {
+			mapsCache[moduleName] = runMaps(theModule.maps, theModule.state);
+		}
+		return mapsCache[moduleName];
+	}
+	const clearMapsCache = (moduleName: ModuleName) => mapsCache[moduleName] = undefined;
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
@@ -116,7 +133,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			...currentModules[moduleName]
 		};
 		proxyModule.actions = createActionsProxy(moduleName);
-		(proxyModule.maps as { [p: string]: unknown }) = proxyModule.maps ? runMaps(proxyModule.maps, proxyModule.state) : {};
+		proxyModule.maps = getMaps(moduleName);
 		return proxyModule;
 	}
 	// 获取原本的module
@@ -127,7 +144,13 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		}
 		return currentModules[moduleName];
 	}
-	const getLazyModule = (moduleName: ModuleName) => (currentLazyModules[moduleName] as () => Promise<StoreModule>) || (() => Promise.resolve({actions: {}, state: {}}));
+	const getLazyModule = (moduleName: ModuleName) => {
+		if (!!currentLazyModules[moduleName]) {
+			return currentLazyModules[moduleName];
+		}
+		console.warn(new Error(`lazy module: ${moduleName} is not exist`));
+		return () => Promise.resolve({actions: {}, state: {}});
+	};
 	const getAllModuleName = () => [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
@@ -139,23 +162,23 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			runListeners(moduleName);
 		};
 	}
-	const setStates = (states: States) => {
-		const syncModuleNames = Object.keys(currentModules);
-		const validSyncModuleNames = Object.keys(states).filter(s => syncModuleNames.includes(s));
-		validSyncModuleNames.forEach(moduleName => {
-			currentModules[moduleName].state = { ...states[moduleName] };
-		});
-		validSyncModuleNames.forEach(runListeners);
+	// const setStates = (states: States) => {
+	// 	const syncModuleNames = Object.keys(currentModules);
+	// 	const validSyncModuleNames = Object.keys(states).filter(s => syncModuleNames.includes(s));
+	// 	validSyncModuleNames.forEach(moduleName => {
+	// 		currentModules[moduleName].state = { ...states[moduleName] };
+	// 	});
+	// 	validSyncModuleNames.forEach(runListeners);
 
-		const invalidSyncModuleNames = Object.keys(states).filter(moduleName => !syncModuleNames.includes(moduleName));
-		const asyncModuleNames = Object.keys(currentLazyModules);
-		const validAsyncModuleNames = invalidSyncModuleNames.filter(ismn => asyncModuleNames.includes(ismn));
+	// 	const invalidSyncModuleNames = Object.keys(states).filter(moduleName => !syncModuleNames.includes(moduleName));
+	// 	const asyncModuleNames = Object.keys(currentLazyModules);
+	// 	const validAsyncModuleNames = invalidSyncModuleNames.filter(ismn => asyncModuleNames.includes(ismn));
 
-		currentAsyncModuleStates = validAsyncModuleNames.reduce((asyncModuleStates, asyncModuleName) => ({
-			...asyncModuleStates,
-			[asyncModuleName]: states[asyncModuleName],
-		}), {});
-	};
+	// 	currentAsyncModuleStates = validAsyncModuleNames.reduce((asyncModuleStates, asyncModuleName) => ({
+	// 		...asyncModuleStates,
+	// 		[asyncModuleName]: states[asyncModuleName],
+	// 	}), {});
+	// };
 	// 查看module是否存在
 	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
@@ -188,12 +211,14 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 					const asyncActionDidChangeState = ns !== currentModules[moduleName].state;
 					if (asyncActionHasReturn && asyncActionDidChangeState) {
 						setState(moduleName, ns);
+						clearMapsCache(moduleName);
 						runListeners(moduleName);
 					}
 					return Promise.resolve(ns);
 				});
 			} else {
 				setState(moduleName, newState);
+				clearMapsCache(moduleName);
 				runListeners(moduleName);
 				return newState;
 			}
@@ -215,7 +240,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		getOriginModule,
 		getLazyModule,
 		setModule,
-		setStates,
+		// setStates,
 		hasModule,
 		subscribe,
 	};

@@ -3,6 +3,10 @@
 
 - [concept of design](./design.en.md)
 
+#### compatibility
+- support react 15.x, 16.x and anujs
+
+
 #### STEP1. Create a store instance
 
 **This step needs to be done before the component is rendered, because the component wrapped by the inject method depends on the instance of the store when rendering.**
@@ -212,3 +216,30 @@ ReactDOM.render(
 
 
 ```
+
+
+
+#### - react-natural-store precautions for use
+
+ - Since the low version does not support the react.forwardRef method, you cannot directly use ref to get the component instance of the package. You need to use the forwardedRef property to get it (using the same ref).
+
+ - Tips in TypeScript may not be so friendly, such as
+ ```ts
+
+@inject<storeProps>('count', 'name')
+class App extends React.Component {
+	// ...
+}
+
+// This method of use will report an error, indicating that there is no forwardedRef attribute declaration in the App component.
+<App forwardedRef={console.log} />
+
+// The following usage methods will not give an error.
+class _App extends React.Component {
+	// ...
+}
+const App = @inject<storeProps>('count', 'name')(_App);
+// correct
+<App forwardedRef={console.log} />
+
+ ```

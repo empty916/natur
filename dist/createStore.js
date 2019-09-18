@@ -44,6 +44,8 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var currentAsyncModuleStates = {};
+  var proxyActionsCache = {};
+  var mapsCache = {};
 
   var replaceState = function replaceState(moduleName, storeModule) {
     if (!!currentAsyncModuleStates[moduleName]) {
@@ -72,6 +74,10 @@ var createStore = function createStore() {
   };
 
   var createActionsProxy = function createActionsProxy(moduleName) {
+    if (!!proxyActionsCache[moduleName]) {
+      return proxyActionsCache[moduleName];
+    }
+
     var actionsProxy = _objectSpread({}, currentModules[moduleName].actions);
 
     var dispatch = createDispatch(moduleName);
@@ -84,6 +90,7 @@ var createStore = function createStore() {
         return dispatch.apply(void 0, [key].concat(data));
       };
     });
+    proxyActionsCache[moduleName] = actionsProxy;
     return actionsProxy;
   };
 
@@ -103,6 +110,24 @@ var createStore = function createStore() {
       return rm;
     }, {});
     return resultMaps;
+  };
+
+  var getMaps = function getMaps(moduleName) {
+    var theModule = currentModules[moduleName];
+
+    if (!theModule.maps) {
+      return undefined;
+    }
+
+    if (!mapsCache[moduleName]) {
+      mapsCache[moduleName] = runMaps(theModule.maps, theModule.state);
+    }
+
+    return mapsCache[moduleName];
+  };
+
+  var clearMapsCache = function clearMapsCache(moduleName) {
+    return mapsCache[moduleName] = undefined;
   }; // 获取module
 
 
@@ -115,7 +140,7 @@ var createStore = function createStore() {
     var proxyModule = _objectSpread({}, currentModules[moduleName]);
 
     proxyModule.actions = createActionsProxy(moduleName);
-    proxyModule.maps = proxyModule.maps ? runMaps(proxyModule.maps, proxyModule.state) : {};
+    proxyModule.maps = getMaps(moduleName);
     return proxyModule;
   }; // 获取原本的module
 
@@ -130,7 +155,12 @@ var createStore = function createStore() {
   };
 
   var getLazyModule = function getLazyModule(moduleName) {
-    return currentLazyModules[moduleName] || function () {
+    if (!!currentLazyModules[moduleName]) {
+      return currentLazyModules[moduleName];
+    }
+
+    console.warn(new Error("lazy module: ".concat(moduleName, " is not exist")));
+    return function () {
       return Promise.resolve({
         actions: {},
         state: {}
@@ -150,28 +180,22 @@ var createStore = function createStore() {
     }
 
     ;
-  };
-
-  var setStates = function setStates(states) {
-    var syncModuleNames = Object.keys(currentModules);
-    var validSyncModuleNames = Object.keys(states).filter(function (s) {
-      return syncModuleNames.includes(s);
-    });
-    validSyncModuleNames.forEach(function (moduleName) {
-      currentModules[moduleName].state = _objectSpread({}, states[moduleName]);
-    });
-    validSyncModuleNames.forEach(runListeners);
-    var invalidSyncModuleNames = Object.keys(states).filter(function (moduleName) {
-      return !syncModuleNames.includes(moduleName);
-    });
-    var asyncModuleNames = Object.keys(currentLazyModules);
-    var validAsyncModuleNames = invalidSyncModuleNames.filter(function (ismn) {
-      return asyncModuleNames.includes(ismn);
-    });
-    currentAsyncModuleStates = validAsyncModuleNames.reduce(function (asyncModuleStates, asyncModuleName) {
-      return _objectSpread({}, asyncModuleStates, _defineProperty({}, asyncModuleName, states[asyncModuleName]));
-    }, {});
-  }; // 查看module是否存在
+  }; // const setStates = (states: States) => {
+  // 	const syncModuleNames = Object.keys(currentModules);
+  // 	const validSyncModuleNames = Object.keys(states).filter(s => syncModuleNames.includes(s));
+  // 	validSyncModuleNames.forEach(moduleName => {
+  // 		currentModules[moduleName].state = { ...states[moduleName] };
+  // 	});
+  // 	validSyncModuleNames.forEach(runListeners);
+  // 	const invalidSyncModuleNames = Object.keys(states).filter(moduleName => !syncModuleNames.includes(moduleName));
+  // 	const asyncModuleNames = Object.keys(currentLazyModules);
+  // 	const validAsyncModuleNames = invalidSyncModuleNames.filter(ismn => asyncModuleNames.includes(ismn));
+  // 	currentAsyncModuleStates = validAsyncModuleNames.reduce((asyncModuleStates, asyncModuleName) => ({
+  // 		...asyncModuleStates,
+  // 		[asyncModuleName]: states[asyncModuleName],
+  // 	}), {});
+  // };
+  // 查看module是否存在
 
 
   var hasModule = function hasModule(moduleName) {
@@ -220,6 +244,7 @@ var createStore = function createStore() {
 
           if (asyncActionHasReturn && asyncActionDidChangeState) {
             setState(moduleName, ns);
+            clearMapsCache(moduleName);
             runListeners(moduleName);
           }
 
@@ -227,6 +252,7 @@ var createStore = function createStore() {
         });
       } else {
         setState(moduleName, newState);
+        clearMapsCache(moduleName);
         runListeners(moduleName);
         return newState;
       }
@@ -255,7 +281,7 @@ var createStore = function createStore() {
     getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
     setModule: setModule,
-    setStates: setStates,
+    // setStates,
     hasModule: hasModule,
     subscribe: subscribe
   };

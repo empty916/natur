@@ -6,6 +6,8 @@
 - [设计概念](./doc/design.md)
 
 
+#### 兼容性
+ - 支持react 15.x, 16.x, 以及anujs
 <!-- # react-natural-store 使用手册 -->
 
 #### 第一步 创建 store 实例
@@ -218,3 +220,29 @@ ReactDOM.render(
 
 
 ```
+
+
+#### - react-natural-store使用注意事项
+
+ - 由于低版本不支持react.forwardRef方法，所以不能直接使用ref获取包裹的组件实例，需要使用forwardedRef属性获取（用法同ref）
+
+ - 在TypeScript中的提示可能不那么友好，比如
+ ```ts
+
+@inject<storeProps>('count', 'name')
+class App extends React.Component {
+	// ...
+}
+
+// 此使用方法会报错，提示App组件中无forwardedRef属性声明
+<App forwardedRef={console.log} />
+
+// 以下使用方式则不会报错
+class _App extends React.Component {
+	// ...
+}
+const App = @inject<storeProps>('count', 'name')(_App);
+// 正确
+<App forwardedRef={console.log} />
+
+ ```
