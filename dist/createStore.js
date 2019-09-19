@@ -46,6 +46,7 @@ var createStore = function createStore() {
   var currentAsyncModuleStates = {};
   var proxyActionsCache = {};
   var mapsCache = {};
+  var modulesCache = {};
 
   var replaceState = function replaceState(moduleName, storeModule) {
     if (!!currentAsyncModuleStates[moduleName]) {
@@ -110,24 +111,6 @@ var createStore = function createStore() {
       return rm;
     }, {});
     return resultMaps;
-  };
-
-  var getMaps = function getMaps(moduleName) {
-    var theModule = currentModules[moduleName];
-
-    if (!theModule.maps) {
-      return undefined;
-    }
-
-    if (!mapsCache[moduleName]) {
-      mapsCache[moduleName] = runMaps(theModule.maps, theModule.state);
-    }
-
-    return mapsCache[moduleName];
-  };
-
-  var clearMapsCache = function clearMapsCache(moduleName) {
-    return mapsCache[moduleName] = undefined;
   }; // 获取module
 
 
@@ -137,11 +120,29 @@ var createStore = function createStore() {
       return {};
     }
 
+    if (!!modulesCache[moduleName]) {
+      return modulesCache[moduleName];
+    }
+
     var proxyModule = _objectSpread({}, currentModules[moduleName]);
 
     proxyModule.actions = createActionsProxy(moduleName);
-    proxyModule.maps = getMaps(moduleName);
+    proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps, currentModules[moduleName].state) : undefined;
+    modulesCache[moduleName] = proxyModule;
     return proxyModule;
+  };
+
+  var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
+    return delete proxyActionsCache[moduleName];
+  };
+
+  var clearModulesCache = function clearModulesCache(moduleName) {
+    return delete modulesCache[moduleName];
+  };
+
+  var clearAllCache = function clearAllCache(moduleName) {
+    clearModulesCache(moduleName);
+    clearProxyActionsCache(moduleName);
   }; // 获取原本的module
 
 
@@ -176,26 +177,12 @@ var createStore = function createStore() {
   var setModule = function setModule(moduleName, storeModule) {
     if (currentModules[moduleName] !== storeModule) {
       currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceState(moduleName, storeModule)));
+      clearAllCache(moduleName);
       runListeners(moduleName);
     }
 
     ;
-  }; // const setStates = (states: States) => {
-  // 	const syncModuleNames = Object.keys(currentModules);
-  // 	const validSyncModuleNames = Object.keys(states).filter(s => syncModuleNames.includes(s));
-  // 	validSyncModuleNames.forEach(moduleName => {
-  // 		currentModules[moduleName].state = { ...states[moduleName] };
-  // 	});
-  // 	validSyncModuleNames.forEach(runListeners);
-  // 	const invalidSyncModuleNames = Object.keys(states).filter(moduleName => !syncModuleNames.includes(moduleName));
-  // 	const asyncModuleNames = Object.keys(currentLazyModules);
-  // 	const validAsyncModuleNames = invalidSyncModuleNames.filter(ismn => asyncModuleNames.includes(ismn));
-  // 	currentAsyncModuleStates = validAsyncModuleNames.reduce((asyncModuleStates, asyncModuleName) => ({
-  // 		...asyncModuleStates,
-  // 		[asyncModuleName]: states[asyncModuleName],
-  // 	}), {});
-  // };
-  // 查看module是否存在
+  }; // 查看module是否存在
 
 
   var hasModule = function hasModule(moduleName) {
@@ -244,7 +231,7 @@ var createStore = function createStore() {
 
           if (asyncActionHasReturn && asyncActionDidChangeState) {
             setState(moduleName, ns);
-            clearMapsCache(moduleName);
+            clearModulesCache(moduleName);
             runListeners(moduleName);
           }
 
@@ -252,7 +239,7 @@ var createStore = function createStore() {
         });
       } else {
         setState(moduleName, newState);
-        clearMapsCache(moduleName);
+        clearModulesCache(moduleName);
         runListeners(moduleName);
         return newState;
       }
@@ -281,7 +268,6 @@ var createStore = function createStore() {
     getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
     setModule: setModule,
-    // setStates,
     hasModule: hasModule,
     subscribe: subscribe
   };
