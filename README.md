@@ -88,6 +88,45 @@ export default inject('app', 'otherModuleName')(App);
 
 ---
 
+
+#### 第二步可以换成hooks使用方式 使用 useInject 将 app 模块注入组件当中
+
+```jsx
+
+import { useInject } from 'react-natural-store/hooks';
+
+const App = () => {
+  /*
+  注意，如果useInject参数中，存在懒加载模块，则会先返回空的数组，
+  等到懒加载模块加载完成才会返回你需要的模块，
+  所以useInject不建议使用于懒加载模块
+
+  但是你可以使用手动添加模块的的方式
+  store.addModule('otherModuleName', otherModule);
+  详情见手动导入模块说明
+  */
+  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
+  const {state, actions, maps} = app;
+  return (
+    <input
+      value={state.name}
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+export default App; 
+
+```
+
+
+
+---
+
+
+
+
+
+
 #### - 懒加载模块配置
 
 ```js
@@ -181,6 +220,51 @@ inject('app')(App, () => <div>loading</div>);
   
   // 取消监听
   unsubscribe();
+
+```
+
+
+#### - 手动导入模块
+
+```ts
+
+// initStore.ts
+import { createStore } from 'react-natural-store';
+
+// 在实例化store的时候，没有导入懒加载模块
+export default createStore({/*...modules*/});
+
+// ================================================
+// lazyloadPage.ts 这是一个懒加载的页面
+import { useInject } from 'react-natural-store/hooks';
+import store from 'initStore.ts'
+
+const lazyLoadModule = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+  },
+  maps: {
+    nameSplit: state => state.name.split(''),
+    addName: state => lastName => state.name + lastName,
+  },
+};
+/*
+手动添加模块，在此模块被添加之前，其他地方无法使用此模块
+要想其他地方也使用，则必须在store实例化的时候就导入
+*/
+store.addModule('lazyModuleName', lazyLoadModule);
+
+const lazyLoadView = () => {
+  // 现在你可以获取手动添加的模块了
+  const [{state, maps, actions}] = useInject('lazyModuleName');
+  return (
+    <div>{state.name}</div>
+  )
+}
+
 
 ```
 

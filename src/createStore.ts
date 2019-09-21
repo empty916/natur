@@ -57,36 +57,52 @@ type TCreateStore = (modules: Modules, lazyModules: LazyStoreModules) => Store;
 
 let currentStoreInstance: Store;
 
+const isObj = (obj: any) => !(typeof obj !== 'object' || Array.isArray(obj) || obj === null);
+const isStoreModule = (obj: any) => {
+	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+		return false;
+	}
+	if (!!obj.maps && !isObj(obj.maps)){
+		return false;
+	}
+	return true;
+}
+
 const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStoreModules = {}) => {
 	let currentModules = modules;
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
-	let currentAsyncModuleStates: States = {};
 	const proxyActionsCache: {[p: string]: Actions} = {};
-	const mapsCache: {[p: string]: any} = {};
 	const modulesCache: Modules = {};
-	const replaceState = (moduleName: ModuleName, storeModule: StoreModule) => {
-		if (!!currentAsyncModuleStates[moduleName]) {
-			storeModule = {
-				...storeModule,
-				state: currentAsyncModuleStates[moduleName],
-			};
-			delete currentAsyncModuleStates[moduleName];
-		}
-		return storeModule;
+	// const cloneModules = (storeModule: StoreModule) => ({
+	// 	...storeModule,
+	// 	state: {...storeModule.state}
+	// });
+	const cloneModules = (storeModule: StoreModule) => storeModule;
+	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
+	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
+	const clearAllCache = (moduleName: ModuleName) => {
+		clearModulesCache(moduleName);
+		clearProxyActionsCache(moduleName);
 	}
 	const setState = (moduleName: ModuleName, newState: any) => currentModules[moduleName].state = newState;
 	// 添加module
 	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if(!!currentModules[moduleName]) {
-			console.log(new Error('action module has exist!'));
-			return;
+			console.error(new Error(`addModule: ${moduleName} already exists!`));
+			return currentStoreInstance;
+		}
+		if (!isStoreModule(storeModule)) {
+			console.error(new Error('addModule: storeModule is illegal!'));
+			return currentStoreInstance;
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: replaceState(moduleName, storeModule),
+			[moduleName]: cloneModules(storeModule),
 		};
+		clearAllCache(moduleName);
 		runListeners(moduleName);
+		return currentStoreInstance;
 	}
 	const createActionsProxy = (moduleName: ModuleName) => {
 		if (!!proxyActionsCache[moduleName]) {
@@ -115,7 +131,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
-			console.log(new Error(`module: ${moduleName} is not exist`));
+			console.log(new Error(`getModule: ${moduleName} is not exist`));
 			return {};
 		}
 		if (!!modulesCache[moduleName]) {
@@ -129,16 +145,11 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}
-	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
-	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
-	const clearAllCache = (moduleName: ModuleName) => {
-		clearModulesCache(moduleName);
-		clearProxyActionsCache(moduleName);
-	}
+
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
-			console.log(new Error(`module: ${moduleName} is not exist`));
+			console.log(new Error(`getOriginModule: ${moduleName} is not exist`));
 			return {};
 		}
 		return currentModules[moduleName];
@@ -147,20 +158,23 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		if (!!currentLazyModules[moduleName]) {
 			return currentLazyModules[moduleName];
 		}
-		console.warn(new Error(`lazy module: ${moduleName} is not exist`));
+		console.warn(new Error(`getLazyModule: ${moduleName} is not exist`));
 		return () => Promise.resolve({actions: {}, state: {}});
 	};
 	const getAllModuleName = () => [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		if (currentModules[moduleName] !== storeModule) {
-			currentModules = {
-				...currentModules,
-				[moduleName]: replaceState(moduleName, storeModule),
-			};
-			clearAllCache(moduleName);
-			runListeners(moduleName);
+		if (!isStoreModule(storeModule)) {
+			console.error(new Error('setModule: storeModule is illegal!'));
+			return currentStoreInstance;
+		}
+		currentModules = {
+			...currentModules,
+			[moduleName]: cloneModules(storeModule),
 		};
+		clearAllCache(moduleName);
+		runListeners(moduleName);
+		return currentStoreInstance;
 	}
 	// 查看module是否存在
 	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
@@ -168,8 +182,8 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 
 	const createDispatch = (moduleName: ModuleName): Action => {
 		if (!hasModule(moduleName)) {
-			console.log(new Error('module is not exist!'));
-			return () => {};
+			throw new Error(`createDispatch: ${moduleName} is not exist!`);
+			// return () => {};
 		}
 
 		return (type: string, ...data: any[]) => {
@@ -180,7 +194,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 			if (moduleIsInvalid || moduleActionIsInvalid) {
 				return;
 			}
-			newState = currentModules[moduleName].actions[type](...data) || undefined;
+			newState = currentModules[moduleName].actions[type](...data) as any;
 
 			const actionHasNoReturn = newState === undefined;
 			const stateIsNotChanged = newState === currentModules[moduleName].state;

@@ -18,14 +18,5 @@ export {
 	Modules,
 	Store,
  } from './createStore'
- export { default as inject } from './inject_class'
+ export { default as inject } from './inject'
 // export { default as inject } from './inject_hooks'
-
-// type Person = {
-// 	name: 'tom',
-// 	age: 22,
-// 	sex: '男',
-// };
-// type PersonProps = ['name', 'age'];
-
-// todo: getRestType<Person, PersonProps> => {sex}; ?

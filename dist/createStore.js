@@ -19,6 +19,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -37,26 +39,49 @@ var isPromise = function isPromise(obj) {
 
 var currentStoreInstance;
 
+var isObj = function isObj(obj) {
+  return !(_typeof(obj) !== 'object' || Array.isArray(obj) || obj === null);
+};
+
+var isStoreModule = function isStoreModule(obj) {
+  if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+    return false;
+  }
+
+  if (!!obj.maps && !isObj(obj.maps)) {
+    return false;
+  }
+
+  return true;
+};
+
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var lazyModules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var currentModules = modules;
   var currentLazyModules = lazyModules;
   var listeners = {};
-  var currentAsyncModuleStates = {};
   var proxyActionsCache = {};
-  var mapsCache = {};
-  var modulesCache = {};
+  var modulesCache = {}; // const cloneModules = (storeModule: StoreModule) => ({
+  // 	...storeModule,
+  // 	state: {...storeModule.state}
+  // });
 
-  var replaceState = function replaceState(moduleName, storeModule) {
-    if (!!currentAsyncModuleStates[moduleName]) {
-      storeModule = _objectSpread({}, storeModule, {
-        state: currentAsyncModuleStates[moduleName]
-      });
-      delete currentAsyncModuleStates[moduleName];
-    }
-
+  var cloneModules = function cloneModules(storeModule) {
     return storeModule;
+  };
+
+  var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
+    return delete proxyActionsCache[moduleName];
+  };
+
+  var clearModulesCache = function clearModulesCache(moduleName) {
+    return delete modulesCache[moduleName];
+  };
+
+  var clearAllCache = function clearAllCache(moduleName) {
+    clearModulesCache(moduleName);
+    clearProxyActionsCache(moduleName);
   };
 
   var setState = function setState(moduleName, newState) {
@@ -66,12 +91,19 @@ var createStore = function createStore() {
 
   var addModule = function addModule(moduleName, storeModule) {
     if (!!currentModules[moduleName]) {
-      console.log(new Error('action module has exist!'));
-      return;
+      console.error(new Error("addModule: ".concat(moduleName, " already exists!")));
+      return currentStoreInstance;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceState(moduleName, storeModule)));
+    if (!isStoreModule(storeModule)) {
+      console.error(new Error('addModule: storeModule is illegal!'));
+      return currentStoreInstance;
+    }
+
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, cloneModules(storeModule)));
+    clearAllCache(moduleName);
     runListeners(moduleName);
+    return currentStoreInstance;
   };
 
   var createActionsProxy = function createActionsProxy(moduleName) {
@@ -116,7 +148,7 @@ var createStore = function createStore() {
 
   var getModule = function getModule(moduleName) {
     if (!currentModules[moduleName]) {
-      console.log(new Error("module: ".concat(moduleName, " is not exist")));
+      console.log(new Error("getModule: ".concat(moduleName, " is not exist")));
       return {};
     }
 
@@ -130,25 +162,12 @@ var createStore = function createStore() {
     proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps, currentModules[moduleName].state) : undefined;
     modulesCache[moduleName] = proxyModule;
     return proxyModule;
-  };
-
-  var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
-    return delete proxyActionsCache[moduleName];
-  };
-
-  var clearModulesCache = function clearModulesCache(moduleName) {
-    return delete modulesCache[moduleName];
-  };
-
-  var clearAllCache = function clearAllCache(moduleName) {
-    clearModulesCache(moduleName);
-    clearProxyActionsCache(moduleName);
   }; // 获取原本的module
 
 
   var getOriginModule = function getOriginModule(moduleName) {
     if (!currentModules[moduleName]) {
-      console.log(new Error("module: ".concat(moduleName, " is not exist")));
+      console.log(new Error("getOriginModule: ".concat(moduleName, " is not exist")));
       return {};
     }
 
@@ -160,7 +179,7 @@ var createStore = function createStore() {
       return currentLazyModules[moduleName];
     }
 
-    console.warn(new Error("lazy module: ".concat(moduleName, " is not exist")));
+    console.warn(new Error("getLazyModule: ".concat(moduleName, " is not exist")));
     return function () {
       return Promise.resolve({
         actions: {},
@@ -175,13 +194,15 @@ var createStore = function createStore() {
 
 
   var setModule = function setModule(moduleName, storeModule) {
-    if (currentModules[moduleName] !== storeModule) {
-      currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceState(moduleName, storeModule)));
-      clearAllCache(moduleName);
-      runListeners(moduleName);
+    if (!isStoreModule(storeModule)) {
+      console.error(new Error('setModule: storeModule is illegal!'));
+      return currentStoreInstance;
     }
 
-    ;
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, cloneModules(storeModule)));
+    clearAllCache(moduleName);
+    runListeners(moduleName);
+    return currentStoreInstance;
   }; // 查看module是否存在
 
 
@@ -197,8 +218,7 @@ var createStore = function createStore() {
 
   var createDispatch = function createDispatch(moduleName) {
     if (!hasModule(moduleName)) {
-      console.log(new Error('module is not exist!'));
-      return function () {};
+      throw new Error("createDispatch: ".concat(moduleName, " is not exist!")); // return () => {};
     }
 
     return function (type) {
@@ -216,7 +236,7 @@ var createStore = function createStore() {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data) || undefined;
+      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
       var actionHasNoReturn = newState === undefined;
       var stateIsNotChanged = newState === currentModules[moduleName].state;
 

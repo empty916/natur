@@ -19,15 +19,15 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
-function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
-
-function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
-
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
+
+function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -83,12 +83,12 @@ var connect = function connect(moduleNames, WrappedComponent) {
           integralModulesName = _this$init.integralModulesName;
 
       _this.store = store;
-      _this.integralModulesName = integralModulesName; // // 初始化模块是否全部加载完成标记
-
+      _this.integralModulesName = integralModulesName;
       var unLoadedModules = integralModulesName.filter(function (mn) {
         return !store.hasModule(mn);
       });
-      _this.unLoadedModules = unLoadedModules;
+      _this.unLoadedModules = unLoadedModules; // 初始化模块是否全部加载完成标记
+
       _this.state.modulesHasLoaded = !unLoadedModules.length;
       _this.setStoreStateChanged = _this.setStoreStateChanged.bind(_assertThisInitialized(_this));
       return _this;
@@ -125,15 +125,8 @@ var connect = function connect(moduleNames, WrappedComponent) {
         if (!modulesHasLoaded) {
           var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
           Promise.all(loadModulesPromise).then(function (modules) {
-            modules.forEach(function (_ref, index) {
-              var state = _ref.state,
-                  actions = _ref.actions,
-                  maps = _ref.maps;
-              return store.addModule(unLoadedModules[index], {
-                state: _objectSpread({}, state),
-                actions: actions,
-                maps: maps
-              });
+            modules.forEach(function (storeModule, index) {
+              return store.addModule(unLoadedModules[index], storeModule);
             });
 
             _this2.setState({
@@ -186,7 +179,13 @@ var connect = function connect(moduleNames, WrappedComponent) {
         var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
 
         var integralModulesName = moduleNames.filter(function (mn) {
-          return allModuleNames.includes(mn);
+          var isInclude = allModuleNames.includes(mn);
+
+          if (!isInclude) {
+            console.warn("inject: ".concat(mn, " module is not exits!"));
+          }
+
+          return isInclude;
         });
         return {
           store: store,
