@@ -87,6 +87,44 @@ export default Inject('app', 'module1', ...)(App);
 
 ```
 
+
+#### The second step can be replaced by hooks. Use useInject to inject the app module into the component.
+
+```jsx
+
+import { useInject } from 'react-natural-store/hooks';
+
+const App = () => {
+  /*
+  Note： that if there is a lazy load module in the useInject parameter, 
+  it will return an empty array first, 
+  and wait until the lazy load module is loaded to return the module you need, 
+  so useInject is not recommended for lazy loading module.
+
+  But you can use the way to manually add modules
+
+  store.addModule('otherModuleName', otherModule);
+
+  See manual import module description for details.
+  */
+  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
+  const {state, actions, maps} = app;
+  return (
+    <input
+      value={state.name}
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+export default App; 
+
+```
+
+
+
+
+
+---
 #### - Lazy loading configuration
 
 ```js
@@ -178,6 +216,54 @@ unsubscribe();
 ```
 
 
+#### - Manual import module
+
+```ts
+
+// initStore.ts
+import { createStore } from 'react-natural-store';
+
+// Lazy load module is not imported when instantiating the store
+export default createStore({/*...modules*/});
+
+// ================================================
+// lazyloadPage.ts
+import { useInject } from 'react-natural-store/hooks';
+import store from 'initStore.ts'
+
+const lazyLoadModule = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+  },
+  maps: {
+    nameSplit: state => state.name.split(''),
+    addName: state => lastName => state.name + lastName,
+  },
+};
+/*
+Add modules manually. 
+Before this module is added, 
+you can't use this module anywhere else. 
+If you want to use it elsewhere, 
+you must import it when the store is instantiated.
+*/
+store.addModule('lazyModuleName', lazyLoadModule);
+
+const lazyLoadView = () => {
+  // Now you can get the modules you added manually.
+  const [{state, maps, actions}] = useInject('lazyModuleName');
+  return (
+    <div>{state.name}</div>
+  )
+}
+
+
+```
+
+
 
 #### - typescript support
 
@@ -243,3 +329,5 @@ const App = @inject<storeProps>('count', 'name')(_App);
 <App forwardedRef={console.log} />
 
  ```
+
+

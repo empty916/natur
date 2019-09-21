@@ -46,7 +46,13 @@ const connect = <P, S, SP>(
 			}
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块
-			const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+			const integralModulesName = moduleNames.filter(mn => {
+				const isInclude = allModuleNames.includes(mn);
+				if (!isInclude) {
+					console.warn(`inject: ${mn} module is not exits!`);
+				}
+				return isInclude;
+			});
 			return {store, integralModulesName};
 		}, [moduleNames, storeContext]);
 
@@ -73,8 +79,8 @@ const connect = <P, S, SP>(
 					const loadModulesPromise = createLoadModulesPromise(unLoadedModules, storeContext);
 					Promise.all(loadModulesPromise)
 						.then((modules: StoreModule[]) => {
-							modules.forEach(({state, actions, maps}, index) =>
-								store.addModule(unLoadedModules[index], {state: {...state}, actions, maps})
+							modules.forEach((storeModule, index) =>
+								store.addModule(unLoadedModules[index], storeModule)
 							);
 							setModulesHasLoaded(true);
 						})

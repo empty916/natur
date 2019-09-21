@@ -46,9 +46,9 @@ const connect = <P, S, SP>(
 			const { store, integralModulesName } = this.init();
 			this.store = store;
 			this.integralModulesName = integralModulesName;
-			// // 初始化模块是否全部加载完成标记
 			const unLoadedModules = integralModulesName.filter(mn => !store.hasModule(mn));
 			this.unLoadedModules = unLoadedModules;
+			// 初始化模块是否全部加载完成标记
 			this.state.modulesHasLoaded = !unLoadedModules.length;
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 		}
@@ -73,8 +73,8 @@ const connect = <P, S, SP>(
 				const loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
 				Promise.all(loadModulesPromise)
 					.then((modules: StoreModule[]) => {
-						modules.forEach(({ state, actions, maps }, index) =>
-							store.addModule(unLoadedModules[index], { state: { ...state }, actions, maps })
+						modules.forEach((storeModule, index) =>
+							store.addModule(unLoadedModules[index], storeModule)
 						);
 						this.setState({
 							modulesHasLoaded: true,
@@ -117,7 +117,13 @@ const connect = <P, S, SP>(
 			}
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块
-			const integralModulesName = moduleNames.filter(mn => allModuleNames.includes(mn));
+			const integralModulesName = moduleNames.filter(mn => {
+				const isInclude = allModuleNames.includes(mn);
+				if (!isInclude) {
+					console.warn(`inject: ${mn} module is not exits!`);
+				}
+				return isInclude;
+			});
 			return { store, integralModulesName };
 		}
 		render() {
