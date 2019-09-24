@@ -331,7 +331,7 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts
-import { useInject } from 'react-natural-store/hooks';
+import { useInject } from 'react-natural-store';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {

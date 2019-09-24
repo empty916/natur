@@ -332,7 +332,7 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts 这是一个懒加载的页面
-import { useInject } from 'react-natural-store/hooks';
+import { useInject } from 'react-natural-store';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {

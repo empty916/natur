@@ -53,7 +53,7 @@ export interface Store {
 	getAllModuleName: () => ModuleName[];
 }
 
-type CreateStore = (modules: Modules, lazyModules: LazyStoreModules, initStates: States, middlewares: Middleware[]) => Store;
+type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 
 let currentStoreInstance: Store;
 
@@ -82,7 +82,12 @@ const createStore: CreateStore = (
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const modulesCache: Modules = {};
 	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
-		let res = storeModule;
+		let res = {
+			...storeModule,
+			state: {
+				...storeModule.state,
+			}
+		};
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
