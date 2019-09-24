@@ -1,10 +1,3 @@
-/**
- * @author empty916
- * @email [empty916@qq.com]
- * @create date 2019-08-09 17:12:36
- * @modify date 2019-08-09 17:12:36
- * @desc [description]
- */
 export interface Listener {
     (): void;
 }
@@ -35,6 +28,14 @@ export interface Modules {
     [p: string]: StoreModule;
 }
 export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
+export declare type Middleware = (params: {
+    setState: (m: ModuleName, state: any) => any;
+    getState: State;
+}) => (next: any) => (p: {
+    moduleName: ModuleName;
+    actionName: String;
+    state: any;
+}) => any;
 export interface Store {
     createDispatch: (a: string) => Action;
     addModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
@@ -46,7 +47,7 @@ export interface Store {
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
 }
-declare type TCreateStore = (modules: Modules, lazyModules: LazyStoreModules) => Store;
-declare const createStore: TCreateStore;
+declare type CreateStore = (modules: Modules, lazyModules: LazyStoreModules, initStates: States, middlewares: Middleware[]) => Store;
+declare const createStore: CreateStore;
 export declare const getStoreInstance: () => Store;
 export default createStore;

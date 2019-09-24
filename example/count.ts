@@ -8,6 +8,7 @@ export const actions = {
 	inc: ({ count }) => {
 		return { count: count + 1 };
 	},
+	asInc: ({ count }) => Promise.resolve({ count: count + 1 }),
 	dec: ({ count }) => {
 		return { count: count - 1 };
 	}

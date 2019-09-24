@@ -25,7 +25,7 @@ type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwar
 const connect = <P, S, SP>(
 	moduleNames: ModuleNames,
 	WrappedComponent: TReactComponent<P, S>,
-	LoadingComponent: TReactComponent<any, any> = Loading
+	LoadingComponent?: TReactComponent<any, any>
 ): connectReturn<P, S, SP> => {
 	// return WrappedComponent as any;
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
@@ -36,6 +36,7 @@ const connect = <P, S, SP>(
 		private unLoadedModules: ModuleNames;
 		private injectModules: Modules = {};
 		private unsubStore: () => void = () => { };
+		private LoadingComponent: TReactComponent<{}, {}>;
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -51,6 +52,7 @@ const connect = <P, S, SP>(
 			// 初始化模块是否全部加载完成标记
 			this.state.modulesHasLoaded = !unLoadedModules.length;
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
+			this.LoadingComponent = LoadingComponent || Loading;
 		}
 		setStoreStateChanged() {
 			this.setState({
@@ -150,7 +152,7 @@ const connect = <P, S, SP>(
 				...this.injectModules,
 			};
 			const render = <WrappedComponent {...newProps} />;
-			return this.state.modulesHasLoaded ? render : <LoadingComponent />;
+			return this.state.modulesHasLoaded ? render : <this.LoadingComponent />;
 		}
 	}
 	let FinalConnect = Connect;

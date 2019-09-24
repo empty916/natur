@@ -5,7 +5,7 @@
  * @modify date 2019-08-09 17:12:36
  * @desc [description]
  */
-
+import compose from './compose';
 
 export interface Listener {
 	(): void;
@@ -40,7 +40,7 @@ export interface Modules {
 
 const isPromise = (obj: any) => obj && typeof obj.then === 'function';
 export type ModuleName = keyof Modules | keyof LazyStoreModules;
-
+export type Middleware = (params: {setState: (m: ModuleName, state: any) => any, getState: State}) => (next: any) => (p: {moduleName: ModuleName, actionName: String, state: any}) => any;
 export interface Store {
 	createDispatch: (a: string) => Action;
 	addModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
@@ -53,7 +53,7 @@ export interface Store {
 	getAllModuleName: () => ModuleName[];
 }
 
-type TCreateStore = (modules: Modules, lazyModules: LazyStoreModules) => Store;
+type CreateStore = (modules: Modules, lazyModules: LazyStoreModules, initStates: States, middlewares: Middleware[]) => Store;
 
 let currentStoreInstance: Store;
 
@@ -68,24 +68,61 @@ const isStoreModule = (obj: any) => {
 	return true;
 }
 
-const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStoreModules = {}) => {
-	let currentModules = modules;
+const createStore: CreateStore = (
+	modules: Modules = {},
+	lazyModules: LazyStoreModules = {},
+	initStates: States = {},
+	middlewares: Middleware[] = [],
+) => {
+	const currentInitStates = {...initStates};
+	let currentModules: Modules = {};
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
+	const currentMiddlewares = middlewares;
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const modulesCache: Modules = {};
-	// const cloneModules = (storeModule: StoreModule) => ({
-	// 	...storeModule,
-	// 	state: {...storeModule.state}
-	// });
-	const cloneModules = (storeModule: StoreModule) => storeModule;
+	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
+		let res = storeModule;
+		if (!!currentInitStates[moduleName]) {
+			res = {
+				...storeModule,
+				state: currentInitStates[moduleName],
+			};
+			delete currentInitStates[moduleName];
+		}
+		return res;
+	};
 	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
 		clearProxyActionsCache(moduleName);
 	}
-	const setState = (moduleName: ModuleName, newState: any) => currentModules[moduleName].state = newState;
+	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
+	const setState = (moduleName: ModuleName, newState: any) => {
+		const actionHasNoReturn = newState === undefined;
+		const stateIsNotChanged = newState === currentModules[moduleName].state;
+		if (actionHasNoReturn || stateIsNotChanged) {
+			return newState;
+		}
+		if(isPromise(newState)) {
+			return (newState as Promise<State>).then((ns: State) => {
+				const asyncActionHasReturn = ns !== undefined;
+				const asyncStateIsChanged = ns !== currentModules[moduleName].state;
+				if (asyncActionHasReturn && asyncStateIsChanged) {
+					currentModules[moduleName].state = ns;
+					clearModulesCache(moduleName);
+					runListeners(moduleName);
+				}
+				return Promise.resolve(ns);
+			});
+		} else {
+			currentModules[moduleName].state = newState;
+			clearModulesCache(moduleName);
+			runListeners(moduleName);
+			return newState;
+		}
+	};
 	// 添加module
 	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if(!!currentModules[moduleName]) {
@@ -98,7 +135,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: cloneModules(storeModule),
+			[moduleName]: replaceModule(storeModule, moduleName),
 		};
 		clearAllCache(moduleName);
 		runListeners(moduleName);
@@ -158,8 +195,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		if (!!currentLazyModules[moduleName]) {
 			return currentLazyModules[moduleName];
 		}
-		console.warn(new Error(`getLazyModule: ${moduleName} is not exist`));
-		return () => Promise.resolve({actions: {}, state: {}});
+		throw new Error(`getLazyModule: ${moduleName} is not exist`);
 	};
 	const getAllModuleName = () => [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 	// 修改module
@@ -170,7 +206,7 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: cloneModules(storeModule),
+			[moduleName]: replaceModule(storeModule, moduleName),
 		};
 		clearAllCache(moduleName);
 		runListeners(moduleName);
@@ -178,47 +214,29 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 	}
 	// 查看module是否存在
 	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
-	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 
 	const createDispatch = (moduleName: ModuleName): Action => {
 		if (!hasModule(moduleName)) {
 			throw new Error(`createDispatch: ${moduleName} is not exist!`);
-			// return () => {};
 		}
+		const setStateProxy = ({state}: any) => setState(moduleName, state);
+		const middlewareParams = {
+			setState: setStateProxy,
+			getState: () => currentModules[moduleName].state,
+		}
+		const chain = currentMiddlewares.map(middleware => middleware(middlewareParams))
+		const setStateProxyWithMiddleware = compose(...chain)(setStateProxy);
 
 		return (type: string, ...data: any[]) => {
 			let newState: State | undefined;
+			const targetModule = currentModules[moduleName];
 
-			const moduleIsInvalid = !hasModule(moduleName);
-			const moduleActionIsInvalid = !currentModules[moduleName].actions[type];
-			if (moduleIsInvalid || moduleActionIsInvalid) {
-				return;
-			}
-			newState = currentModules[moduleName].actions[type](...data) as any;
-
-			const actionHasNoReturn = newState === undefined;
-			const stateIsNotChanged = newState === currentModules[moduleName].state;
-			if (actionHasNoReturn || stateIsNotChanged) {
-				return newState;
-			}
-
-			if(isPromise(newState)) {
-				return (newState as Promise<State>).then((ns: State) => {
-					const asyncActionHasReturn = ns !== undefined;
-					const asyncActionDidChangeState = ns !== currentModules[moduleName].state;
-					if (asyncActionHasReturn && asyncActionDidChangeState) {
-						setState(moduleName, ns);
-						clearModulesCache(moduleName);
-						runListeners(moduleName);
-					}
-					return Promise.resolve(ns);
-				});
-			} else {
-				setState(moduleName, newState);
-				clearModulesCache(moduleName);
-				runListeners(moduleName);
-				return newState;
-			}
+			newState = targetModule.actions[type](...data) as any;
+			return setStateProxyWithMiddleware({
+				moduleName,
+				actionName: type,
+				state: newState,
+			});
 		};
 	};
 	const subscribe = (moduleName: ModuleName, listener: Listener) => {
@@ -228,6 +246,12 @@ const createStore: TCreateStore = (modules: Modules = {}, lazyModules: LazyStore
 		listeners[moduleName].push(listener);
 		return () => listeners[moduleName] = listeners[moduleName].filter((lis: Listener) => listener !== lis);;
 	};
+	const init = () => {
+		Object.keys(modules).forEach((moduleName: ModuleName) => {
+			addModule(moduleName, modules[moduleName]);
+		});
+	};
+	init();
 
 	currentStoreInstance = {
 		createDispatch,

@@ -5,6 +5,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = exports.getStoreInstance = void 0;
 
+var _compose = _interopRequireDefault(require("./compose"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -21,13 +25,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-/**
- * @author empty916
- * @email [empty916@qq.com]
- * @create date 2019-08-09 17:12:36
- * @modify date 2019-08-09 17:12:36
- * @desc [description]
- */
 ;
 ;
 ;
@@ -58,17 +55,29 @@ var isStoreModule = function isStoreModule(obj) {
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var lazyModules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var currentModules = modules;
+  var initStates = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var middlewares = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+
+  var currentInitStates = _objectSpread({}, initStates);
+
+  var currentModules = {};
   var currentLazyModules = lazyModules;
   var listeners = {};
+  var currentMiddlewares = middlewares;
   var proxyActionsCache = {};
-  var modulesCache = {}; // const cloneModules = (storeModule: StoreModule) => ({
-  // 	...storeModule,
-  // 	state: {...storeModule.state}
-  // });
+  var modulesCache = {};
 
-  var cloneModules = function cloneModules(storeModule) {
-    return storeModule;
+  var replaceModule = function replaceModule(storeModule, moduleName) {
+    var res = storeModule;
+
+    if (!!currentInitStates[moduleName]) {
+      res = _objectSpread({}, storeModule, {
+        state: currentInitStates[moduleName]
+      });
+      delete currentInitStates[moduleName];
+    }
+
+    return res;
   };
 
   var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
@@ -84,8 +93,39 @@ var createStore = function createStore() {
     clearProxyActionsCache(moduleName);
   };
 
+  var runListeners = function runListeners(moduleName) {
+    return Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(function (listener) {
+      return listener();
+    });
+  };
+
   var setState = function setState(moduleName, newState) {
-    return currentModules[moduleName].state = newState;
+    var actionHasNoReturn = newState === undefined;
+    var stateIsNotChanged = newState === currentModules[moduleName].state;
+
+    if (actionHasNoReturn || stateIsNotChanged) {
+      return newState;
+    }
+
+    if (isPromise(newState)) {
+      return newState.then(function (ns) {
+        var asyncActionHasReturn = ns !== undefined;
+        var asyncStateIsChanged = ns !== currentModules[moduleName].state;
+
+        if (asyncActionHasReturn && asyncStateIsChanged) {
+          currentModules[moduleName].state = ns;
+          clearModulesCache(moduleName);
+          runListeners(moduleName);
+        }
+
+        return Promise.resolve(ns);
+      });
+    } else {
+      currentModules[moduleName].state = newState;
+      clearModulesCache(moduleName);
+      runListeners(moduleName);
+      return newState;
+    }
   }; // 添加module
 
 
@@ -100,7 +140,7 @@ var createStore = function createStore() {
       return currentStoreInstance;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, cloneModules(storeModule)));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
     clearAllCache(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
@@ -179,13 +219,7 @@ var createStore = function createStore() {
       return currentLazyModules[moduleName];
     }
 
-    console.warn(new Error("getLazyModule: ".concat(moduleName, " is not exist")));
-    return function () {
-      return Promise.resolve({
-        actions: {},
-        state: {}
-      });
-    };
+    throw new Error("getLazyModule: ".concat(moduleName, " is not exist"));
   };
 
   var getAllModuleName = function getAllModuleName() {
@@ -199,7 +233,7 @@ var createStore = function createStore() {
       return currentStoreInstance;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, cloneModules(storeModule)));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
     clearAllCache(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
@@ -210,59 +244,44 @@ var createStore = function createStore() {
     return !!currentModules[moduleName];
   };
 
-  var runListeners = function runListeners(moduleName) {
-    return Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(function (listener) {
-      return listener();
-    });
-  };
-
   var createDispatch = function createDispatch(moduleName) {
     if (!hasModule(moduleName)) {
-      throw new Error("createDispatch: ".concat(moduleName, " is not exist!")); // return () => {};
+      throw new Error("createDispatch: ".concat(moduleName, " is not exist!"));
     }
 
+    var setStateProxy = function setStateProxy(_ref) {
+      var state = _ref.state;
+      return setState(moduleName, state);
+    };
+
+    var middlewareParams = {
+      setState: setStateProxy,
+      getState: function getState() {
+        return currentModules[moduleName].state;
+      }
+    };
+    var chain = currentMiddlewares.map(function (middleware) {
+      return middleware(middlewareParams);
+    });
+
+    var setStateProxyWithMiddleware = _compose["default"].apply(void 0, _toConsumableArray(chain))(setStateProxy);
+
     return function (type) {
-      var _currentModules$modul;
+      var _targetModule$actions;
 
       var newState;
-      var moduleIsInvalid = !hasModule(moduleName);
-      var moduleActionIsInvalid = !currentModules[moduleName].actions[type];
-
-      if (moduleIsInvalid || moduleActionIsInvalid) {
-        return;
-      }
+      var targetModule = currentModules[moduleName];
 
       for (var _len2 = arguments.length, data = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_currentModules$modul = currentModules[moduleName].actions)[type].apply(_currentModules$modul, data);
-      var actionHasNoReturn = newState === undefined;
-      var stateIsNotChanged = newState === currentModules[moduleName].state;
-
-      if (actionHasNoReturn || stateIsNotChanged) {
-        return newState;
-      }
-
-      if (isPromise(newState)) {
-        return newState.then(function (ns) {
-          var asyncActionHasReturn = ns !== undefined;
-          var asyncActionDidChangeState = ns !== currentModules[moduleName].state;
-
-          if (asyncActionHasReturn && asyncActionDidChangeState) {
-            setState(moduleName, ns);
-            clearModulesCache(moduleName);
-            runListeners(moduleName);
-          }
-
-          return Promise.resolve(ns);
-        });
-      } else {
-        setState(moduleName, newState);
-        clearModulesCache(moduleName);
-        runListeners(moduleName);
-        return newState;
-      }
+      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data);
+      return setStateProxyWithMiddleware({
+        moduleName: moduleName,
+        actionName: type,
+        state: newState
+      });
     };
   };
 
@@ -280,6 +299,13 @@ var createStore = function createStore() {
     ;
   };
 
+  var init = function init() {
+    Object.keys(modules).forEach(function (moduleName) {
+      addModule(moduleName, modules[moduleName]);
+    });
+  };
+
+  init();
   currentStoreInstance = {
     createDispatch: createDispatch,
     addModule: addModule,
