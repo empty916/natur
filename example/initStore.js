@@ -1,14 +1,26 @@
-import { createStore } from 'react-natural-store';
-import * as nameModule from './name';
+import { createStore } from '../src';
+// import * as nameModule from './name';
 import countModule from './count';
 
+const LogMiddleware = ({setState}) => next => record => {
+	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
+    return next(record);
+};
 
-// export default () => createStore().addModule('name', nameModule).addModule('count', {
-// 	state, maps,actions,
-// });
-
-export default () => createStore({
-	name: nameModule,
-	count: countModule,
-});
+export default () => createStore(
+	{
+		// name: nameModule,
+		count: countModule,
+	},
+	{
+		name: () => import('./name'),
+	},
+	{
+		count: {count: 111},
+		name: {name: 'wxg'},
+	},
+	[
+		LogMiddleware,
+	]
+);
 

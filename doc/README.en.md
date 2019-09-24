@@ -152,6 +152,109 @@ const store = createStore({ app }, { module1, ...otherLazyModules }); // create 
 // The latter usage is the same as before
 ```
 
+
+
+
+
+
+
+#### createStore initializes state
+
+```jsx
+
+
+import { createStore } from 'react-natural-store';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+  createStore third parameter
+  {
+	  [moduleName: ModuleName]: State,
+  }
+*/
+const store = createStore(
+  { app }, 
+  {},
+  { 
+    app: {name: 'jerry'} // Initialize the state of the app module
+  }
+);
+
+export default store;
+
+
+```
+
+---
+
+
+
+
+
+
+#### Middleware
+
+```jsx
+
+
+import { createStore } from 'react-natural-store';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+
+Copy the redux middleware,
+
+stateOperate: {setState, getState};
+setState: record => Promise<State> | State | undefined;
+getState: () => State
+
+next: record => any;
+
+record: {
+	moduleName,
+	actionName,
+	state, // Promise<State> | State
+}
+*/
+const LogMiddleware = (stateOperate: {setState, getState}) => next => record => {
+	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
+    // return next(record); // Should be returned, only then you will have a return value when the page calls the action
+    // return stateOperate.setState(record); // Should be returned, only then you will have a return value when the page calls the action
+};
+const store = createStore(
+  { app }, 
+  {},
+  {},
+  [LogMiddleware, /* ...moreMiddleware */]
+);
+
+export default store;
+
+
+```
+
+---
+
+
+
+
+
+
+
 #### - when loading the module, the configuration of the loading prompt component
 
 ```jsx

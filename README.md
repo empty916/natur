@@ -126,7 +126,6 @@ export default App;
 
 
 
-
 #### - 懒加载模块配置
 
 ```js
@@ -153,6 +152,103 @@ const store = createStore({ app }, { module1, ...otherLazyModules }); // 创建s
 
 // 然后用法等同于第二步
 ```
+
+
+
+#### createStore初始化state
+
+```jsx
+
+
+import { createStore } from 'react-natural-store';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+  createStore第三个参数
+  {
+	  [moduleName: ModuleName]: State,
+  }
+*/
+const store = createStore(
+  { app }, 
+  {},
+  { 
+    app: {name: 'jerry'} // 初始化app 模块的state
+  }
+);
+
+export default store;
+
+
+```
+
+---
+
+
+
+
+
+
+#### 中间件
+
+```jsx
+
+
+import { createStore } from 'react-natural-store';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+
+抄的redux middleware,
+
+stateOperate: {setState, getState};
+setState: record => Promise<State> | State | undefined;
+getState: () => State
+
+next: record => any;
+
+record: {
+	moduleName,
+	actionName,
+	state, // Promise<State> | State
+}
+*/
+const LogMiddleware = (stateOperate: {setState, getState}) => next => record => {
+	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
+    // return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
+    // return stateOperate.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
+};
+const store = createStore(
+  { app }, 
+  {},
+  {},
+  [LogMiddleware, /* ...moreMiddleware */]
+);
+
+export default store;
+
+
+```
+
+---
+
+
+
+
 
 #### - 加载时候的占位组件配置
 

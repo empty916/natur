@@ -55,9 +55,7 @@ var createLoadModulesPromise = function createLoadModulesPromise(moduleNames, st
   });
 };
 
-var connect = function connect(moduleNames, WrappedComponent) {
-  var LoadingComponent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Loading;
-
+var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) {
   var Connect =
   /*#__PURE__*/
   function (_React$Component) {
@@ -91,6 +89,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
 
       _this.state.modulesHasLoaded = !unLoadedModules.length;
       _this.setStoreStateChanged = _this.setStoreStateChanged.bind(_assertThisInitialized(_this));
+      _this.LoadingComponent = LoadingComponent || Loading;
       return _this;
     }
 
@@ -221,7 +220,7 @@ var connect = function connect(moduleNames, WrappedComponent) {
 
         var render = _react["default"].createElement(WrappedComponent, newProps);
 
-        return this.state.modulesHasLoaded ? render : _react["default"].createElement(LoadingComponent, null);
+        return this.state.modulesHasLoaded ? render : _react["default"].createElement(this.LoadingComponent, null);
       }
     }]);
 
