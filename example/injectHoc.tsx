@@ -14,11 +14,11 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 	const incProxy = () => actions.inc(state);
 	const decProxy = () => actions.dec(state);
 	return (
-		<>
+		<div>
 			<button onClick={incProxy}>+</button>
 			<span>{state.count}</span>
 			<button onClick={decProxy}>-</button>
-		</>
+		</div>
 	);
 };
 

@@ -47,7 +47,7 @@ export interface Store {
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
 }
-declare type CreateStore = (modules: Modules, lazyModules: LazyStoreModules, initStates: States, middlewares: Middleware[]) => Store;
+declare type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;
 export declare const getStoreInstance: () => Store;
 export default createStore;

@@ -68,7 +68,9 @@ var createStore = function createStore() {
   var modulesCache = {};
 
   var replaceModule = function replaceModule(storeModule, moduleName) {
-    var res = storeModule;
+    var res = _objectSpread({}, storeModule, {
+      state: _objectSpread({}, storeModule.state)
+    });
 
     if (!!currentInitStates[moduleName]) {
       res = _objectSpread({}, storeModule, {

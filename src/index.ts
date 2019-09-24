@@ -16,7 +16,7 @@ export {
 	StoreModule,
 	LazyStoreModules,
 	Modules,
-	Store,
- } from './createStore'
- export { default as inject } from './inject'
-// export { default as inject } from './inject_hooks'
+	Store
+} from "./createStore";
+export { default as inject } from "./inject";
+export { useInject } from "./hooks";
