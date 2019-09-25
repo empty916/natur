@@ -38,12 +38,13 @@ export declare type Middleware = (params: {
 }) => any;
 export interface Store {
     createDispatch: (a: string) => Action;
-    addModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-    getModule: (moduleName: ModuleName) => any;
+    addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
+    getModule: (moduleName: ModuleName) => StoreModule;
+    setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
+    removeModule: (moduleName: ModuleName) => Store;
+    hasModule: (moduleName: ModuleName) => boolean;
     getOriginModule: (moduleName: ModuleName) => StoreModule | {};
     getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
-    setModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-    hasModule: (moduleName: ModuleName) => boolean;
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
 }
