@@ -63,6 +63,8 @@ var createStore = function createStore() {
   var currentModules = {};
   var currentLazyModules = lazyModules;
   var listeners = {};
+  var allModuleNames;
+  var isInit = false;
   var currentMiddlewares = middlewares;
   var proxyActionsCache = {};
   var modulesCache = {};
@@ -93,6 +95,19 @@ var createStore = function createStore() {
   var clearAllCache = function clearAllCache(moduleName) {
     clearModulesCache(moduleName);
     clearProxyActionsCache(moduleName);
+  };
+
+  var getAllModuleName = function getAllModuleName() {
+    if (!isInit) {
+      console.warn('store has not init!');
+      return [];
+    }
+
+    if (!allModuleNames) {
+      allModuleNames = _toConsumableArray(new Set([].concat(_toConsumableArray(Object.keys(currentModules)), _toConsumableArray(Object.keys(currentLazyModules)))));
+    }
+
+    return allModuleNames;
   };
 
   var runListeners = function runListeners(moduleName) {
@@ -133,7 +148,7 @@ var createStore = function createStore() {
 
   var addModule = function addModule(moduleName, storeModule) {
     if (!!currentModules[moduleName]) {
-      console.error(new Error("addModule: ".concat(moduleName, " already exists!")));
+      console.warn(new Error("addModule: ".concat(moduleName, " already exists!")));
       return currentStoreInstance;
     }
 
@@ -143,6 +158,16 @@ var createStore = function createStore() {
     }
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
+    allModuleNames = undefined;
+    clearAllCache(moduleName);
+    runListeners(moduleName);
+    return currentStoreInstance;
+  };
+
+  var removeModule = function removeModule(moduleName) {
+    delete currentModules[moduleName];
+    delete currentLazyModules[moduleName];
+    allModuleNames = undefined;
     clearAllCache(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
@@ -190,8 +215,7 @@ var createStore = function createStore() {
 
   var getModule = function getModule(moduleName) {
     if (!currentModules[moduleName]) {
-      console.log(new Error("getModule: ".concat(moduleName, " is not exist")));
-      return {};
+      throw new Error("getModule: ".concat(moduleName, " is not exist"));
     }
 
     if (!!modulesCache[moduleName]) {
@@ -222,10 +246,6 @@ var createStore = function createStore() {
     }
 
     throw new Error("getLazyModule: ".concat(moduleName, " is not exist"));
-  };
-
-  var getAllModuleName = function getAllModuleName() {
-    return _toConsumableArray(new Set([].concat(_toConsumableArray(Object.keys(currentModules)), _toConsumableArray(Object.keys(currentLazyModules)))));
   }; // 修改module
 
 
@@ -305,6 +325,7 @@ var createStore = function createStore() {
     Object.keys(modules).forEach(function (moduleName) {
       addModule(moduleName, modules[moduleName]);
     });
+    isInit = true;
   };
 
   init();
@@ -313,6 +334,7 @@ var createStore = function createStore() {
     addModule: addModule,
     getAllModuleName: getAllModuleName,
     getModule: getModule,
+    removeModule: removeModule,
     getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
     setModule: setModule,

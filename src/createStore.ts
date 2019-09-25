@@ -43,12 +43,13 @@ export type ModuleName = keyof Modules | keyof LazyStoreModules;
 export type Middleware = (params: {setState: (m: ModuleName, state: any) => any, getState: State}) => (next: any) => (p: {moduleName: ModuleName, actionName: String, state: any}) => any;
 export interface Store {
 	createDispatch: (a: string) => Action;
-	addModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-	getModule: (moduleName: ModuleName) => any;
+	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
+	getModule: (moduleName: ModuleName) => StoreModule;
+	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
+	removeModule: (moduleName: ModuleName) => Store;
+	hasModule: (moduleName: ModuleName) => boolean;
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
-	setModule: (moduleName: ModuleName, storeModule: StoreModule) => void;
-	hasModule: (moduleName: ModuleName) => boolean;
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
 }
@@ -78,6 +79,8 @@ const createStore: CreateStore = (
 	let currentModules: Modules = {};
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
+	let allModuleNames: string[] | undefined;
+	let isInit = false;
 	const currentMiddlewares = middlewares;
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const modulesCache: Modules = {};
@@ -102,6 +105,16 @@ const createStore: CreateStore = (
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
 		clearProxyActionsCache(moduleName);
+	}
+	const getAllModuleName = () => {
+		if (!isInit) {
+			console.warn('store has not init!');
+			return [];
+		}
+		if(!allModuleNames) {
+			allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
+		}
+		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const setState = (moduleName: ModuleName, newState: any) => {
@@ -131,7 +144,7 @@ const createStore: CreateStore = (
 	// 添加module
 	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if(!!currentModules[moduleName]) {
-			console.error(new Error(`addModule: ${moduleName} already exists!`));
+			console.warn(new Error(`addModule: ${moduleName} already exists!`));
 			return currentStoreInstance;
 		}
 		if (!isStoreModule(storeModule)) {
@@ -142,10 +155,19 @@ const createStore: CreateStore = (
 			...currentModules,
 			[moduleName]: replaceModule(storeModule, moduleName),
 		};
+		allModuleNames = undefined;
 		clearAllCache(moduleName);
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
+	const removeModule = (moduleName: ModuleName) => {
+		delete currentModules[moduleName];
+		delete currentLazyModules[moduleName];
+		allModuleNames = undefined;
+		clearAllCache(moduleName);
+		runListeners(moduleName);
+		return currentStoreInstance;
+	};
 	const createActionsProxy = (moduleName: ModuleName) => {
 		if (!!proxyActionsCache[moduleName]) {
 			return proxyActionsCache[moduleName];
@@ -173,8 +195,7 @@ const createStore: CreateStore = (
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		if (!currentModules[moduleName]) {
-			console.log(new Error(`getModule: ${moduleName} is not exist`));
-			return {};
+			throw new Error(`getModule: ${moduleName} is not exist`);
 		}
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
@@ -202,7 +223,6 @@ const createStore: CreateStore = (
 		}
 		throw new Error(`getLazyModule: ${moduleName} is not exist`);
 	};
-	const getAllModuleName = () => [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!isStoreModule(storeModule)) {
@@ -255,6 +275,7 @@ const createStore: CreateStore = (
 		Object.keys(modules).forEach((moduleName: ModuleName) => {
 			addModule(moduleName, modules[moduleName]);
 		});
+		isInit = true;
 	};
 	init();
 
@@ -263,6 +284,7 @@ const createStore: CreateStore = (
 		addModule,
 		getAllModuleName,
 		getModule,
+		removeModule,
 		getOriginModule,
 		getLazyModule,
 		setModule,
