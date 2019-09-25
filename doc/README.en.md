@@ -92,7 +92,7 @@ export default Inject('app', 'module1', ...)(App);
 
 ```jsx
 
-import { useInject } from 'react-natural-store/hooks';
+import { useInject } from 'react-natural-store';
 
 const App = () => {
   /*
