@@ -80,7 +80,6 @@ const createStore: CreateStore = (
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
-	let isInit = false;
 	const currentMiddlewares = middlewares;
 	const proxyActionsCache: {[p: string]: Actions} = {};
 	const modulesCache: Modules = {};
@@ -107,10 +106,6 @@ const createStore: CreateStore = (
 		clearProxyActionsCache(moduleName);
 	}
 	const getAllModuleName = () => {
-		if (!isInit) {
-			console.warn('store has not init!');
-			return [];
-		}
 		if(!allModuleNames) {
 			allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
 		}
@@ -275,7 +270,6 @@ const createStore: CreateStore = (
 		Object.keys(modules).forEach((moduleName: ModuleName) => {
 			addModule(moduleName, modules[moduleName]);
 		});
-		isInit = true;
 	};
 	init();
 
