@@ -64,7 +64,6 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var allModuleNames;
-  var isInit = false;
   var currentMiddlewares = middlewares;
   var proxyActionsCache = {};
   var modulesCache = {};
@@ -98,11 +97,6 @@ var createStore = function createStore() {
   };
 
   var getAllModuleName = function getAllModuleName() {
-    if (!isInit) {
-      console.warn('store has not init!');
-      return [];
-    }
-
     if (!allModuleNames) {
       allModuleNames = _toConsumableArray(new Set([].concat(_toConsumableArray(Object.keys(currentModules)), _toConsumableArray(Object.keys(currentLazyModules)))));
     }
@@ -325,7 +319,6 @@ var createStore = function createStore() {
     Object.keys(modules).forEach(function (moduleName) {
       addModule(moduleName, modules[moduleName]);
     });
-    isInit = true;
   };
 
   init();
