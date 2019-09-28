@@ -130,10 +130,9 @@ const connect = <P, S, SP>(
 		}
 		render() {
 			const { forwardedRef, ...props } = this.props;
-			let newProps = {
-				...props,
+			let newProps = Object.assign({}, props, {
 				ref: forwardedRef,
-			} as any as P;
+			}) as any as P;
 
 			if (!this.integralModulesName.length) {
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
@@ -142,15 +141,13 @@ const connect = <P, S, SP>(
 			}
 			if (this.state.modulesHasLoaded) {
 				const { store, integralModulesName } = this;
-				this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => ({
-					...res,
-					[mn]: store.getModule(mn),
-				}), {});
+				this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => {
+					res[mn] = store.getModule(mn);
+					return res;
+				}, {} as Modules);
 			}
-			newProps = {
-				...newProps,
-				...this.injectModules,
-			};
+			Object.assign(newProps, this.injectModules)
+
 			const render = <WrappedComponent {...newProps} />;
 			return this.state.modulesHasLoaded ? render : <this.LoadingComponent />;
 		}

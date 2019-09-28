@@ -13,7 +13,7 @@ import {
 const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 
 export function useInject(...moduleNames: ModuleName[]): StoreModule[] {
-    if (moduleNames.length === 0) {
+	if (moduleNames.length === 0) {
         return [];
     }
     const store = getStoreInstance();
@@ -63,5 +63,5 @@ export function useInject(...moduleNames: ModuleName[]): StoreModule[] {
     return moduleNames.reduce((res, mn: ModuleName) => {
         res.push(store.getModule(mn));
         return res;
-    }, [] as StoreModule[]);
+	}, [] as StoreModule[]);
 }

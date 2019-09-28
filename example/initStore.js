@@ -2,9 +2,9 @@ import { createStore } from '../src';
 // import * as nameModule from './name';
 import countModule from './count';
 
-const LogMiddleware = ({setState}) => next => record => {
+const LogMiddleware = ({ setState }) => next => record => {
 	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
-    return next(record);
+	return next(record);
 };
 
 export default () => createStore(
@@ -16,8 +16,8 @@ export default () => createStore(
 		name: () => import('./name'),
 	},
 	{
-		count: {count: 111},
-		name: {name: 'wxg'},
+		count: { count: 111 },
+		name: { name: 'wxg' },
 	},
 	[
 		LogMiddleware,
