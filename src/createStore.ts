@@ -99,6 +99,15 @@ const createStore: CreateStore = (
 		}
 		return res;
 	};
+
+	// 查看module是否存在
+	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
+
+	const checkModuleIsValid = (moduleName: ModuleName) => {
+		if (!hasModule(moduleName)) {
+			throw new Error(`module: ${moduleName} is not valid!`);
+		}
+	}
 	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
@@ -189,9 +198,7 @@ const createStore: CreateStore = (
 	}
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
-		if (!currentModules[moduleName]) {
-			throw new Error(`getModule: ${moduleName} is not exist`);
-		}
+		checkModuleIsValid(moduleName);
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}
@@ -206,10 +213,7 @@ const createStore: CreateStore = (
 
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
-		if (!currentModules[moduleName]) {
-			console.log(new Error(`getOriginModule: ${moduleName} is not exist`));
-			return {};
-		}
+		checkModuleIsValid(moduleName);
 		return currentModules[moduleName];
 	}
 	const getLazyModule = (moduleName: ModuleName) => {
@@ -232,13 +236,8 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
-	// 查看module是否存在
-	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
-
 	const createDispatch = (moduleName: ModuleName): Action => {
-		if (!hasModule(moduleName)) {
-			throw new Error(`createDispatch: ${moduleName} is not exist!`);
-		}
+		checkModuleIsValid(moduleName);
 		const setStateProxy = ({state}: any) => setState(moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
@@ -248,9 +247,9 @@ const createStore: CreateStore = (
 		const setStateProxyWithMiddleware = compose(...chain)(setStateProxy);
 
 		return (type: string, ...data: any[]) => {
+			checkModuleIsValid(moduleName);
 			let newState: State | undefined;
 			const targetModule = currentModules[moduleName];
-
 			newState = targetModule.actions[type](...data) as any;
 			return setStateProxyWithMiddleware({
 				moduleName,

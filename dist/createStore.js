@@ -81,6 +81,17 @@ var createStore = function createStore() {
     }
 
     return res;
+  }; // 查看module是否存在
+
+
+  var hasModule = function hasModule(moduleName) {
+    return !!currentModules[moduleName];
+  };
+
+  var checkModuleIsValid = function checkModuleIsValid(moduleName) {
+    if (!hasModule(moduleName)) {
+      throw new Error("module: ".concat(moduleName, " is not valid!"));
+    }
   };
 
   var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
@@ -208,9 +219,7 @@ var createStore = function createStore() {
 
 
   var getModule = function getModule(moduleName) {
-    if (!currentModules[moduleName]) {
-      throw new Error("getModule: ".concat(moduleName, " is not exist"));
-    }
+    checkModuleIsValid(moduleName);
 
     if (!!modulesCache[moduleName]) {
       return modulesCache[moduleName];
@@ -226,11 +235,7 @@ var createStore = function createStore() {
 
 
   var getOriginModule = function getOriginModule(moduleName) {
-    if (!currentModules[moduleName]) {
-      console.log(new Error("getOriginModule: ".concat(moduleName, " is not exist")));
-      return {};
-    }
-
+    checkModuleIsValid(moduleName);
     return currentModules[moduleName];
   };
 
@@ -253,17 +258,10 @@ var createStore = function createStore() {
     clearAllCache(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
-  }; // 查看module是否存在
-
-
-  var hasModule = function hasModule(moduleName) {
-    return !!currentModules[moduleName];
   };
 
   var createDispatch = function createDispatch(moduleName) {
-    if (!hasModule(moduleName)) {
-      throw new Error("createDispatch: ".concat(moduleName, " is not exist!"));
-    }
+    checkModuleIsValid(moduleName);
 
     var setStateProxy = function setStateProxy(_ref) {
       var state = _ref.state;
@@ -285,6 +283,7 @@ var createStore = function createStore() {
     return function (type) {
       var _targetModule$actions;
 
+      checkModuleIsValid(moduleName);
       var newState;
       var targetModule = currentModules[moduleName];
 
