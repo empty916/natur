@@ -21,6 +21,7 @@ export default () => createStore(
 	},
 	[
 		// LogMiddleware,
-	]
+	],
+	true,
 );
 

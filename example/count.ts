@@ -1,12 +1,13 @@
 export const state = {
 	count: 1,
-	name: "count"
+	name: "count",
 };
 export const maps = {
 	isOdd: ({ count }) => count % 2 !== 0,
 	splitName: state => {
 		return state.name.split("");
 	},
+	count: state => ({count: state.count}),
 	combine: state => ({ ...state })
 };
 export const actions = {

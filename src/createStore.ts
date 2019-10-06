@@ -62,7 +62,13 @@ type MapResultCache = {
 	dependencies: {[p: string]: boolean};
 	clear: () => void;
 }
-type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
+type CreateStore = (
+	modules?: Modules,
+	lazyModules?: LazyStoreModules,
+	initStates?: States,
+	middlewares?: Middleware[],
+	isLazy?: boolean,
+) => Store;
 
 let currentStoreInstance: Store;
 
@@ -82,6 +88,7 @@ const createStore: CreateStore = (
 	lazyModules: LazyStoreModules = {},
 	initStates: States = {},
 	middlewares: Middleware[] = [],
+	isLazy: boolean = true,
 ) => {
 	const currentInitStates = {...initStates};
 	let currentModules: Modules = {};
@@ -174,7 +181,7 @@ const createStore: CreateStore = (
 		}
 		currentModules[moduleName].state = newState;
 		clearModulesCache(moduleName);
-		clearMapsResultCache(moduleName, changedStateKeys.updatedKeys);
+		clearMapsResultCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
 		runListeners(moduleName);
 	}
 	const setState = (moduleName: ModuleName, newState: any) => {
@@ -241,7 +248,7 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (runningMap && !runningMap.dependencies[key]) {
+						if (isLazy && runningMap && !runningMap.dependencies[key]) {
 							if(!stateChangedListeners[moduleName]) {
 								stateChangedListeners[moduleName] = {};
 							}
