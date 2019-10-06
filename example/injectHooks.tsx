@@ -15,7 +15,7 @@ const App: React.FC<props> = () => {
 	const incProxy = () => {
 		const newState = actions.inc(state);
 		// console.log('after inc state', {...state});
-		// console.log('after inc maps', maps.isOdd);
+		console.log('after inc maps isOdd', maps.isOdd);
 		// console.log('after inc maps', maps.splitName);
 	};
 	const stateHasNoChange = () => actions.doNothing(state);
@@ -30,15 +30,16 @@ const App: React.FC<props> = () => {
 	// React.useEffect(() => {
 	// 	console.log('maps has changed');
 	// }, [maps])
-	React.useEffect(() => {
-		console.log('maps.isOdd has changed');
-	}, [maps.isOdd]);
-	React.useEffect(() => {
-		console.log('maps.splitName has changed');
-	}, [maps.splitName]);
-	React.useEffect(() => {
-		console.log('maps.combine has changed');
-	}, [maps.combine]);
+
+	// React.useEffect(() => {
+	// 	console.log('maps.isOdd has changed');
+	// }, [maps.isOdd]);
+	// React.useEffect(() => {
+	// 	console.log('maps.splitName has changed');
+	// }, [maps.splitName]);
+	// React.useEffect(() => {
+	// 	console.log('maps.combine has changed');
+	// }, [maps.combine]);
 
 	return (
 		<>

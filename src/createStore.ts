@@ -92,9 +92,12 @@ const createStore: CreateStore = (
 	const actionsProxyCache: {[p: string]: Actions} = {};
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: Maps} = {};
+
 	const mapsProxyResultCatch: {[p: string]: {[p: string]: MapResultCache}} = {};
 	const stateChangedListeners: {[p: string]: {[p: string]: string[]}} = {};
+
 	const modulesCache: Modules = {};
+	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
 	let runningMap: MapResultCache | undefined = undefined;
 	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
 		let res = {
@@ -164,6 +167,16 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
+	const _setState = (moduleName: ModuleName, newState: State) => {
+		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
+		if(!keysOfModuleStateChangedRecords[moduleName]) {
+			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
+		}
+		currentModules[moduleName].state = newState;
+		clearModulesCache(moduleName);
+		clearMapsResultCache(moduleName, changedStateKeys.updatedKeys);
+		runListeners(moduleName);
+	}
 	const setState = (moduleName: ModuleName, newState: any) => {
 		const actionHasNoReturn = newState === undefined;
 		const stateIsNotChanged = newState === stateProxyCache[moduleName];
@@ -173,23 +186,15 @@ const createStore: CreateStore = (
 		if(isPromise(newState)) {
 			return (newState as Promise<State>).then((ns: State) => {
 				const asyncActionHasReturn = ns !== undefined;
-				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];;
+				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 				if (asyncActionHasReturn && asyncStateIsChanged) {
-					const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, ns);
-					currentModules[moduleName].state = ns;
-					clearModulesCache(moduleName);
-					clearMapsResultCache(moduleName, changedStateKeys);
-					runListeners(moduleName);
+					_setState(moduleName, ns);
 				}
-				return Promise.resolve(ns);
+				return Promise.resolve(stateProxyCache[moduleName]);
 			});
 		} else {
-			const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
-			currentModules[moduleName].state = newState;
-			clearModulesCache(moduleName);
-			clearMapsResultCache(moduleName, changedStateKeys);
-			runListeners(moduleName);
-			return newState;
+			_setState(moduleName, newState);
+			return stateProxyCache[moduleName];
 		}
 	};
 	// 添加module
@@ -222,7 +227,11 @@ const createStore: CreateStore = (
 
 	const createStateProxy = (moduleName: ModuleName): State => {
 		const {state} = currentModules[moduleName];
-		if (!!stateProxyCache[moduleName] && ObjHasSameKeys(state, stateProxyCache[moduleName])) {
+		const keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
+		// const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
+		const stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
+		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
+			keysOfModuleStateChangedRecords[moduleName] = false;
 			return stateProxyCache[moduleName];
 		}
 		let proxyState = {};
@@ -233,7 +242,6 @@ const createStore: CreateStore = (
 					configurable: true,
 					get() {
 						if (runningMap && !runningMap.dependencies[key]) {
-							runningMap.dependencies[key] = true;
 							if(!stateChangedListeners[moduleName]) {
 								stateChangedListeners[moduleName] = {};
 							}
@@ -241,6 +249,7 @@ const createStore: CreateStore = (
 								stateChangedListeners[moduleName][key] = [];
 							}
 							stateChangedListeners[moduleName][key].push(runningMap.name);
+							runningMap.dependencies[key] = true;
 						}
 						return currentModules[moduleName].state[key];
 					}

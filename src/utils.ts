@@ -18,26 +18,45 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 type Obj = {[p: string]: any}
 
 export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
+	// console.log(source, afterChange);
 	if (!source || !afterChange) {
-		return [];
+		return {
+			updatedKeys: [],
+			keyHasChanged: false,
+		};
 	}
-	const keysOfChangedValue = [];
+	// KEY还在，但是值变化了的
+	const updatedKeys = [];
+	// KEY是否变动
+	let keyHasChanged = false;
+
 	for(let key in source) {
 		if (source.hasOwnProperty(key)) {
 			if (!afterChange.hasOwnProperty(key)) {
-				keysOfChangedValue.push(key);
+				keyHasChanged = true;
+				updatedKeys.push(key);
 			}
 			if (afterChange.hasOwnProperty(key) && source[key] !== afterChange[key]) {
-				keysOfChangedValue.push(key);
+				updatedKeys.push(key);
 			}
 		}
 	}
 	for(let key in afterChange) {
 		if (afterChange.hasOwnProperty(key)) {
 			if (!source.hasOwnProperty(key)) {
-				keysOfChangedValue.push(key);
+				updatedKeys.push(key);
+				keyHasChanged = true;
 			}
 		}
 	}
-	return keysOfChangedValue;
+	return {updatedKeys, keyHasChanged};
+}
+
+class Watcher {
+	target: any;
+	callback: any;
+	constructor(target: any, callback: any) {
+		this.target = target;
+		this.callback = callback;
+	}
 }
