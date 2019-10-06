@@ -174,6 +174,9 @@ export class Depend {
 	notify() {
 		this.watchers.forEach(w => w.update());
 	}
+	destroy() {
+		this.clearWatcher();
+	}
 }
 
 export class Watcher {
@@ -212,6 +215,11 @@ export class Watcher {
 		this.depends.forEach(dep => dep.removeWatcher(this));
 		this.depends = [];
 		this.dependsMap = {};
+	}
+	destroy() {
+		this.clearDepends();
+		this.cache = null;
+		this.mapRunner = () => {};
 	}
 }
 

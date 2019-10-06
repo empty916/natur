@@ -132,22 +132,33 @@ const createStore: CreateStore = (
 		}
 	}
 	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
-	const clearStateProxyCache = (moduleName: ModuleName) => delete stateProxyCache[moduleName];
+	const clearStateProxyCache = (moduleName: ModuleName) => {
+		delete stateProxyCache[moduleName];
+		for(let key in stateDepends[moduleName]) {
+			stateDepends[moduleName][key].destroy();
+			delete stateDepends[moduleName][key];
+		}
+		delete stateDepends[moduleName];
+	};
 	const clearMapsProxyCache = (moduleName: ModuleName) => {
 		delete mapsProxyCache[moduleName];
+		for(let key in mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName][key].destroy();
+			delete mapsWatcher[moduleName][key];
+		}
 		delete mapsWatcher[moduleName];
 	};
-	const clearMapsResultCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
-		const targetMapsResultCache = mapsWatcher[moduleName];
+	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
+		const targetMapsWatcher = mapsWatcher[moduleName];
 		if (!!changedStateNames) {
 			changedStateNames.forEach(stateName => {
-				if (stateDepends[moduleName] && stateDepends[moduleName][stateName]) {
+				if (stateDepends[moduleName][stateName]) {
 					stateDepends[moduleName][stateName].notify();
 				}
 			});
 		} else {
-			for(let key in targetMapsResultCache) {
-				targetMapsResultCache[key].update();
+			for(let key in targetMapsWatcher) {
+				targetMapsWatcher[key].update();
 			}
 		}
 	};
@@ -155,8 +166,8 @@ const createStore: CreateStore = (
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
 		clearStateProxyCache(moduleName);
+		// clearMapsWatcherCache(moduleName);
 		clearMapsProxyCache(moduleName);
-		clearMapsResultCache(moduleName);
 		clearActionsProxyCache(moduleName);
 	}
 	const getAllModuleName = () => {
@@ -173,7 +184,7 @@ const createStore: CreateStore = (
 		}
 		currentModules[moduleName].state = newState;
 		clearModulesCache(moduleName);
-		clearMapsResultCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+		clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
 		runListeners(moduleName);
 	}
 	const setState = (moduleName: ModuleName, newState: any) => {
