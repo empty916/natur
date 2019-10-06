@@ -11,7 +11,7 @@ var _hoistNonReactStatics = _interopRequireDefault(require("hoist-non-react-stat
 
 var _createStore = require("./createStore");
 
-var _isEqualWithDepthLimit = _interopRequireDefault(require("./isEqualWithDepthLimit"));
+var _utils = require("./utils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -155,7 +155,7 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
          * 		}
          * }
          */
-        var propsChanged = !(0, _isEqualWithDepthLimit["default"])(this.props, nextProps, 3);
+        var propsChanged = !(0, _utils.isEqualWithDepthLimit)(this.props, nextProps, 3);
         var stateChanged = nextState.modulesHasLoaded !== this.state.modulesHasLoaded || nextState.storeStateChange !== this.state.storeStateChange;
         return propsChanged || stateChanged;
       }

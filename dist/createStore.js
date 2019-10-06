@@ -5,9 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = exports.getStoreInstance = void 0;
 
-var _compose = _interopRequireDefault(require("./compose"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var _utils = require("./utils");
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -57,6 +55,7 @@ var createStore = function createStore() {
   var lazyModules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var initStates = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var middlewares = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var isLazy = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
 
   var currentInitStates = _objectSpread({}, initStates);
 
@@ -65,8 +64,13 @@ var createStore = function createStore() {
   var listeners = {};
   var allModuleNames;
   var currentMiddlewares = middlewares;
-  var proxyActionsCache = {};
+  var actionsProxyCache = {};
+  var stateProxyCache = {};
+  var mapsProxyCache = {};
+  var mapsWatcher = {};
+  var stateDepends = {};
   var modulesCache = {};
+  var keysOfModuleStateChangedRecords = {};
 
   var replaceModule = function replaceModule(storeModule, moduleName) {
     var res = _objectSpread({}, storeModule, {
@@ -75,7 +79,7 @@ var createStore = function createStore() {
 
     if (!!currentInitStates[moduleName]) {
       res = _objectSpread({}, storeModule, {
-        state: currentInitStates[moduleName]
+        state: _objectSpread({}, storeModule.state, {}, currentInitStates[moduleName])
       });
       delete currentInitStates[moduleName];
     }
@@ -94,8 +98,46 @@ var createStore = function createStore() {
     }
   };
 
-  var clearProxyActionsCache = function clearProxyActionsCache(moduleName) {
-    return delete proxyActionsCache[moduleName];
+  var clearActionsProxyCache = function clearActionsProxyCache(moduleName) {
+    return delete actionsProxyCache[moduleName];
+  };
+
+  var clearStateProxyCache = function clearStateProxyCache(moduleName) {
+    delete stateProxyCache[moduleName];
+
+    for (var key in stateDepends[moduleName]) {
+      stateDepends[moduleName][key].destroy();
+      delete stateDepends[moduleName][key];
+    }
+
+    delete stateDepends[moduleName];
+  };
+
+  var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
+    delete mapsProxyCache[moduleName];
+
+    for (var key in mapsWatcher[moduleName]) {
+      mapsWatcher[moduleName][key].destroy();
+      delete mapsWatcher[moduleName][key];
+    }
+
+    delete mapsWatcher[moduleName];
+  };
+
+  var clearMapsWatcherCache = function clearMapsWatcherCache(moduleName, changedStateNames) {
+    var targetMapsWatcher = mapsWatcher[moduleName];
+
+    if (!!changedStateNames) {
+      changedStateNames.forEach(function (stateName) {
+        if (stateDepends[moduleName][stateName]) {
+          stateDepends[moduleName][stateName].notify();
+        }
+      });
+    } else {
+      for (var key in targetMapsWatcher) {
+        targetMapsWatcher[key].update();
+      }
+    }
   };
 
   var clearModulesCache = function clearModulesCache(moduleName) {
@@ -104,7 +146,10 @@ var createStore = function createStore() {
 
   var clearAllCache = function clearAllCache(moduleName) {
     clearModulesCache(moduleName);
-    clearProxyActionsCache(moduleName);
+    clearStateProxyCache(moduleName); // clearMapsWatcherCache(moduleName);
+
+    clearMapsProxyCache(moduleName);
+    clearActionsProxyCache(moduleName);
   };
 
   var getAllModuleName = function getAllModuleName() {
@@ -121,9 +166,22 @@ var createStore = function createStore() {
     });
   };
 
+  var _setState = function _setState(moduleName, newState) {
+    var changedStateKeys = (0, _utils.ObjChangedKeys)(currentModules[moduleName].state, newState);
+
+    if (!keysOfModuleStateChangedRecords[moduleName]) {
+      keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
+    }
+
+    currentModules[moduleName].state = newState;
+    clearModulesCache(moduleName);
+    clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+    runListeners(moduleName);
+  };
+
   var setState = function setState(moduleName, newState) {
     var actionHasNoReturn = newState === undefined;
-    var stateIsNotChanged = newState === currentModules[moduleName].state;
+    var stateIsNotChanged = newState === stateProxyCache[moduleName];
 
     if (actionHasNoReturn || stateIsNotChanged) {
       return newState;
@@ -132,21 +190,18 @@ var createStore = function createStore() {
     if (isPromise(newState)) {
       return newState.then(function (ns) {
         var asyncActionHasReturn = ns !== undefined;
-        var asyncStateIsChanged = ns !== currentModules[moduleName].state;
+        var asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 
         if (asyncActionHasReturn && asyncStateIsChanged) {
-          currentModules[moduleName].state = ns;
-          clearModulesCache(moduleName);
-          runListeners(moduleName);
+          _setState(moduleName, ns);
         }
 
-        return Promise.resolve(ns);
+        return Promise.resolve(stateProxyCache[moduleName]);
       });
     } else {
-      currentModules[moduleName].state = newState;
-      clearModulesCache(moduleName);
-      runListeners(moduleName);
-      return newState;
+      _setState(moduleName, newState);
+
+      return stateProxyCache[moduleName];
     }
   }; // 添加module
 
@@ -165,6 +220,15 @@ var createStore = function createStore() {
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
     allModuleNames = undefined;
     clearAllCache(moduleName);
+
+    if (!mapsWatcher[moduleName]) {
+      mapsWatcher[moduleName] = {};
+    }
+
+    if (!stateDepends[moduleName]) {
+      stateDepends[moduleName] = {};
+    }
+
     runListeners(moduleName);
     return currentStoreInstance;
   };
@@ -178,9 +242,99 @@ var createStore = function createStore() {
     return currentStoreInstance;
   };
 
+  var createStateProxy = function createStateProxy(moduleName) {
+    var state = currentModules[moduleName].state;
+    var keyHasChanged = keysOfModuleStateChangedRecords[moduleName]; // const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
+
+    var stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
+
+    if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
+      return stateProxyCache[moduleName];
+    }
+
+    var proxyState = {};
+
+    var _loop = function _loop(key) {
+      if (state.hasOwnProperty(key)) {
+        Object.defineProperty(proxyState, key, {
+          enumerable: true,
+          configurable: true,
+          get: function get() {
+            if (isLazy && _utils.Depend.targetWatcher) {
+              if (!stateDepends[moduleName][key]) {
+                stateDepends[moduleName][key] = new _utils.Depend(moduleName, key);
+              }
+
+              stateDepends[moduleName][key].addWatcher(_utils.Depend.targetWatcher);
+            }
+
+            return currentModules[moduleName].state[key];
+          }
+        });
+      }
+    };
+
+    for (var key in state) {
+      _loop(key);
+    }
+
+    stateProxyCache[moduleName] = proxyState;
+    keysOfModuleStateChangedRecords[moduleName] = false;
+    return proxyState;
+  };
+
+  var createMapsProxy = function createMapsProxy(moduleName) {
+    var maps = currentModules[moduleName].maps;
+
+    if (maps === undefined) {
+      return undefined;
+    }
+
+    if (!!mapsProxyCache[moduleName]) {
+      return mapsProxyCache[moduleName];
+    }
+
+    var proxyMaps = {};
+
+    var _loop2 = function _loop2(key) {
+      if (maps.hasOwnProperty(key)) {
+        Object.defineProperty(proxyMaps, key, {
+          enumerable: true,
+          configurable: true,
+          get: function get() {
+            if (mapsWatcher[moduleName][key] === undefined) {
+              mapsWatcher[moduleName][key] = new _utils.Watcher(moduleName, key, function () {
+                return currentModules[moduleName].maps[key](stateProxyCache[moduleName]);
+              });
+            }
+
+            var targetWatcher = mapsWatcher[moduleName][key];
+
+            if (targetWatcher.useCache) {
+              return targetWatcher.cache;
+            } // 清除旧的依赖
+
+
+            targetWatcher.clearDepends(); // 重新收集依赖
+
+            targetWatcher.run();
+            return targetWatcher.cache;
+          }
+        });
+      }
+    };
+
+    for (var key in maps) {
+      _loop2(key);
+    }
+
+    mapsProxyCache[moduleName] = proxyMaps;
+    return proxyMaps;
+  };
+
   var createActionsProxy = function createActionsProxy(moduleName) {
-    if (!!proxyActionsCache[moduleName]) {
-      return proxyActionsCache[moduleName];
+    if (!!actionsProxyCache[moduleName]) {
+      return actionsProxyCache[moduleName];
     }
 
     var actionsProxy = _objectSpread({}, currentModules[moduleName].actions);
@@ -195,26 +349,8 @@ var createStore = function createStore() {
         return dispatch.apply(void 0, [key].concat(data));
       };
     });
-    proxyActionsCache[moduleName] = actionsProxy;
+    actionsProxyCache[moduleName] = actionsProxy;
     return actionsProxy;
-  };
-
-  var runMaps = function runMaps(maps, state) {
-    if (!maps) {
-      return {};
-    }
-
-    var mapsKeys = Object.keys(maps);
-
-    if (!mapsKeys.length) {
-      return {};
-    }
-
-    var resultMaps = mapsKeys.reduce(function (rm, key) {
-      rm[key] = typeof maps[key] === 'function' ? maps[key](state) : maps[key];
-      return rm;
-    }, {});
-    return resultMaps;
   }; // 获取module
 
 
@@ -225,10 +361,10 @@ var createStore = function createStore() {
       return modulesCache[moduleName];
     }
 
-    var proxyModule = _objectSpread({}, currentModules[moduleName]);
-
+    var proxyModule = {};
+    proxyModule.state = createStateProxy(moduleName);
     proxyModule.actions = createActionsProxy(moduleName);
-    proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps, currentModules[moduleName].state) : undefined;
+    proxyModule.maps = createMapsProxy(moduleName);
     modulesCache[moduleName] = proxyModule;
     return proxyModule;
   }; // 获取原本的module
@@ -271,14 +407,14 @@ var createStore = function createStore() {
     var middlewareParams = {
       setState: setStateProxy,
       getState: function getState() {
-        return currentModules[moduleName].state;
+        return stateProxyCache[moduleName];
       }
     };
     var chain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);
     });
 
-    var setStateProxyWithMiddleware = _compose["default"].apply(void 0, _toConsumableArray(chain))(setStateProxy);
+    var setStateProxyWithMiddleware = _utils.compose.apply(void 0, _toConsumableArray(chain))(setStateProxy);
 
     return function (type) {
       var _targetModule$actions;

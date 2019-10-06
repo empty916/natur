@@ -5,7 +5,12 @@
  * @modify date 2019-08-09 17:12:36
  * @desc [description]
  */
-import compose from './compose';
+import {
+	ObjChangedKeys,
+	Depend,
+	Watcher,
+	compose,
+} from './utils';
 
 export interface Listener {
 	(): void;
@@ -23,8 +28,9 @@ export interface Actions {
 	[type: string]: Action;
 };
 
+type StoreMap = (state: State) => any;
 export interface Maps {
-	[p: string]: (state: State) => any;
+	[p: string]: StoreMap;
 };
 export interface StoreModule {
 	state: State;
@@ -54,7 +60,13 @@ export interface Store {
 	getAllModuleName: () => ModuleName[];
 }
 
-type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
+type CreateStore = (
+	modules?: Modules,
+	lazyModules?: LazyStoreModules,
+	initStates?: States,
+	middlewares?: Middleware[],
+	isLazy?: boolean,
+) => Store;
 
 let currentStoreInstance: Store;
 
@@ -74,6 +86,7 @@ const createStore: CreateStore = (
 	lazyModules: LazyStoreModules = {},
 	initStates: States = {},
 	middlewares: Middleware[] = [],
+	isLazy: boolean = true,
 ) => {
 	const currentInitStates = {...initStates};
 	let currentModules: Modules = {};
@@ -81,8 +94,15 @@ const createStore: CreateStore = (
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
 	const currentMiddlewares = middlewares;
-	const proxyActionsCache: {[p: string]: Actions} = {};
+	const actionsProxyCache: {[p: string]: Actions} = {};
+	const stateProxyCache: States = {};
+	const mapsProxyCache: {[p: string]: Maps} = {};
+
+	const mapsWatcher: {[p: string]: {[p: string]: Watcher}} = {};
+	const stateDepends: {[p: string]: {[p: string]: Depend}} = {};
+
 	const modulesCache: Modules = {};
+	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
 	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
 		let res = {
 			...storeModule,
@@ -93,7 +113,10 @@ const createStore: CreateStore = (
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
-				state: currentInitStates[moduleName],
+				state: {
+					...storeModule.state,
+					...currentInitStates[moduleName],
+				},
 			};
 			delete currentInitStates[moduleName];
 		}
@@ -108,11 +131,44 @@ const createStore: CreateStore = (
 			throw new Error(`module: ${moduleName} is not valid!`);
 		}
 	}
-	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
+	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
+	const clearStateProxyCache = (moduleName: ModuleName) => {
+		delete stateProxyCache[moduleName];
+		for(let key in stateDepends[moduleName]) {
+			stateDepends[moduleName][key].destroy();
+			delete stateDepends[moduleName][key];
+		}
+		delete stateDepends[moduleName];
+	};
+	const clearMapsProxyCache = (moduleName: ModuleName) => {
+		delete mapsProxyCache[moduleName];
+		for(let key in mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName][key].destroy();
+			delete mapsWatcher[moduleName][key];
+		}
+		delete mapsWatcher[moduleName];
+	};
+	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
+		const targetMapsWatcher = mapsWatcher[moduleName];
+		if (!!changedStateNames) {
+			changedStateNames.forEach(stateName => {
+				if (stateDepends[moduleName][stateName]) {
+					stateDepends[moduleName][stateName].notify();
+				}
+			});
+		} else {
+			for(let key in targetMapsWatcher) {
+				targetMapsWatcher[key].update();
+			}
+		}
+	};
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
-		clearProxyActionsCache(moduleName);
+		clearStateProxyCache(moduleName);
+		// clearMapsWatcherCache(moduleName);
+		clearMapsProxyCache(moduleName);
+		clearActionsProxyCache(moduleName);
 	}
 	const getAllModuleName = () => {
 		if(!allModuleNames) {
@@ -121,28 +177,34 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
+	const _setState = (moduleName: ModuleName, newState: State) => {
+		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
+		if(!keysOfModuleStateChangedRecords[moduleName]) {
+			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
+		}
+		currentModules[moduleName].state = newState;
+		clearModulesCache(moduleName);
+		clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+		runListeners(moduleName);
+	}
 	const setState = (moduleName: ModuleName, newState: any) => {
 		const actionHasNoReturn = newState === undefined;
-		const stateIsNotChanged = newState === currentModules[moduleName].state;
+		const stateIsNotChanged = newState === stateProxyCache[moduleName];
 		if (actionHasNoReturn || stateIsNotChanged) {
 			return newState;
 		}
 		if(isPromise(newState)) {
 			return (newState as Promise<State>).then((ns: State) => {
 				const asyncActionHasReturn = ns !== undefined;
-				const asyncStateIsChanged = ns !== currentModules[moduleName].state;
+				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 				if (asyncActionHasReturn && asyncStateIsChanged) {
-					currentModules[moduleName].state = ns;
-					clearModulesCache(moduleName);
-					runListeners(moduleName);
+					_setState(moduleName, ns);
 				}
-				return Promise.resolve(ns);
+				return Promise.resolve(stateProxyCache[moduleName]);
 			});
 		} else {
-			currentModules[moduleName].state = newState;
-			clearModulesCache(moduleName);
-			runListeners(moduleName);
-			return newState;
+			_setState(moduleName, newState);
+			return stateProxyCache[moduleName];
 		}
 	};
 	// 添加module
@@ -161,6 +223,12 @@ const createStore: CreateStore = (
 		};
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
+		if (!mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName] = {};
+		}
+		if(!stateDepends[moduleName]) {
+			stateDepends[moduleName] = {};
+		}
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
@@ -172,41 +240,97 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	};
+
+	const createStateProxy = (moduleName: ModuleName): State => {
+		const {state} = currentModules[moduleName];
+		const keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
+		// const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
+		const stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
+		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
+			return stateProxyCache[moduleName];
+		}
+		let proxyState = {};
+		for(let key in state) {
+			if (state.hasOwnProperty(key)) {
+				Object.defineProperty(proxyState, key, {
+					enumerable: true,
+					configurable: true,
+					get() {
+						if (isLazy && Depend.targetWatcher) {
+							if (!stateDepends[moduleName][key]) {
+								stateDepends[moduleName][key] = new Depend(moduleName, key);
+							}
+							stateDepends[moduleName][key].addWatcher(Depend.targetWatcher);
+						}
+						return currentModules[moduleName].state[key];
+					}
+				});
+			}
+		}
+		stateProxyCache[moduleName] = proxyState;
+		keysOfModuleStateChangedRecords[moduleName] = false;
+		return proxyState;
+	}
+
+	const createMapsProxy = (moduleName: ModuleName): Maps | undefined => {
+		const {maps} = currentModules[moduleName];
+		if (maps === undefined) {
+			return undefined;
+		}
+		if (!!mapsProxyCache[moduleName]) {
+			return mapsProxyCache[moduleName];
+		}
+		let proxyMaps = {};
+		for(let key in maps) {
+			if (maps.hasOwnProperty(key)) {
+				Object.defineProperty(proxyMaps, key, {
+					enumerable: true,
+					configurable: true,
+					get() {
+						if (mapsWatcher[moduleName][key] === undefined) {
+							mapsWatcher[moduleName][key] = new Watcher(
+								moduleName,
+								key,
+								() => (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName])
+							);
+						}
+						const targetWatcher = mapsWatcher[moduleName][key];
+						if (targetWatcher.useCache) {
+							return targetWatcher.cache;
+						}
+						// 清除旧的依赖
+						targetWatcher.clearDepends();
+						// 重新收集依赖
+						targetWatcher.run();
+						return targetWatcher.cache;
+					}
+				});
+			}
+		}
+		mapsProxyCache[moduleName] = proxyMaps;
+		return proxyMaps;
+	}
 	const createActionsProxy = (moduleName: ModuleName) => {
-		if (!!proxyActionsCache[moduleName]) {
-			return proxyActionsCache[moduleName];
+		if (!!actionsProxyCache[moduleName]) {
+			return actionsProxyCache[moduleName];
 		}
 		let actionsProxy = {...currentModules[moduleName].actions};
 		const dispatch = createDispatch(moduleName);
 		Object.keys(actionsProxy).forEach(key => actionsProxy[key] = (...data: any[]) => dispatch(key, ...data))
-		proxyActionsCache[moduleName] = actionsProxy;
+		actionsProxyCache[moduleName] = actionsProxy;
 		return actionsProxy;
 	};
-	const runMaps = (maps: Maps, state: any) => {
-		if (!maps) {
-			return {};
-		}
-		const mapsKeys = Object.keys(maps);
-		if (!mapsKeys.length) {
-			return {};
-		}
-		const resultMaps = mapsKeys.reduce((rm, key) => {
-			rm[key] = typeof maps[key] === 'function' ? maps[key](state) : maps[key];
-			return rm;
-		}, {} as {[p: string]: any});
-		return resultMaps;
-	}
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
+
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}
-		const proxyModule = {
-			...currentModules[moduleName]
-		};
+		const proxyModule: StoreModule = {} as StoreModule;
+		proxyModule.state = createStateProxy(moduleName);
 		proxyModule.actions = createActionsProxy(moduleName);
-		proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps as Maps, currentModules[moduleName].state) : undefined;
+		proxyModule.maps = createMapsProxy(moduleName);
 		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}
@@ -241,7 +365,7 @@ const createStore: CreateStore = (
 		const setStateProxy = ({state}: any) => setState(moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
-			getState: () => currentModules[moduleName].state,
+			getState: () => stateProxyCache[moduleName],
 		}
 		const chain = currentMiddlewares.map(middleware => middleware(middlewareParams))
 		const setStateProxyWithMiddleware = compose(...chain)(setStateProxy);
