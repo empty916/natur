@@ -103,26 +103,39 @@ var createStore = function createStore() {
   };
 
   var clearStateProxyCache = function clearStateProxyCache(moduleName) {
-    return delete stateProxyCache[moduleName];
+    delete stateProxyCache[moduleName];
+
+    for (var key in stateDepends[moduleName]) {
+      stateDepends[moduleName][key].destroy();
+      delete stateDepends[moduleName][key];
+    }
+
+    delete stateDepends[moduleName];
   };
 
   var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
     delete mapsProxyCache[moduleName];
+
+    for (var key in mapsWatcher[moduleName]) {
+      mapsWatcher[moduleName][key].destroy();
+      delete mapsWatcher[moduleName][key];
+    }
+
     delete mapsWatcher[moduleName];
   };
 
-  var clearMapsResultCache = function clearMapsResultCache(moduleName, changedStateNames) {
-    var targetMapsResultCache = mapsWatcher[moduleName];
+  var clearMapsWatcherCache = function clearMapsWatcherCache(moduleName, changedStateNames) {
+    var targetMapsWatcher = mapsWatcher[moduleName];
 
     if (!!changedStateNames) {
       changedStateNames.forEach(function (stateName) {
-        if (stateDepends[moduleName] && stateDepends[moduleName][stateName]) {
+        if (stateDepends[moduleName][stateName]) {
           stateDepends[moduleName][stateName].notify();
         }
       });
     } else {
-      for (var key in targetMapsResultCache) {
-        targetMapsResultCache[key].update();
+      for (var key in targetMapsWatcher) {
+        targetMapsWatcher[key].update();
       }
     }
   };
@@ -133,9 +146,9 @@ var createStore = function createStore() {
 
   var clearAllCache = function clearAllCache(moduleName) {
     clearModulesCache(moduleName);
-    clearStateProxyCache(moduleName);
+    clearStateProxyCache(moduleName); // clearMapsWatcherCache(moduleName);
+
     clearMapsProxyCache(moduleName);
-    clearMapsResultCache(moduleName);
     clearActionsProxyCache(moduleName);
   };
 
@@ -162,7 +175,7 @@ var createStore = function createStore() {
 
     currentModules[moduleName].state = newState;
     clearModulesCache(moduleName);
-    clearMapsResultCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+    clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
     runListeners(moduleName);
   };
 

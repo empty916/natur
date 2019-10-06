@@ -193,6 +193,11 @@ function () {
         return w.update();
       });
     }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.clearWatcher();
+    }
   }]);
 
   return Depend;
@@ -254,6 +259,14 @@ function () {
       });
       this.depends = [];
       this.dependsMap = {};
+    }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.clearDepends();
+      this.cache = null;
+
+      this.mapRunner = function () {};
     }
   }]);
 

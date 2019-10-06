@@ -40,6 +40,7 @@ export declare class Depend {
     removeWatcher(watcher: Watcher): void;
     clearWatcher(): void;
     notify(): void;
+    destroy(): void;
 }
 export declare class Watcher {
     depends: Depend[];
@@ -57,5 +58,6 @@ export declare class Watcher {
     addDepend(depend: Depend): void;
     removeDepend(depend: Depend): void;
     clearDepends(): void;
+    destroy(): void;
 }
 export {};
