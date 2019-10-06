@@ -13,46 +13,58 @@ const App: React.FC<props> = () => {
 	const [{ state, actions, maps }] = useInject('count');
 	const [name] = useInject('name');
 	const incProxy = () => {
-		const newState = actions.inc(state);
-		// console.log('after inc state', {...state});
-		// console.log('after inc maps isOdd', maps.isOdd);
-		// console.log('after inc maps', maps.splitName);
+		actions.inc(state);
+		console.log('state实时获取最新值测试', {...state});
+		console.log('maps实时获取最新值测试', {...maps});
 	};
 	const stateHasNoChange = () => actions.doNothing(state);
 	const asyncStateHasNoChange = () => actions.asyncDoNothing(state);
 	const decProxy = () => actions.dec(state);
+	React.useEffect(() => {
+		console.log({...maps});
+	});
+	React.useEffect(() => {
+		console.log('state缓存测试：当state改变时才会打印');
+	}, [state]);
+	React.useEffect(() => {
+		console.log('maps缓存测试：当maps改变时才会打印');
+	}, [maps]);
 	// React.useEffect(() => {
-	// 	console.log('updated');
-	// })
+	// 	console.log('maps缓存测试：当name改变时才会打印');
+	// }, [maps.splitName]);
 	// React.useEffect(() => {
-	// 	console.log('state has changed');
-	// }, [state])
+	// 	console.log('maps缓存测试：name或者count改变时就会打印');
+	// }, [maps.combine]);
 	// React.useEffect(() => {
-	// 	console.log('maps has changed');
-	// }, [maps])
+	// 	console.log('maps缓存测试：当count改变时才会打印');
+	// }, [maps.count]);
 
-	React.useEffect(() => {
-		console.log('maps.isOdd has changed');
-	}, [maps.isOdd]);
-	React.useEffect(() => {
-		console.log('maps.splitName has changed');
-	}, [maps.splitName]);
-	React.useEffect(() => {
-		console.log('maps.combine has changed');
-	}, [maps.combine]);
-	React.useEffect(() => {
-		console.log('maps.count has changed', maps.count);
-	}, [maps.count]);
+
+	// React.useEffect(() => {
+	// 	console.log('maps动态依赖测试: 当count是奇数时，打印name', maps.returnNameWhenCountIsOdd);
+	// }, [maps.returnNameWhenCountIsOdd]);
+
 
 	return (
 		<>
 			<button onClick={incProxy}>+</button>
 			<span>{state.count}</span>
 			<button onClick={decProxy}>-</button>
-			<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
+			<br/>
+			<br/>
+			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
+			<br/>
+			<br/>
+			<div>maps.isOdd: {maps.isOdd + ''}</div>
 			<br/>
 			<button onClick={stateHasNoChange}>stateHasNoChange</button>
+			<br/>
 			<button onClick={asyncStateHasNoChange}>asyncStateHasNoChange</button>
+			<br/>
+			<button onClick={() => actions.addKey(state)}>add new key</button>
+			<br/>
+			<button onClick={() => actions.deleteKey(state)}>delete new key</button>
+			<br/>
 		</>
 	);
 };

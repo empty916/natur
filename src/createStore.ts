@@ -297,6 +297,15 @@ const createStore: CreateStore = (
 						if (targetMapCache.useCache) {
 							return targetMapCache.cache;
 						}
+						// 清除旧的依赖
+						for(let stateName in targetMapCache.dependencies) {
+							const targetStateListeners = stateChangedListeners[moduleName][stateName];
+							if (targetStateListeners.includes(key)) {
+								stateChangedListeners[moduleName][stateName] = targetStateListeners.filter(mapName => mapName !== key);
+							}
+						}
+						targetMapCache.dependencies = {};
+						// 重新收集依赖
 						runningMap = targetMapCache;
 						targetMapCache.cache = (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName]);
 						runningMap = undefined;
