@@ -20,7 +20,7 @@ export default () => createStore(
 		name: { name: 'wxg' },
 	},
 	[
-		LogMiddleware,
+		// LogMiddleware,
 	]
 );
 

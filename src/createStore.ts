@@ -6,6 +6,7 @@
  * @desc [description]
  */
 import compose from './compose';
+import {ObjHasSameKeys, ObjChangedKeys} from './utils';
 
 export interface Listener {
 	(): void;
@@ -23,8 +24,9 @@ export interface Actions {
 	[type: string]: Action;
 };
 
+type StoreMap = (state: State) => any;
 export interface Maps {
-	[p: string]: (state: State) => any;
+	[p: string]: StoreMap;
 };
 export interface StoreModule {
 	state: State;
@@ -53,7 +55,13 @@ export interface Store {
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
 }
-
+type MapResultCache = {
+	name: string;
+	useCache: boolean;
+	cache: any;
+	dependencies: {[p: string]: boolean};
+	clear: () => void;
+}
 type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 
 let currentStoreInstance: Store;
@@ -81,8 +89,13 @@ const createStore: CreateStore = (
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
 	const currentMiddlewares = middlewares;
-	const proxyActionsCache: {[p: string]: Actions} = {};
+	const actionsProxyCache: {[p: string]: Actions} = {};
+	const stateProxyCache: States = {};
+	const mapsProxyCache: {[p: string]: Maps} = {};
+	const mapsProxyResultCatch: {[p: string]: {[p: string]: MapResultCache}} = {};
+	const stateChangedListeners: {[p: string]: {[p: string]: string[]}} = {};
 	const modulesCache: Modules = {};
+	let runningMap: MapResultCache | undefined = undefined;
 	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
 		let res = {
 			...storeModule,
@@ -93,7 +106,10 @@ const createStore: CreateStore = (
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
-				state: currentInitStates[moduleName],
+				state: {
+					...storeModule.state,
+					...currentInitStates[moduleName],
+				},
 			};
 			delete currentInitStates[moduleName];
 		}
@@ -108,11 +124,38 @@ const createStore: CreateStore = (
 			throw new Error(`module: ${moduleName} is not valid!`);
 		}
 	}
-	const clearProxyActionsCache = (moduleName: ModuleName) => delete proxyActionsCache[moduleName];
+	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
+	const clearStateProxyCache = (moduleName: ModuleName) => delete stateProxyCache[moduleName];
+	const clearMapsProxyCache = (moduleName: ModuleName) => {
+		delete mapsProxyCache[moduleName];
+		delete mapsProxyResultCatch[moduleName];
+	};
+	const clearMapsResultCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
+		const targetMapsResultCache = mapsProxyResultCatch[moduleName];
+		if (!!changedStateNames) {
+			changedStateNames.forEach(stateName => {
+				if (stateChangedListeners[moduleName] && stateChangedListeners[moduleName][stateName]) {
+					const mapNamesWhichDependStateChange = stateChangedListeners[moduleName][stateName];
+					mapNamesWhichDependStateChange.forEach(mapName => {
+						if(targetMapsResultCache && targetMapsResultCache[mapName]) {
+							targetMapsResultCache[mapName].clear()
+						}
+					});
+				}
+			});
+		} else {
+			for(let key in targetMapsResultCache) {
+				targetMapsResultCache[key].clear();
+			}
+		}
+	};
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
-		clearProxyActionsCache(moduleName);
+		clearStateProxyCache(moduleName);
+		clearMapsProxyCache(moduleName);
+		clearMapsResultCache(moduleName);
+		clearActionsProxyCache(moduleName);
 	}
 	const getAllModuleName = () => {
 		if(!allModuleNames) {
@@ -123,24 +166,28 @@ const createStore: CreateStore = (
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const setState = (moduleName: ModuleName, newState: any) => {
 		const actionHasNoReturn = newState === undefined;
-		const stateIsNotChanged = newState === currentModules[moduleName].state;
+		const stateIsNotChanged = newState === stateProxyCache[moduleName];
 		if (actionHasNoReturn || stateIsNotChanged) {
 			return newState;
 		}
 		if(isPromise(newState)) {
 			return (newState as Promise<State>).then((ns: State) => {
 				const asyncActionHasReturn = ns !== undefined;
-				const asyncStateIsChanged = ns !== currentModules[moduleName].state;
+				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];;
 				if (asyncActionHasReturn && asyncStateIsChanged) {
+					const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, ns);
 					currentModules[moduleName].state = ns;
 					clearModulesCache(moduleName);
+					clearMapsResultCache(moduleName, changedStateKeys);
 					runListeners(moduleName);
 				}
 				return Promise.resolve(ns);
 			});
 		} else {
+			const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
 			currentModules[moduleName].state = newState;
 			clearModulesCache(moduleName);
+			clearMapsResultCache(moduleName, changedStateKeys);
 			runListeners(moduleName);
 			return newState;
 		}
@@ -172,41 +219,104 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	};
+
+	const createStateProxy = (moduleName: ModuleName): State => {
+		const {state} = currentModules[moduleName];
+		if (!!stateProxyCache[moduleName] && ObjHasSameKeys(state, stateProxyCache[moduleName])) {
+			return stateProxyCache[moduleName];
+		}
+		let proxyState = {};
+		for(let key in state) {
+			if (state.hasOwnProperty(key)) {
+				Object.defineProperty(proxyState, key, {
+					enumerable: true,
+					configurable: true,
+					get() {
+						if (runningMap && !runningMap.dependencies[key]) {
+							runningMap.dependencies[key] = true;
+							if(!stateChangedListeners[moduleName]) {
+								stateChangedListeners[moduleName] = {};
+							}
+							if (!stateChangedListeners[moduleName][key]) {
+								stateChangedListeners[moduleName][key] = [];
+							}
+							stateChangedListeners[moduleName][key].push(runningMap.name);
+						}
+						return currentModules[moduleName].state[key];
+					}
+				});
+			}
+		}
+		stateProxyCache[moduleName] = proxyState;
+		return proxyState;
+	}
+
+	const createMapsProxy = (moduleName: ModuleName): Maps | undefined => {
+		const {maps} = currentModules[moduleName];
+		if (maps === undefined) {
+			return undefined;
+		}
+		if (!!mapsProxyCache[moduleName]) {
+			return mapsProxyCache[moduleName];
+		}
+		let proxyMaps = {};
+		for(let key in maps) {
+			if (maps.hasOwnProperty(key)) {
+				Object.defineProperty(proxyMaps, key, {
+					enumerable: true,
+					configurable: true,
+					get() {
+						if (mapsProxyResultCatch[moduleName][key] === undefined) {
+							mapsProxyResultCatch[moduleName][key] = {
+								name: key,
+								useCache: false,
+								cache: null,
+								dependencies: {},
+								clear: () => {
+									mapsProxyResultCatch[moduleName][key].useCache = false;
+								}
+							};
+						}
+						const targetMapCache = mapsProxyResultCatch[moduleName][key];
+						if (targetMapCache.useCache) {
+							return targetMapCache.cache;
+						}
+						runningMap = targetMapCache;
+						targetMapCache.cache = (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName]);
+						runningMap = undefined;
+
+						targetMapCache.useCache = true;
+						return targetMapCache.cache;
+					}
+				});
+			}
+		}
+		mapsProxyCache[moduleName] = proxyMaps;
+		return proxyMaps;
+	}
 	const createActionsProxy = (moduleName: ModuleName) => {
-		if (!!proxyActionsCache[moduleName]) {
-			return proxyActionsCache[moduleName];
+		if (!!actionsProxyCache[moduleName]) {
+			return actionsProxyCache[moduleName];
 		}
 		let actionsProxy = {...currentModules[moduleName].actions};
 		const dispatch = createDispatch(moduleName);
 		Object.keys(actionsProxy).forEach(key => actionsProxy[key] = (...data: any[]) => dispatch(key, ...data))
-		proxyActionsCache[moduleName] = actionsProxy;
+		actionsProxyCache[moduleName] = actionsProxy;
 		return actionsProxy;
 	};
-	const runMaps = (maps: Maps, state: any) => {
-		if (!maps) {
-			return {};
-		}
-		const mapsKeys = Object.keys(maps);
-		if (!mapsKeys.length) {
-			return {};
-		}
-		const resultMaps = mapsKeys.reduce((rm, key) => {
-			rm[key] = typeof maps[key] === 'function' ? maps[key](state) : maps[key];
-			return rm;
-		}, {} as {[p: string]: any});
-		return resultMaps;
-	}
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
+		if (!mapsProxyResultCatch[moduleName]) {
+			mapsProxyResultCatch[moduleName] = {};
+		}
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}
-		const proxyModule = {
-			...currentModules[moduleName]
-		};
+		const proxyModule: StoreModule = {} as StoreModule;
+		proxyModule.state = createStateProxy(moduleName);
 		proxyModule.actions = createActionsProxy(moduleName);
-		proxyModule.maps = currentModules[moduleName].maps ? runMaps(currentModules[moduleName].maps as Maps, currentModules[moduleName].state) : undefined;
+		proxyModule.maps = createMapsProxy(moduleName);
 		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}
@@ -241,7 +351,7 @@ const createStore: CreateStore = (
 		const setStateProxy = ({state}: any) => setState(moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
-			getState: () => currentModules[moduleName].state,
+			getState: () => stateProxyCache[moduleName],
 		}
 		const chain = currentMiddlewares.map(middleware => middleware(middlewareParams))
 		const setStateProxyWithMiddleware = compose(...chain)(setStateProxy);
