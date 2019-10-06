@@ -15,7 +15,7 @@ import React, {
 } from 'react';
 import hoistStatics from 'hoist-non-react-statics'
 import { StoreModule, ModuleName, Store, getStoreInstance } from './createStore';
-import isEqualWithDepthLimit from './isEqualWithDepthLimit';
+import {isEqualWithDepthLimit} from './utils';
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 type ModuleNames = ModuleName[];

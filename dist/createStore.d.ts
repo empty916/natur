@@ -13,8 +13,9 @@ export interface Action {
 export interface Actions {
     [type: string]: Action;
 }
+declare type StoreMap = (state: State) => any;
 export interface Maps {
-    [p: string]: (state: State) => any;
+    [p: string]: StoreMap;
 }
 export interface StoreModule {
     state: State;
@@ -48,7 +49,7 @@ export interface Store {
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
 }
-declare type CreateStore = (modules: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
+declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[], isLazy?: boolean) => Store;
 declare const createStore: CreateStore;
 export declare const getStoreInstance: () => Store;
 export default createStore;

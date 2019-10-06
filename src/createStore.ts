@@ -5,8 +5,12 @@
  * @modify date 2019-08-09 17:12:36
  * @desc [description]
  */
-import compose from './compose';
-import {ObjHasSameKeys, ObjChangedKeys} from './utils';
+import {
+	ObjChangedKeys,
+	Depend,
+	Watcher,
+	compose,
+} from './utils';
 
 export interface Listener {
 	(): void;
@@ -55,13 +59,7 @@ export interface Store {
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
 }
-type MapResultCache = {
-	name: string;
-	useCache: boolean;
-	cache: any;
-	dependencies: {[p: string]: boolean};
-	clear: () => void;
-}
+
 type CreateStore = (
 	modules?: Modules,
 	lazyModules?: LazyStoreModules,
@@ -100,12 +98,11 @@ const createStore: CreateStore = (
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: Maps} = {};
 
-	const mapsProxyResultCatch: {[p: string]: {[p: string]: MapResultCache}} = {};
-	const stateChangedListeners: {[p: string]: {[p: string]: string[]}} = {};
+	const mapsWatcher: {[p: string]: {[p: string]: Watcher}} = {};
+	const stateDepends: {[p: string]: {[p: string]: Depend}} = {};
 
 	const modulesCache: Modules = {};
 	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
-	let runningMap: MapResultCache | undefined = undefined;
 	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
 		let res = {
 			...storeModule,
@@ -138,24 +135,19 @@ const createStore: CreateStore = (
 	const clearStateProxyCache = (moduleName: ModuleName) => delete stateProxyCache[moduleName];
 	const clearMapsProxyCache = (moduleName: ModuleName) => {
 		delete mapsProxyCache[moduleName];
-		delete mapsProxyResultCatch[moduleName];
+		delete mapsWatcher[moduleName];
 	};
 	const clearMapsResultCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
-		const targetMapsResultCache = mapsProxyResultCatch[moduleName];
+		const targetMapsResultCache = mapsWatcher[moduleName];
 		if (!!changedStateNames) {
 			changedStateNames.forEach(stateName => {
-				if (stateChangedListeners[moduleName] && stateChangedListeners[moduleName][stateName]) {
-					const mapNamesWhichDependStateChange = stateChangedListeners[moduleName][stateName];
-					mapNamesWhichDependStateChange.forEach(mapName => {
-						if(targetMapsResultCache && targetMapsResultCache[mapName]) {
-							targetMapsResultCache[mapName].clear()
-						}
-					});
+				if (stateDepends[moduleName] && stateDepends[moduleName][stateName]) {
+					stateDepends[moduleName][stateName].notify();
 				}
 			});
 		} else {
 			for(let key in targetMapsResultCache) {
-				targetMapsResultCache[key].clear();
+				targetMapsResultCache[key].update();
 			}
 		}
 	};
@@ -220,6 +212,12 @@ const createStore: CreateStore = (
 		};
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
+		if (!mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName] = {};
+		}
+		if(!stateDepends[moduleName]) {
+			stateDepends[moduleName] = {};
+		}
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
@@ -238,7 +236,6 @@ const createStore: CreateStore = (
 		// const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
 		const stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
 		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
-			keysOfModuleStateChangedRecords[moduleName] = false;
 			return stateProxyCache[moduleName];
 		}
 		let proxyState = {};
@@ -248,15 +245,11 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (isLazy && runningMap && !runningMap.dependencies[key]) {
-							if(!stateChangedListeners[moduleName]) {
-								stateChangedListeners[moduleName] = {};
+						if (isLazy && Depend.targetWatcher) {
+							if (!stateDepends[moduleName][key]) {
+								stateDepends[moduleName][key] = new Depend(moduleName, key);
 							}
-							if (!stateChangedListeners[moduleName][key]) {
-								stateChangedListeners[moduleName][key] = [];
-							}
-							stateChangedListeners[moduleName][key].push(runningMap.name);
-							runningMap.dependencies[key] = true;
+							stateDepends[moduleName][key].addWatcher(Depend.targetWatcher);
 						}
 						return currentModules[moduleName].state[key];
 					}
@@ -264,6 +257,7 @@ const createStore: CreateStore = (
 			}
 		}
 		stateProxyCache[moduleName] = proxyState;
+		keysOfModuleStateChangedRecords[moduleName] = false;
 		return proxyState;
 	}
 
@@ -282,36 +276,22 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (mapsProxyResultCatch[moduleName][key] === undefined) {
-							mapsProxyResultCatch[moduleName][key] = {
-								name: key,
-								useCache: false,
-								cache: null,
-								dependencies: {},
-								clear: () => {
-									mapsProxyResultCatch[moduleName][key].useCache = false;
-								}
-							};
+						if (mapsWatcher[moduleName][key] === undefined) {
+							mapsWatcher[moduleName][key] = new Watcher(
+								moduleName,
+								key,
+								() => (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName])
+							);
 						}
-						const targetMapCache = mapsProxyResultCatch[moduleName][key];
-						if (targetMapCache.useCache) {
-							return targetMapCache.cache;
+						const targetWatcher = mapsWatcher[moduleName][key];
+						if (targetWatcher.useCache) {
+							return targetWatcher.cache;
 						}
 						// 清除旧的依赖
-						for(let stateName in targetMapCache.dependencies) {
-							const targetStateListeners = stateChangedListeners[moduleName][stateName];
-							if (targetStateListeners.includes(key)) {
-								stateChangedListeners[moduleName][stateName] = targetStateListeners.filter(mapName => mapName !== key);
-							}
-						}
-						targetMapCache.dependencies = {};
+						targetWatcher.clearDepends();
 						// 重新收集依赖
-						runningMap = targetMapCache;
-						targetMapCache.cache = (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName]);
-						runningMap = undefined;
-
-						targetMapCache.useCache = true;
-						return targetMapCache.cache;
+						targetWatcher.run();
+						return targetWatcher.cache;
 					}
 				});
 			}
@@ -332,9 +312,7 @@ const createStore: CreateStore = (
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
-		if (!mapsProxyResultCatch[moduleName]) {
-			mapsProxyResultCatch[moduleName] = {};
-		}
+
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}

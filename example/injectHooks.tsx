@@ -14,26 +14,26 @@ const App: React.FC<props> = () => {
 	const [name] = useInject('name');
 	const incProxy = () => {
 		actions.inc(state);
-		console.log('state实时获取最新值测试', {...state});
-		console.log('maps实时获取最新值测试', {...maps});
+		// console.log('state实时获取最新值测试', {...state});
+		// console.log('maps实时获取最新值测试', {...maps});
 	};
 	const stateHasNoChange = () => actions.doNothing(state);
 	const asyncStateHasNoChange = () => actions.asyncDoNothing(state);
 	const decProxy = () => actions.dec(state);
-	React.useEffect(() => {
-		console.log({...maps});
-	});
-	React.useEffect(() => {
-		console.log('state缓存测试：当state改变时才会打印');
-	}, [state]);
-	React.useEffect(() => {
-		console.log('maps缓存测试：当maps改变时才会打印');
-	}, [maps]);
+	// React.useEffect(() => {
+	// 	console.log({...maps});
+	// });
+	// React.useEffect(() => {
+	// 	console.log('state缓存测试：当state改变时才会打印');
+	// }, [state]);
+	// React.useEffect(() => {
+	// 	console.log('maps缓存测试：当maps改变时才会打印');
+	// }, [maps]);
 	// React.useEffect(() => {
 	// 	console.log('maps缓存测试：当name改变时才会打印');
 	// }, [maps.splitName]);
 	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：name或者count改变时就会打印');
+	// 	console.log('maps缓存测试：当state中有值改变时就会打印');
 	// }, [maps.combine]);
 	// React.useEffect(() => {
 	// 	console.log('maps缓存测试：当count改变时才会打印');
