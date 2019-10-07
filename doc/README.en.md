@@ -433,4 +433,9 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 
+---
+- Starting with version 1.x, the values in maps are dynamically calculated based on changes in dependencies, and the cache is dependent on constants. The principle is to use Object.defineProperty for data hijacking and collect dependencies. So when changing the state, you should use immutable, otherwise maps will not listen to state changes, it will not be recalculated. (Because the immutable specification is followed, the maps listener only listens for changes in the first layer value of the state. If the value of the first layer of the state has not changed, the maps will not be updated.)
+---
+- In the 1.x version, the first layer attribute of state should be declared in advance. If a new attribute is dynamically added, or an attribute is dynamically deleted, the maps cannot monitor its changes, and the maps cannot be updated in time.
+
 

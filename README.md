@@ -426,3 +426,9 @@ const App = @inject<storeProps>('count', 'name')(_App);
 <App forwardedRef={console.log} />
 
  ```
+
+---
+ - 从1.x版本开始，maps中的值会根据依赖的变化进行动态计算，依赖不变的则使用缓存，原理是使用了Object.defineProperty作数据劫持，收集依赖，所以在改变state时，应该使用immutable写法，否则maps不会监听到state变化，就不会重新计算。（因为遵循着immutable的规范，所以maps监听只是监听了state第一层值的变化，如果state第一层的值没有变化，那么maps也不会更新。）
+ ---
+  - 在1.x的版本中，state的第一层属性应该提前声明，如果动态新增某个属性，或动态删除某个属性，此时maps无法监听其变化，导致maps无法及时更新。
+
