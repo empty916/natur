@@ -17,6 +17,8 @@ const App: React.FC<props> = () => {
 		// console.log('state实时获取最新值测试', {...state});
 		// console.log('maps实时获取最新值测试', {...maps});
 	};
+	console.log('state: ', {...state});
+	console.log('maps: ', {...maps});
 	const stateHasNoChange = () => actions.doNothing(state);
 	const asyncStateHasNoChange = () => actions.asyncDoNothing(state);
 	const decProxy = () => actions.dec(state);
@@ -50,12 +52,26 @@ const App: React.FC<props> = () => {
 			<button onClick={incProxy}>+</button>
 			<span>{state.count}</span>
 			<button onClick={decProxy}>-</button>
+
+			<br/>
+			deep count:
+			<button onClick={() => actions.incDeep(state)}>+</button>
+			<span>{state.deep.count}</span>
+
+			<br/>
+			deeep count:
+			<button onClick={() => actions.incDeeep(state)}>+</button>
+			<span>{state.deeep.deep.count}</span>
+
+			{/* <button onClick={decProxy}>-</button> */}
 			<br/>
 			<br/>
 			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
 			<br/>
 			<br/>
 			<div>maps.isOdd: {maps.isOdd + ''}</div>
+			<div>maps.deepIsOdd: {maps.deepCountIsOdd + ''}</div>
+			<div>maps.deeepIsOdd: {maps.deeepCountIsOdd + ''}</div>
 			<br/>
 			<button onClick={stateHasNoChange}>stateHasNoChange</button>
 			<br/>

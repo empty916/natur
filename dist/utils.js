@@ -156,14 +156,15 @@ function () {
     this.watchersMap = {};
     this.moduleName = moduleName;
     this.stateName = stateName;
+    this.id = "".concat(moduleName, "-").concat(stateName);
   }
 
   _createClass(Depend, [{
     key: "addWatcher",
     value: function addWatcher(watcher) {
-      if (!this.watchersMap[watcher.moduleName + watcher.mapName]) {
+      if (!this.watchersMap[watcher.id]) {
         this.watchers.push(watcher);
-        this.watchersMap[watcher.moduleName + watcher.mapName] = true;
+        this.watchersMap[watcher.id] = true;
         watcher.addDepend(this);
       }
     }
@@ -173,7 +174,7 @@ function () {
       this.watchers = this.watchers.filter(function (w) {
         return w !== watcher;
       });
-      delete this.watchersMap[watcher.moduleName + watcher.mapName];
+      delete this.watchersMap[watcher.id];
     }
   }, {
     key: "clearWatcher",
@@ -218,6 +219,7 @@ function () {
     this.moduleName = moduleName;
     this.mapName = mapName;
     this.mapRunner = runner;
+    this.id = "".concat(moduleName, "-").concat(mapName);
   }
 
   _createClass(Watcher, [{
@@ -236,9 +238,9 @@ function () {
   }, {
     key: "addDepend",
     value: function addDepend(depend) {
-      if (!this.dependsMap[depend.moduleName + depend.stateName]) {
+      if (!this.dependsMap[depend.id]) {
         this.depends.push(depend);
-        this.dependsMap[depend.moduleName + depend.stateName] = true;
+        this.dependsMap[depend.id] = true;
       }
     }
   }, {
@@ -247,7 +249,7 @@ function () {
       this.depends.filter(function (dep) {
         return dep !== depend;
       });
-      delete this.dependsMap[depend.moduleName + depend.stateName];
+      delete this.dependsMap[depend.id];
     }
   }, {
     key: "clearDepends",
