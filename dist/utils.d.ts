@@ -28,6 +28,7 @@ declare type anyFn = (...arg: any[]) => any;
 export declare function compose(...funcs: anyFn[]): anyFn;
 export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?: number, depth?: number): boolean;
 export declare class Depend {
+    id: string;
     moduleName: ModuleName;
     stateName: string;
     watchers: Watcher[];
@@ -51,6 +52,7 @@ export declare class Watcher {
     dependsMap: {
         [p: string]: true;
     };
+    id: string;
     mapRunner: (...arg: any[]) => any;
     constructor(moduleName: ModuleName, mapName: string, runner: (...arg: any[]) => any);
     update(): void;
