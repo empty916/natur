@@ -7,12 +7,13 @@ import {
     getStoreInstance,
     ModuleName,
     Store,
-    StoreModule,
+	StoreModule,
+	InjectStoreModule,
 } from './createStore';
 
 const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 
-export function useInject(...moduleNames: ModuleName[]): StoreModule[] {
+export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
 	if (moduleNames.length === 0) {
         return [];
     }
@@ -63,5 +64,5 @@ export function useInject(...moduleNames: ModuleName[]): StoreModule[] {
     return moduleNames.reduce((res, mn: ModuleName) => {
         res.push(store.getModule(mn));
         return res;
-	}, [] as StoreModule[]);
+	}, [] as InjectStoreModule[]);
 }

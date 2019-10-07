@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
-import { inject, StoreModule } from "../src";
+import { inject, InjectStoreModule } from "../src";
 import initStore from "./initStore.js";
 
-type storeProps = { count?: StoreModule; name?: StoreModule };
+type storeProps = { count?: InjectStoreModule; name?: InjectStoreModule };
 type otherProps = {
 	className: string;
 	style: Object;

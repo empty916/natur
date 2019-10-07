@@ -374,9 +374,9 @@ const lazyLoadView = () => {
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, StoreModule} from 'react-natural-store'
+import {inject, InjectStoreModule} from 'react-natural-store'
 
-type storeProps = {count: StoreModule, name: StoreModule};
+type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
 type otherProps = {
   className: string,
   style: Object,
