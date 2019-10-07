@@ -178,7 +178,6 @@ const createStore: CreateStore = (
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const _setState = (moduleName: ModuleName, newState: State) => {
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
-
 		if(!keysOfModuleStateChangedRecords[moduleName]) {
 			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
 		}
@@ -261,14 +260,12 @@ const createStore: CreateStore = (
 								stateDepends[moduleName][key] = new Depend(moduleName, key);
 							}
 							stateDepends[moduleName][key].addWatcher(Depend.targetWatcher);
-							// perfRecord2();
 						}
 						return currentModules[moduleName].state[key];
 					}
 				});
 			}
 		}
-		// perfRecord1();
 		stateProxyCache[moduleName] = proxyState;
 		keysOfModuleStateChangedRecords[moduleName] = false;
 		return proxyState;
@@ -289,7 +286,6 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-
 						if (mapsWatcher[moduleName][key] === undefined) {
 							mapsWatcher[moduleName][key] = new Watcher(
 								moduleName,
