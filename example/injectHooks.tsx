@@ -29,20 +29,20 @@ const App: React.FC<props> = () => {
 	// React.useEffect(() => {
 	// 	console.log('maps缓存测试：当maps改变时才会打印');
 	// }, [maps]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当name改变时才会打印');
-	// }, [maps.splitName]);
+	React.useEffect(() => {
+		console.log('maps缓存测试：当name改变时才会打印');
+	}, [maps.splitName]);
 	// React.useEffect(() => {
 	// 	console.log('maps缓存测试：当state中有值改变时就会打印');
 	// }, [maps.combine]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当count改变时才会打印');
-	// }, [maps.count]);
+	React.useEffect(() => {
+		console.log('maps缓存测试：当count改变时才会打印');
+	}, [maps.count]);
 
 
-	// React.useEffect(() => {
-	// 	console.log('maps动态依赖测试: 当count是奇数时，打印name', maps.returnNameWhenCountIsOdd);
-	// }, [maps.returnNameWhenCountIsOdd]);
+	React.useEffect(() => {
+		console.log('maps动态依赖测试: 当count是奇数时，打印name', maps.returnNameWhenCountIsOdd);
+	}, [maps.returnNameWhenCountIsOdd]);
 
 
 	return (

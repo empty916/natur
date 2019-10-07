@@ -80,7 +80,23 @@ const isStoreModule = (obj: any) => {
 	}
 	return true;
 }
+let performanceRecord = 0;
+let hasRecord: any = {};
+(window as any).hasRecord = hasRecord;
+(window as any).performanceRecord = () => performanceRecord;
 
+const record = (id: string, time:number) => {
+	if (!hasRecord[id]) {
+		hasRecord[id] = [];
+		performanceRecord += time;
+	};
+	hasRecord[id].push(time);
+	hasRecord[id].average = hasRecord[id].reduce((avg: number, t: number) => avg + t)/hasRecord[id].length;
+}
+const startRecord = (id: string) => {
+	const startTime = performance.now();
+	return () => record(id, performance.now()- startTime);
+}
 const createStore: CreateStore = (
 	modules: Modules = {},
 	lazyModules: LazyStoreModules = {},
@@ -178,13 +194,19 @@ const createStore: CreateStore = (
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const _setState = (moduleName: ModuleName, newState: State) => {
+		const objPerfRecord = startRecord('ObjChangedKeys');
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
+		objPerfRecord();
+
 		if(!keysOfModuleStateChangedRecords[moduleName]) {
 			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
 		}
 		currentModules[moduleName].state = newState;
 		clearModulesCache(moduleName);
+
+		const clearMapsWatcherCachePerfRecord = startRecord('clearMapsWatcherCache');
 		clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+		clearMapsWatcherCachePerfRecord();
 		runListeners(moduleName);
 	}
 	const setState = (moduleName: ModuleName, newState: any) => {
@@ -250,6 +272,7 @@ const createStore: CreateStore = (
 			return stateProxyCache[moduleName];
 		}
 		let proxyState = {};
+		const perfRecord1 = startRecord('createStateProxy');
 		for(let key in state) {
 			if (state.hasOwnProperty(key)) {
 				Object.defineProperty(proxyState, key, {
@@ -257,16 +280,19 @@ const createStore: CreateStore = (
 					configurable: true,
 					get() {
 						if (isLazy && Depend.targetWatcher) {
+							const perfRecord2 = startRecord('createStateProxy: state get');
 							if (!stateDepends[moduleName][key]) {
 								stateDepends[moduleName][key] = new Depend(moduleName, key);
 							}
 							stateDepends[moduleName][key].addWatcher(Depend.targetWatcher);
+							perfRecord2();
 						}
 						return currentModules[moduleName].state[key];
 					}
 				});
 			}
 		}
+		perfRecord1();
 		stateProxyCache[moduleName] = proxyState;
 		keysOfModuleStateChangedRecords[moduleName] = false;
 		return proxyState;
@@ -287,6 +313,7 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
+						const perfRecord = startRecord('createMapsProxy: map get');
 						if (mapsWatcher[moduleName][key] === undefined) {
 							mapsWatcher[moduleName][key] = new Watcher(
 								moduleName,
@@ -302,6 +329,7 @@ const createStore: CreateStore = (
 						targetWatcher.clearDepends();
 						// 重新收集依赖
 						targetWatcher.run();
+						perfRecord();
 						return targetWatcher.cache;
 					}
 				});
