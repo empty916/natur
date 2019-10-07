@@ -146,6 +146,7 @@ export function isEqualWithDepthLimit(
 
 
 export class Depend {
+	id: string;
 	moduleName: ModuleName;
 	stateName: string;
 	watchers: Watcher[] = [];
@@ -154,17 +155,18 @@ export class Depend {
 	constructor(moduleName: ModuleName, stateName: string) {
 		this.moduleName = moduleName;
 		this.stateName = stateName;
+		this.id = `${moduleName}-${stateName}`;
 	}
 	addWatcher(watcher: Watcher) {
-		if (!this.watchersMap[watcher.moduleName + watcher.mapName]) {
+		if (!this.watchersMap[watcher.id]) {
 			this.watchers.push(watcher);
-			this.watchersMap[watcher.moduleName + watcher.mapName] = true;
+			this.watchersMap[watcher.id] = true;
 			watcher.addDepend(this);
 		}
 	}
 	removeWatcher(watcher: Watcher) {
 		this.watchers = this.watchers.filter(w => w !== watcher);
-		delete this.watchersMap[watcher.moduleName + watcher.mapName];
+		delete this.watchersMap[watcher.id];
 	}
 	clearWatcher() {
 		this.watchers.forEach(w => w.removeDepend(this));
@@ -186,11 +188,13 @@ export class Watcher {
 	moduleName: ModuleName;
 	mapName: string;
 	dependsMap: {[p: string]: true} = {};
+	id: string;
 	mapRunner: (...arg: any[]) => any;
 	constructor(moduleName: ModuleName, mapName: string, runner: (...arg: any[]) => any) {
 		this.moduleName = moduleName;
 		this.mapName = mapName;
 		this.mapRunner = runner;
+		this.id = `${moduleName}-${mapName}`;
 	}
 	update() {
 		this.useCache = false;
@@ -202,14 +206,14 @@ export class Watcher {
 		this.useCache = true;
 	}
 	addDepend(depend: Depend) {
-		if (!this.dependsMap[depend.moduleName + depend.stateName]) {
+		if (!this.dependsMap[depend.id]) {
 			this.depends.push(depend);
-			this.dependsMap[depend.moduleName + depend.stateName] = true;
+			this.dependsMap[depend.id] = true;
 		}
 	}
 	removeDepend(depend: Depend) {
 		this.depends.filter(dep => dep !== depend);
-		delete this.dependsMap[depend.moduleName + depend.stateName];
+		delete this.dependsMap[depend.id];
 	}
 	clearDepends() {
 		this.depends.forEach(dep => dep.removeWatcher(this));

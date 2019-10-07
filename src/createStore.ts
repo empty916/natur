@@ -80,7 +80,6 @@ const isStoreModule = (obj: any) => {
 	}
 	return true;
 }
-
 const createStore: CreateStore = (
 	modules: Modules = {},
 	lazyModules: LazyStoreModules = {},
