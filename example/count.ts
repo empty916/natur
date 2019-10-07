@@ -2,9 +2,25 @@ export const state = {
 	count: 1,
 	name: "count",
 	newKey: -1,
+	deep: {
+		count: 2,
+	},
+	deeep: {
+		deep: {
+			count: 1,
+		}
+	}
 };
 export const maps = {
 	isOdd: ({ count }) => count % 2 !== 0,
+	deepCountIsOdd: ({ deep }) => {
+		console.log('run deep map');
+		return deep.count % 2 !== 0;
+	},
+	deeepCountIsOdd: ({ deeep }) => {
+		console.log('run deeep map');
+		return deeep.deep.count % 2 !== 0;
+	},
 	splitName: state => {
 		return state.name.split("");
 	},
@@ -23,6 +39,24 @@ export const actions = {
 		return {
 			...state,
 			count: state.count + 1
+		};
+	},
+	incDeep: state => {
+		return {
+			...state,
+			deep: {
+				count: state.deep.count + 1,
+			}
+		};
+	},
+	incDeeep: state => {
+		return {
+			...state,
+			deeep: {
+				deep: {
+					count: state.deeep.deep.count + 1,
+				}
+			}
 		};
 	},
 	addKey: state => ({...state, newKey: 1}),
