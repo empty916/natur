@@ -22,6 +22,11 @@ export interface StoreModule {
     actions: Actions;
     maps?: Maps;
 }
+export interface InjectStoreModule {
+    state: State;
+    actions: Actions;
+    maps?: any;
+}
 export interface LazyStoreModules {
     [p: string]: () => Promise<StoreModule>;
 }
@@ -40,7 +45,7 @@ export declare type Middleware = (params: {
 export interface Store {
     createDispatch: (a: string) => Action;
     addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
-    getModule: (moduleName: ModuleName) => StoreModule;
+    getModule: (moduleName: ModuleName) => InjectStoreModule;
     setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     removeModule: (moduleName: ModuleName) => Store;
     hasModule: (moduleName: ModuleName) => boolean;

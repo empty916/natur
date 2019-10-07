@@ -37,6 +37,11 @@ export interface StoreModule {
 	actions: Actions;
 	maps?: Maps;
 }
+export interface InjectStoreModule {
+	state: State;
+	actions: Actions;
+	maps?: any;
+}
 export interface LazyStoreModules {
 	[p: string]: () => Promise<StoreModule>;
 }
@@ -50,7 +55,7 @@ export type Middleware = (params: {setState: (m: ModuleName, state: any) => any,
 export interface Store {
 	createDispatch: (a: string) => Action;
 	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
-	getModule: (moduleName: ModuleName) => StoreModule;
+	getModule: (moduleName: ModuleName) => InjectStoreModule;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	removeModule: (moduleName: ModuleName) => Store;
 	hasModule: (moduleName: ModuleName) => boolean;
@@ -326,7 +331,7 @@ const createStore: CreateStore = (
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}
-		const proxyModule: StoreModule = {} as StoreModule;
+		const proxyModule: StoreModule = {} as InjectStoreModule;
 		proxyModule.state = createStateProxy(moduleName);
 		proxyModule.actions = createActionsProxy(moduleName);
 		proxyModule.maps = createMapsProxy(moduleName);
