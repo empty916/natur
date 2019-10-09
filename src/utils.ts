@@ -29,12 +29,12 @@ type Obj = {[p: string]: any}
 
 export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
 	// console.log(source, afterChange);
-	if (!source || !afterChange) {
-		return {
-			updatedKeys: [],
-			keyHasChanged: false,
-		};
-	}
+	// if (!source || !afterChange) {
+	// 	return {
+	// 		updatedKeys: [],
+	// 		keyHasChanged: false,
+	// 	};
+	// }
 	// KEY还在，但是值变化了的
 	const updatedKeys = [];
 	// KEY是否变动

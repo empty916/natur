@@ -32,6 +32,9 @@ type StoreMap = (state: State) => any;
 export interface Maps {
 	[p: string]: StoreMap;
 };
+export interface InjectMaps {
+	[p: string]: any;
+};
 export interface StoreModule {
 	state: State;
 	actions: Actions;
@@ -100,7 +103,7 @@ const createStore: CreateStore = (
 	const currentMiddlewares = middlewares;
 	const actionsProxyCache: {[p: string]: Actions} = {};
 	const stateProxyCache: States = {};
-	const mapsProxyCache: {[p: string]: Maps} = {};
+	const mapsProxyCache: {[p: string]: InjectMaps} = {};
 
 	const mapsWatcher: {[p: string]: {[p: string]: Watcher}} = {};
 	const stateDepends: {[p: string]: {[p: string]: Depend}} = {};
@@ -276,7 +279,7 @@ const createStore: CreateStore = (
 		return proxyState;
 	}
 
-	const createMapsProxy = (moduleName: ModuleName): Maps | undefined => {
+	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
 		const {maps} = currentModules[moduleName];
 		if (maps === undefined) {
 			return undefined;
@@ -331,10 +334,11 @@ const createStore: CreateStore = (
 		if (!!modulesCache[moduleName]) {
 			return modulesCache[moduleName];
 		}
-		const proxyModule: StoreModule = {} as InjectStoreModule;
-		proxyModule.state = createStateProxy(moduleName);
-		proxyModule.actions = createActionsProxy(moduleName);
-		proxyModule.maps = createMapsProxy(moduleName);
+		const proxyModule: InjectStoreModule = {
+			state: createStateProxy(moduleName),
+			actions: createActionsProxy(moduleName),
+			maps: createMapsProxy(moduleName),
+		};
 		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}

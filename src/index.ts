@@ -13,6 +13,7 @@ export {
 	Action,
 	Actions,
 	Maps,
+	InjectMaps,
 	StoreModule,
 	InjectStoreModule,
 	LazyStoreModules,
