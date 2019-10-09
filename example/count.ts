@@ -35,12 +35,13 @@ export const maps = {
 	showNewKey: state => !!state.newKey && state.newKey,
 };
 export const actions = {
-	inc: state => {
-		return {
-			...state,
-			count: state.count + 1
-		};
-	},
+	// inc: state => {
+	// 	return {
+	// 		...state,
+	// 		count: state.count + 1
+	// 	};
+	// },
+	inc: state => null,
 	incDeep: state => {
 		return {
 			...state,

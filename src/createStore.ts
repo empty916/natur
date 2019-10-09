@@ -79,6 +79,7 @@ type CreateStore = (
 let currentStoreInstance: Store;
 
 const isObj = (obj: any) => !(typeof obj !== 'object' || Array.isArray(obj) || obj === null);
+
 const isStoreModule = (obj: any) => {
 	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
 		return false;
@@ -195,14 +196,14 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 	}
 	const setState = (moduleName: ModuleName, newState: any) => {
-		const actionHasNoReturn = newState === undefined;
+		const actionHasNoReturn = !newState;
 		const stateIsNotChanged = newState === stateProxyCache[moduleName];
 		if (actionHasNoReturn || stateIsNotChanged) {
 			return newState;
 		}
 		if(isPromise(newState)) {
 			return (newState as Promise<State>).then((ns: State) => {
-				const asyncActionHasReturn = ns !== undefined;
+				const asyncActionHasReturn = !!ns;
 				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 				if (asyncActionHasReturn && asyncStateIsChanged) {
 					_setState(moduleName, ns);
