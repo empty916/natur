@@ -17,6 +17,9 @@ declare type StoreMap = (state: State) => any;
 export interface Maps {
     [p: string]: StoreMap;
 }
+export interface InjectMaps {
+    [p: string]: any;
+}
 export interface StoreModule {
     state: State;
     actions: Actions;

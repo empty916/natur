@@ -27,6 +27,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 ;
 ;
 ;
+;
 
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
@@ -180,7 +181,7 @@ var createStore = function createStore() {
   };
 
   var setState = function setState(moduleName, newState) {
-    var actionHasNoReturn = newState === undefined;
+    var actionHasNoReturn = !newState;
     var stateIsNotChanged = newState === stateProxyCache[moduleName];
 
     if (actionHasNoReturn || stateIsNotChanged) {
@@ -189,7 +190,7 @@ var createStore = function createStore() {
 
     if (isPromise(newState)) {
       return newState.then(function (ns) {
-        var asyncActionHasReturn = ns !== undefined;
+        var asyncActionHasReturn = !!ns;
         var asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 
         if (asyncActionHasReturn && asyncStateIsChanged) {
@@ -361,10 +362,11 @@ var createStore = function createStore() {
       return modulesCache[moduleName];
     }
 
-    var proxyModule = {};
-    proxyModule.state = createStateProxy(moduleName);
-    proxyModule.actions = createActionsProxy(moduleName);
-    proxyModule.maps = createMapsProxy(moduleName);
+    var proxyModule = {
+      state: createStateProxy(moduleName),
+      actions: createActionsProxy(moduleName),
+      maps: createMapsProxy(moduleName)
+    };
     modulesCache[moduleName] = proxyModule;
     return proxyModule;
   }; // 获取原本的module

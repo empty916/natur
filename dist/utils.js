@@ -40,20 +40,20 @@ var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
   }
 
   return true;
-};
+}; // const isObj = (obj: any) => typeof obj === 'object' && obj !== null;
+
 
 exports.ObjHasSameKeys = ObjHasSameKeys;
 
 var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
   // console.log(source, afterChange);
-  if (!source || !afterChange) {
-    return {
-      updatedKeys: [],
-      keyHasChanged: false
-    };
-  } // KEY还在，但是值变化了的
-
-
+  // if (!isObj(afterChange) || !isObj(source)) {
+  // 	return {
+  // 		updatedKeys: [],
+  // 		keyHasChanged: false,
+  // 	};
+  // }
+  // KEY还在，但是值变化了的
   var updatedKeys = []; // KEY是否变动
 
   var keyHasChanged = false;
