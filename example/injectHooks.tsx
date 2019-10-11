@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 import { inject, StoreModule, Store } from "../src";
 import { useInject } from "../src/hooks";
-import initStore from "./initStore.js";
+import initStore from "./initStore";
 
 type props = {
 	className: string;

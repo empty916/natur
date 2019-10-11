@@ -40,7 +40,7 @@ var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
   }
 
   return true;
-}; // const isObj = (obj: any) => typeof obj === 'object' && obj !== null;
+}; // const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
 
 
 exports.ObjHasSameKeys = ObjHasSameKeys;

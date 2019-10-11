@@ -8,7 +8,7 @@ export interface States {
     [type: string]: State;
 }
 export interface Action {
-    (...arg: any[]): void | undefined | State | Promise<State> | Promise<undefined>;
+    (...arg: any[]): State | Promise<State> | void | Promise<void>;
 }
 export interface Actions {
     [type: string]: Action;
@@ -36,15 +36,18 @@ export interface LazyStoreModules {
 export interface Modules {
     [p: string]: StoreModule;
 }
-export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
-export declare type Middleware = (params: {
-    setState: (m: ModuleName, state: any) => any;
-    getState: State;
-}) => (next: any) => (p: {
+declare type Record = {
     moduleName: ModuleName;
     actionName: String;
-    state: any;
-}) => any;
+    state: ReturnType<Action>;
+};
+declare type MiddlewareParams = {
+    setState: (record: Record) => ReturnType<Action>;
+    getState: () => State;
+};
+declare type Next = (record: Record) => ReturnType<Action>;
+export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
+export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => (record: Record) => ReturnType<Action>;
 export interface Store {
     createDispatch: (a: string) => Action;
     addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;

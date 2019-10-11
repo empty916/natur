@@ -27,7 +27,7 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 
 type Obj = {[p: string]: any}
 
-// const isObj = (obj: any) => typeof obj === 'object' && obj !== null;
+// const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
 
 export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
 	// console.log(source, afterChange);

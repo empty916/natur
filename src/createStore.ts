@@ -22,7 +22,7 @@ export interface States {
 	[type: string]: State,
 };
 export interface Action {
-	(...arg: any[]): void | undefined | State | Promise<State> | Promise<undefined>;
+	(...arg: any[]): State | Promise<State> | void | Promise<void>;
 }
 export interface Actions {
 	[type: string]: Action;
@@ -52,9 +52,13 @@ export interface Modules {
 	[p: string]: StoreModule;
 }
 
-const isPromise = (obj: any) => obj && typeof obj.then === 'function';
+type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
+type MiddlewareParams = {setState: (record: Record) => ReturnType<Action>, getState: () => State};
+type Next = (record: Record) => ReturnType<Action>;
+
 export type ModuleName = keyof Modules | keyof LazyStoreModules;
-export type Middleware = (params: {setState: (m: ModuleName, state: any) => any, getState: State}) => (next: any) => (p: {moduleName: ModuleName, actionName: String, state: any}) => any;
+export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => (record: Record) => ReturnType<Action>;
+
 export interface Store {
 	createDispatch: (a: string) => Action;
 	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
@@ -78,9 +82,11 @@ type CreateStore = (
 
 let currentStoreInstance: Store;
 
-const isObj = (obj: any) => !(typeof obj !== 'object' || Array.isArray(obj) || obj === null);
-
-const isStoreModule = (obj: any) => {
+// type TObj = Object;
+const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
+const isObj = (obj: any):obj is Object => !(typeof obj !== 'object' || Array.isArray(obj) || obj === null);
+const isVoid = <T>(ar: T | void): ar is void => !ar;
+const isStoreModule = (obj: any): obj is StoreModule => {
 	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
 		return false;
 	}
@@ -190,25 +196,27 @@ const createStore: CreateStore = (
 		if(!keysOfModuleStateChangedRecords[moduleName]) {
 			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
 		}
+		if (changedStateKeys.updatedKeys.length === 0) {
+			return;
+		}
 		currentModules[moduleName].state = newState;
 		clearModulesCache(moduleName);
 		clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
 		runListeners(moduleName);
 	}
-	const setState = (moduleName: ModuleName, newState: any) => {
-		const actionHasNoReturn = !newState;
+	const setState = (moduleName: ModuleName, newState: ReturnType<Action>): ReturnType<Action> => {
 		const stateIsNotChanged = newState === stateProxyCache[moduleName];
-		if (actionHasNoReturn || stateIsNotChanged) {
+		if (isVoid<State>(newState) || stateIsNotChanged) {
 			return newState;
 		}
-		if(isPromise(newState)) {
-			return (newState as Promise<State>).then((ns: State) => {
-				const asyncActionHasReturn = !!ns;
+		if(isPromise<void | State>(newState)) {
+			return (newState as Promise<State|void>).then(ns => {
 				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];
-				if (asyncActionHasReturn && asyncStateIsChanged) {
+				if (!isVoid<State>(ns) && asyncStateIsChanged) {
 					_setState(moduleName, ns);
+					return Promise.resolve(stateProxyCache[moduleName]);
 				}
-				return Promise.resolve(stateProxyCache[moduleName]);
+				return Promise.resolve(ns);
 			});
 		} else {
 			_setState(moduleName, newState);
@@ -371,19 +379,19 @@ const createStore: CreateStore = (
 	}
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
-		const setStateProxy = ({state}: any) => setState(moduleName, state);
+		const setStateProxy: Next = ({state}: Record) => setState(moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
 			getState: () => stateProxyCache[moduleName],
 		}
-		const chain = currentMiddlewares.map(middleware => middleware(middlewareParams))
-		const setStateProxyWithMiddleware = compose(...chain)(setStateProxy);
+		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams))
+		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setStateProxy);
 
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);
-			let newState: State | undefined;
+			let newState: ReturnType<Action>;
 			const targetModule = currentModules[moduleName];
-			newState = targetModule.actions[type](...data) as any;
+			newState = targetModule.actions[type](...data);
 			return setStateProxyWithMiddleware({
 				moduleName,
 				actionName: type,
