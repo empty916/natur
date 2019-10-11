@@ -27,15 +27,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 ;
 ;
 ;
+;
+var currentStoreInstance; // type TObj = Object;
 
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 };
 
-var currentStoreInstance;
-
 var isObj = function isObj(obj) {
   return !(_typeof(obj) !== 'object' || Array.isArray(obj) || obj === null);
+};
+
+var isVoid = function isVoid(ar) {
+  return !ar;
 };
 
 var isStoreModule = function isStoreModule(obj) {
@@ -173,6 +177,10 @@ var createStore = function createStore() {
       keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
     }
 
+    if (changedStateKeys.updatedKeys.length === 0) {
+      return;
+    }
+
     currentModules[moduleName].state = newState;
     clearModulesCache(moduleName);
     clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
@@ -180,23 +188,23 @@ var createStore = function createStore() {
   };
 
   var setState = function setState(moduleName, newState) {
-    var actionHasNoReturn = newState === undefined;
     var stateIsNotChanged = newState === stateProxyCache[moduleName];
 
-    if (actionHasNoReturn || stateIsNotChanged) {
+    if (isVoid(newState) || stateIsNotChanged) {
       return newState;
     }
 
     if (isPromise(newState)) {
       return newState.then(function (ns) {
-        var asyncActionHasReturn = ns !== undefined;
         var asyncStateIsChanged = ns !== stateProxyCache[moduleName];
 
-        if (asyncActionHasReturn && asyncStateIsChanged) {
+        if (!isVoid(ns) && asyncStateIsChanged) {
           _setState(moduleName, ns);
+
+          return Promise.resolve(stateProxyCache[moduleName]);
         }
 
-        return Promise.resolve(stateProxyCache[moduleName]);
+        return Promise.resolve(ns);
       });
     } else {
       _setState(moduleName, newState);
@@ -361,10 +369,11 @@ var createStore = function createStore() {
       return modulesCache[moduleName];
     }
 
-    var proxyModule = {};
-    proxyModule.state = createStateProxy(moduleName);
-    proxyModule.actions = createActionsProxy(moduleName);
-    proxyModule.maps = createMapsProxy(moduleName);
+    var proxyModule = {
+      state: createStateProxy(moduleName),
+      actions: createActionsProxy(moduleName),
+      maps: createMapsProxy(moduleName)
+    };
     modulesCache[moduleName] = proxyModule;
     return proxyModule;
   }; // 获取原本的module

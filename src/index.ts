@@ -13,11 +13,13 @@ export {
 	Action,
 	Actions,
 	Maps,
+	InjectMaps,
 	StoreModule,
 	InjectStoreModule,
 	LazyStoreModules,
 	Modules,
-	Store
+	Store,
+	Middleware,
 } from "./createStore";
 export { default as inject } from "./inject";
 export { useInject } from "./hooks";
