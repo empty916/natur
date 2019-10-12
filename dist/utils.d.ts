@@ -5,11 +5,15 @@
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
-import { ModuleName } from './createStore';
+import { ModuleName, StoreModule } from './createStore';
 export declare const ObjHasSameKeys: (obj1: Object, obj2: Object) => boolean;
 declare type Obj = {
     [p: string]: any;
 };
+export declare const isObj: (obj: any) => obj is Obj;
+export declare const isPromise: <T>(obj: any) => obj is Promise<T>;
+export declare const isVoid: <T>(ar: void | T) => ar is void;
+export declare const isStoreModule: (obj: any) => obj is StoreModule;
 export declare const ObjChangedKeys: (source: Obj, afterChange: Obj) => {
     updatedKeys: string[];
     keyHasChanged: boolean;

@@ -21,45 +21,18 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 ;
 ;
 ;
 ;
 ;
-var currentStoreInstance; // type TObj = Object;
-
-var isPromise = function isPromise(obj) {
-  return obj && typeof obj.then === 'function';
-};
-
-var isObj = function isObj(obj) {
-  return !(_typeof(obj) !== 'object' || Array.isArray(obj) || obj === null);
-};
-
-var isVoid = function isVoid(ar) {
-  return !ar;
-};
-
-var isStoreModule = function isStoreModule(obj) {
-  if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
-    return false;
-  }
-
-  if (!!obj.maps && !isObj(obj.maps)) {
-    return false;
-  }
-
-  return true;
-};
+var currentStoreInstance;
 
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var lazyModules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var initStates = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var middlewares = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-  var isLazy = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
 
   var currentInitStates = _objectSpread({}, initStates);
 
@@ -76,7 +49,7 @@ var createStore = function createStore() {
   var modulesCache = {};
   var keysOfModuleStateChangedRecords = {};
 
-  var replaceModule = function replaceModule(storeModule, moduleName) {
+  var replaceModule = function replaceModule(moduleName, storeModule) {
     var res = _objectSpread({}, storeModule, {
       state: _objectSpread({}, storeModule.state)
     });
@@ -171,6 +144,12 @@ var createStore = function createStore() {
   };
 
   var _setState = function _setState(moduleName, newState) {
+    var stateIsNotChanged = newState === stateProxyCache[moduleName];
+
+    if ((0, _utils.isVoid)(newState) || stateIsNotChanged) {
+      return newState;
+    }
+
     var changedStateKeys = (0, _utils.ObjChangedKeys)(currentModules[moduleName].state, newState);
 
     if (!keysOfModuleStateChangedRecords[moduleName]) {
@@ -183,34 +162,19 @@ var createStore = function createStore() {
 
     currentModules[moduleName].state = newState;
     clearModulesCache(moduleName);
-    clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+    clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
     runListeners(moduleName);
+    return stateProxyCache[moduleName];
   };
 
   var setState = function setState(moduleName, newState) {
-    var stateIsNotChanged = newState === stateProxyCache[moduleName];
-
-    if (isVoid(newState) || stateIsNotChanged) {
-      return newState;
-    }
-
-    if (isPromise(newState)) {
+    if ((0, _utils.isPromise)(newState)) {
       return newState.then(function (ns) {
-        var asyncStateIsChanged = ns !== stateProxyCache[moduleName];
-
-        if (!isVoid(ns) && asyncStateIsChanged) {
-          _setState(moduleName, ns);
-
-          return Promise.resolve(stateProxyCache[moduleName]);
-        }
-
-        return Promise.resolve(ns);
+        return Promise.resolve(_setState(moduleName, ns));
       });
-    } else {
-      _setState(moduleName, newState);
-
-      return stateProxyCache[moduleName];
     }
+
+    return _setState(moduleName, newState);
   }; // 添加module
 
 
@@ -220,12 +184,12 @@ var createStore = function createStore() {
       return currentStoreInstance;
     }
 
-    if (!isStoreModule(storeModule)) {
+    if (!(0, _utils.isStoreModule)(storeModule)) {
       console.error(new Error('addModule: storeModule is illegal!'));
       return currentStoreInstance;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
     allModuleNames = undefined;
     clearAllCache(moduleName);
 
@@ -268,7 +232,7 @@ var createStore = function createStore() {
           enumerable: true,
           configurable: true,
           get: function get() {
-            if (isLazy && _utils.Depend.targetWatcher) {
+            if (_utils.Depend.targetWatcher) {
               if (!stateDepends[moduleName][key]) {
                 stateDepends[moduleName][key] = new _utils.Depend(moduleName, key);
               }
@@ -394,12 +358,12 @@ var createStore = function createStore() {
 
 
   var setModule = function setModule(moduleName, storeModule) {
-    if (!isStoreModule(storeModule)) {
+    if (!(0, _utils.isStoreModule)(storeModule)) {
       console.error(new Error('setModule: storeModule is illegal!'));
       return currentStoreInstance;
     }
 
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(storeModule, moduleName)));
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
     clearAllCache(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
@@ -467,7 +431,7 @@ var createStore = function createStore() {
 
   init();
   currentStoreInstance = {
-    createDispatch: createDispatch,
+    // createDispatch,
     addModule: addModule,
     getAllModuleName: getAllModuleName,
     getModule: getModule,

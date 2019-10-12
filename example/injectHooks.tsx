@@ -13,9 +13,8 @@ const App: React.FC<props> = () => {
 	const [{
 		state,
 		actions,
-		// maps
+		maps
 	}] = useInject('count');
-	console.log(useInject('count'));
 	const [name] = useInject('name');
 	const incProxy = () => {
 		actions.inc(state);
@@ -74,9 +73,9 @@ const App: React.FC<props> = () => {
 			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
 			<br/>
 			<br/>
-			{/* <div>maps.isOdd: {maps.isOdd + ''}</div>
+			<div>maps.isOdd: {maps.isOdd + ''}</div>
 			<div>maps.deepIsOdd: {maps.deepCountIsOdd + ''}</div>
-			<div>maps.deeepIsOdd: {maps.deeepCountIsOdd + ''}</div> */}
+			<div>maps.deeepIsOdd: {maps.deeepCountIsOdd + ''}</div>
 			<br/>
 			<button onClick={stateHasNoChange}>stateHasNoChange</button>
 			<br/>
