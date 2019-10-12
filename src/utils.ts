@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-import { ModuleName } from './createStore'
+import { ModuleName, StoreModule } from './createStore'
 
 export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 	if (!obj1 || !obj2) {
@@ -27,16 +27,26 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 
 type Obj = {[p: string]: any}
 
-// const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
+export const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
+export const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
+export const isVoid = <T>(ar: T | void): ar is void => !ar;
+export const isStoreModule = (obj: any): obj is StoreModule => {
+	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+		return false;
+	}
+	if (!!obj.maps && !isObj(obj.maps)){
+		return false;
+	}
+	return true;
+}
 
 export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
-	// console.log(source, afterChange);
-	// if (!isObj(afterChange) || !isObj(source)) {
-	// 	return {
-	// 		updatedKeys: [],
-	// 		keyHasChanged: false,
-	// 	};
-	// }
+	if (!isObj(afterChange) || !isObj(source)) {
+		return {
+			updatedKeys: [],
+			keyHasChanged: false,
+		};
+	}
 	// KEY还在，但是值变化了的
 	const updatedKeys = [];
 	// KEY是否变动

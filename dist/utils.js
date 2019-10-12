@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.compose = compose;
 exports.isEqualWithDepthLimit = isEqualWithDepthLimit;
-exports.Watcher = exports.Depend = exports.ObjChangedKeys = exports.ObjHasSameKeys = void 0;
+exports.Watcher = exports.Depend = exports.ObjChangedKeys = exports.isStoreModule = exports.isVoid = exports.isPromise = exports.isObj = exports.ObjHasSameKeys = void 0;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -40,20 +40,51 @@ var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
   }
 
   return true;
-}; // const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
-
+};
 
 exports.ObjHasSameKeys = ObjHasSameKeys;
 
+var isObj = function isObj(obj) {
+  return _typeof(obj) === 'object' && obj !== null;
+};
+
+exports.isObj = isObj;
+
+var isPromise = function isPromise(obj) {
+  return obj && typeof obj.then === 'function';
+};
+
+exports.isPromise = isPromise;
+
+var isVoid = function isVoid(ar) {
+  return !ar;
+};
+
+exports.isVoid = isVoid;
+
+var isStoreModule = function isStoreModule(obj) {
+  if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+    return false;
+  }
+
+  if (!!obj.maps && !isObj(obj.maps)) {
+    return false;
+  }
+
+  return true;
+};
+
+exports.isStoreModule = isStoreModule;
+
 var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
-  // console.log(source, afterChange);
-  // if (!isObj(afterChange) || !isObj(source)) {
-  // 	return {
-  // 		updatedKeys: [],
-  // 		keyHasChanged: false,
-  // 	};
-  // }
-  // KEY还在，但是值变化了的
+  if (!isObj(afterChange) || !isObj(source)) {
+    return {
+      updatedKeys: [],
+      keyHasChanged: false
+    };
+  } // KEY还在，但是值变化了的
+
+
   var updatedKeys = []; // KEY是否变动
 
   var keyHasChanged = false;

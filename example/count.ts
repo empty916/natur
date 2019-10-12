@@ -14,11 +14,11 @@ export const state = {
 export const maps = {
 	isOdd: ({ count }) => count % 2 !== 0,
 	deepCountIsOdd: ({ deep }) => {
-		// console.log('run deep map');
+		console.log('run deep map');
 		return deep.count % 2 !== 0;
 	},
 	deeepCountIsOdd: ({ deeep }) => {
-		// console.log('run deeep map');
+		console.log('run deeep map');
 		return deeep.deep.count % 2 !== 0;
 	},
 	splitName: state => {
@@ -35,13 +35,13 @@ export const maps = {
 	showNewKey: state => !!state.newKey && state.newKey,
 };
 export const actions = {
-	// inc: state => {
-	// 	return {
-	// 		...state,
-	// 		count: state.count + 1
-	// 	};
-	// },
-	inc: state => null,
+	inc: state => {
+		return Promise.resolve({
+			...state,
+			count: state.count + 1
+		});
+	},
+	// inc: state => null,
 	incDeep: state => {
 		return {
 			...state,
@@ -80,6 +80,6 @@ export const actions = {
 
 export default {
 	state,
-	// maps,
+	maps,
 	actions
 };

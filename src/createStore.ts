@@ -10,6 +10,9 @@ import {
 	Depend,
 	Watcher,
 	compose,
+	isPromise,
+	isVoid,
+	isStoreModule,
 } from './utils';
 
 export interface Listener {
@@ -60,7 +63,7 @@ export type ModuleName = keyof Modules | keyof LazyStoreModules;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => (record: Record) => ReturnType<Action>;
 
 export interface Store {
-	createDispatch: (a: string) => Action;
+	// createDispatch: (a: string) => Action;
 	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	getModule: (moduleName: ModuleName) => InjectStoreModule;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
@@ -77,30 +80,15 @@ type CreateStore = (
 	lazyModules?: LazyStoreModules,
 	initStates?: States,
 	middlewares?: Middleware[],
-	isLazy?: boolean,
 ) => Store;
 
 let currentStoreInstance: Store;
 
-// type TObj = Object;
-const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
-const isObj = (obj: any):obj is Object => !(typeof obj !== 'object' || Array.isArray(obj) || obj === null);
-const isVoid = <T>(ar: T | void): ar is void => !ar;
-const isStoreModule = (obj: any): obj is StoreModule => {
-	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
-		return false;
-	}
-	if (!!obj.maps && !isObj(obj.maps)){
-		return false;
-	}
-	return true;
-}
 const createStore: CreateStore = (
 	modules: Modules = {},
 	lazyModules: LazyStoreModules = {},
 	initStates: States = {},
 	middlewares: Middleware[] = [],
-	isLazy: boolean = true,
 ) => {
 	const currentInitStates = {...initStates};
 	let currentModules: Modules = {};
@@ -117,7 +105,7 @@ const createStore: CreateStore = (
 
 	const modulesCache: Modules = {};
 	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
-	const replaceModule = (storeModule: StoreModule, moduleName: ModuleName) => {
+	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		let res = {
 			...storeModule,
 			state: {
@@ -191,7 +179,11 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
-	const _setState = (moduleName: ModuleName, newState: State) => {
+	const _setState = (moduleName: ModuleName, newState: State | void) => {
+		const stateIsNotChanged = newState === stateProxyCache[moduleName];
+		if (isVoid<State>(newState) || stateIsNotChanged) {
+			return newState;
+		}
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
 		if(!keysOfModuleStateChangedRecords[moduleName]) {
 			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
@@ -201,27 +193,15 @@ const createStore: CreateStore = (
 		}
 		currentModules[moduleName].state = newState;
 		clearModulesCache(moduleName);
-		clearMapsWatcherCache(moduleName, isLazy ? changedStateKeys.updatedKeys : undefined);
+		clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
 		runListeners(moduleName);
+		return stateProxyCache[moduleName];
 	}
 	const setState = (moduleName: ModuleName, newState: ReturnType<Action>): ReturnType<Action> => {
-		const stateIsNotChanged = newState === stateProxyCache[moduleName];
-		if (isVoid<State>(newState) || stateIsNotChanged) {
-			return newState;
+		if(isPromise<ReturnType<Action>>(newState)) {
+			return (newState as Promise<ReturnType<Action>>).then(ns => Promise.resolve(_setState(moduleName, ns)));
 		}
-		if(isPromise<void | State>(newState)) {
-			return (newState as Promise<State|void>).then(ns => {
-				const asyncStateIsChanged = ns !== stateProxyCache[moduleName];
-				if (!isVoid<State>(ns) && asyncStateIsChanged) {
-					_setState(moduleName, ns);
-					return Promise.resolve(stateProxyCache[moduleName]);
-				}
-				return Promise.resolve(ns);
-			});
-		} else {
-			_setState(moduleName, newState);
-			return stateProxyCache[moduleName];
-		}
+		return _setState(moduleName, newState);
 	};
 	// 添加module
 	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
@@ -235,7 +215,7 @@ const createStore: CreateStore = (
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: replaceModule(storeModule, moduleName),
+			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
@@ -272,7 +252,7 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (isLazy && Depend.targetWatcher) {
+						if (Depend.targetWatcher) {
 							if (!stateDepends[moduleName][key]) {
 								stateDepends[moduleName][key] = new Depend(moduleName, key);
 							}
@@ -371,7 +351,7 @@ const createStore: CreateStore = (
 		}
 		currentModules = {
 			...currentModules,
-			[moduleName]: replaceModule(storeModule, moduleName),
+			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		clearAllCache(moduleName);
 		runListeners(moduleName);
@@ -414,7 +394,7 @@ const createStore: CreateStore = (
 	init();
 
 	currentStoreInstance = {
-		createDispatch,
+		// createDispatch,
 		addModule,
 		getAllModuleName,
 		getModule,
