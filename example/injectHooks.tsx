@@ -17,7 +17,7 @@ const App: React.FC<props> = () => {
 	}] = useInject('count');
 	const [name] = useInject('name');
 	const incProxy = () => {
-		actions.inc(state);
+		console.log(actions.inc(state));
 		// console.log('state实时获取最新值测试', {...state});
 		// console.log('maps实时获取最新值测试', {...maps});
 	};
@@ -81,9 +81,9 @@ const App: React.FC<props> = () => {
 			<br/>
 			<button onClick={asyncStateHasNoChange}>asyncStateHasNoChange</button>
 			<br/>
-			<button onClick={() => actions.addKey(state)}>add new key</button>
+			<button onClick={() => console.log(actions.addKey(state))}>add new key</button>
 			<br/>
-			<button onClick={() => actions.deleteKey(state)}>delete new key</button>
+			<button onClick={() => console.log(actions.deleteKey(state))}>delete new key</button>
 			<br/>
 		</>
 	);

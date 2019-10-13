@@ -155,7 +155,12 @@ var createStore = function createStore() {
     }
 
     currentModules[moduleName].state = newState;
-    changedStateKeys.keyHasChanged && clearModulesCache(moduleName);
+
+    if (changedStateKeys.keyHasChanged) {
+      clearModulesCache(moduleName);
+      createStateProxy(moduleName);
+    }
+
     clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
     runListeners(moduleName);
     return stateProxyCache[moduleName];
