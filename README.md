@@ -201,7 +201,7 @@ export default store;
 ```jsx
 
 
-import { createStore } from 'react-natural-store';
+import { createStore, MiddleWare, Next, Record } from 'react-natural-store';
 const app = {
   state: {
     name: 'tom',
@@ -214,23 +214,25 @@ const app = {
 /*
 
 抄的redux middleware,
-
-stateOperate: {setState, getState};
-setState: record => Promise<State> | State | undefined;
-getState: () => State
-
-next: record => any;
-
-record: {
-	moduleName,
-	actionName,
-	state, // Promise<State> | State
+	
+type Record = {
+	moduleName: String,
+	actionName: String,
+	state: ReturnType<Action>,
 }
+
+type Next = (record: Record) => ReturnType<Action>;
+
+middlewareParams: {
+	setState: Next, 
+	getState: () => State,
+};
+
 */
-const LogMiddleware = (stateOperate: {setState, getState}) => next => record => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
 	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
-    // return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
-    // return stateOperate.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
+    return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
+    // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
 };
 const store = createStore(
   { app }, 

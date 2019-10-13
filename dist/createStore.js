@@ -79,27 +79,21 @@ var createStore = function createStore() {
     return delete actionsProxyCache[moduleName];
   };
 
-  var clearStateProxyCache = function clearStateProxyCache(moduleName) {
-    delete stateProxyCache[moduleName];
+  var clearStateOrMapProxyCache = function clearStateOrMapProxyCache(stateOrMapProxyCache, stateDependsOrMapsWatcher) {
+    return function (moduleName) {
+      delete stateOrMapProxyCache[moduleName];
 
-    for (var key in stateDepends[moduleName]) {
-      stateDepends[moduleName][key].destroy();
-      delete stateDepends[moduleName][key];
-    }
+      for (var key in stateDependsOrMapsWatcher[moduleName]) {
+        stateDependsOrMapsWatcher[moduleName][key].destroy();
+        delete stateDependsOrMapsWatcher[moduleName][key];
+      }
 
-    delete stateDepends[moduleName];
+      delete stateDependsOrMapsWatcher[moduleName];
+    };
   };
 
-  var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
-    delete mapsProxyCache[moduleName];
-
-    for (var key in mapsWatcher[moduleName]) {
-      mapsWatcher[moduleName][key].destroy();
-      delete mapsWatcher[moduleName][key];
-    }
-
-    delete mapsWatcher[moduleName];
-  };
+  var clearStateProxyCache = clearStateOrMapProxyCache(stateProxyCache, stateDepends);
+  var clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
 
   var clearMapsWatcherCache = function clearMapsWatcherCache(moduleName, changedStateNames) {
     var targetMapsWatcher = mapsWatcher[moduleName];
@@ -157,11 +151,11 @@ var createStore = function createStore() {
     }
 
     if (changedStateKeys.updatedKeys.length === 0) {
-      return;
+      return stateProxyCache[moduleName];
     }
 
     currentModules[moduleName].state = newState;
-    clearModulesCache(moduleName);
+    changedStateKeys.keyHasChanged && clearModulesCache(moduleName);
     clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
     runListeners(moduleName);
     return stateProxyCache[moduleName];
@@ -190,8 +184,7 @@ var createStore = function createStore() {
     }
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
-    allModuleNames = undefined;
-    clearAllCache(moduleName);
+    allModuleNames = undefined; // clearAllCache(moduleName);
 
     if (!mapsWatcher[moduleName]) {
       mapsWatcher[moduleName] = {};
@@ -216,8 +209,7 @@ var createStore = function createStore() {
 
   var createStateProxy = function createStateProxy(moduleName) {
     var state = currentModules[moduleName].state;
-    var keyHasChanged = keysOfModuleStateChangedRecords[moduleName]; // const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
-
+    var keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
     var stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
 
     if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {

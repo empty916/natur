@@ -204,7 +204,7 @@ export default store;
 ```jsx
 
 
-import { createStore } from 'react-natural-store';
+import { createStore, MiddleWare, Next, Record } from 'react-natural-store';
 const app = {
   state: {
     name: 'tom',
@@ -218,22 +218,24 @@ const app = {
 
 Copy the redux middleware,
 
-stateOperate: {setState, getState};
-setState: record => Promise<State> | State | undefined;
-getState: () => State
-
-next: record => any;
-
-record: {
-	moduleName,
-	actionName,
-	state, // Promise<State> | State
+type Record = {
+	moduleName: String,
+	actionName: String,
+	state: ReturnType<Action>,
 }
+
+type Next = (record: Record) => ReturnType<Action>;
+
+middlewareParams: {
+	setState: Next, 
+	getState: () => State,
+};
+
 */
-const LogMiddleware = (stateOperate: {setState, getState}) => next => record => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
 	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
-    // return next(record); // Should be returned, only then you will have a return value when the page calls the action
-    // return stateOperate.setState(record); // Should be returned, only then you will have a return value when the page calls the action
+    return next(record); // Should be returned, only then you will have a return value when the page calls the action
+    // return middlewareParams.setState(record); // Should be returned, only then you will have a return value when the page calls the action
 };
 const store = createStore(
   { app }, 
