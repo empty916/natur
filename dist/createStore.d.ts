@@ -18,7 +18,7 @@ export interface Maps {
     [p: string]: StoreMap;
 }
 export interface InjectMaps {
-    [p: string]: any;
+    [p: string]: ReturnType<StoreMap>;
 }
 export interface StoreModule {
     state: State;
@@ -28,7 +28,7 @@ export interface StoreModule {
 export interface InjectStoreModule {
     state: State;
     actions: Actions;
-    maps?: any;
+    maps?: ReturnType<StoreMap>;
 }
 export interface LazyStoreModules {
     [p: string]: () => Promise<StoreModule>;
@@ -36,18 +36,18 @@ export interface LazyStoreModules {
 export interface Modules {
     [p: string]: StoreModule;
 }
+declare type Next = (record: Record) => ReturnType<Action>;
 declare type Record = {
     moduleName: ModuleName;
     actionName: String;
     state: ReturnType<Action>;
 };
 declare type MiddlewareParams = {
-    setState: (record: Record) => ReturnType<Action>;
+    setState: Next;
     getState: () => State;
 };
-declare type Next = (record: Record) => ReturnType<Action>;
 export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
-export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => (record: Record) => ReturnType<Action>;
+export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 export interface Store {
     addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     getModule: (moduleName: ModuleName) => InjectStoreModule;

@@ -27,6 +27,7 @@ export interface States {
 export interface Action {
 	(...arg: any[]): State | Promise<State> | void | Promise<void>;
 }
+
 export interface Actions {
 	[type: string]: Action;
 };
@@ -36,7 +37,7 @@ export interface Maps {
 	[p: string]: StoreMap;
 };
 export interface InjectMaps {
-	[p: string]: any;
+	[p: string]: ReturnType<StoreMap>;
 };
 export interface StoreModule {
 	state: State;
@@ -46,7 +47,7 @@ export interface StoreModule {
 export interface InjectStoreModule {
 	state: State;
 	actions: Actions;
-	maps?: any;
+	maps?: ReturnType<StoreMap>;
 }
 export interface LazyStoreModules {
 	[p: string]: () => Promise<StoreModule>;
@@ -55,12 +56,12 @@ export interface Modules {
 	[p: string]: StoreModule;
 }
 
-type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
-type MiddlewareParams = {setState: (record: Record) => ReturnType<Action>, getState: () => State};
 type Next = (record: Record) => ReturnType<Action>;
+type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
+type MiddlewareParams = {setState: Next, getState: () => State};
 
 export type ModuleName = keyof Modules | keyof LazyStoreModules;
-export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => (record: Record) => ReturnType<Action>;
+export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
 export interface Store {
 	// createDispatch: (a: string) => Action;
@@ -134,22 +135,19 @@ const createStore: CreateStore = (
 		}
 	}
 	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
-	const clearStateProxyCache = (moduleName: ModuleName) => {
-		delete stateProxyCache[moduleName];
-		for(let key in stateDepends[moduleName]) {
-			stateDepends[moduleName][key].destroy();
-			delete stateDepends[moduleName][key];
+	const clearStateOrMapProxyCache = (
+		stateOrMapProxyCache: States | typeof mapsProxyCache,
+		stateDependsOrMapsWatcher: typeof stateDepends | typeof mapsWatcher
+	) => (moduleName: ModuleName) => {
+		delete stateOrMapProxyCache[moduleName];
+		for(let key in stateDependsOrMapsWatcher[moduleName]) {
+			stateDependsOrMapsWatcher[moduleName][key].destroy();
+			delete stateDependsOrMapsWatcher[moduleName][key];
 		}
-		delete stateDepends[moduleName];
-	};
-	const clearMapsProxyCache = (moduleName: ModuleName) => {
-		delete mapsProxyCache[moduleName];
-		for(let key in mapsWatcher[moduleName]) {
-			mapsWatcher[moduleName][key].destroy();
-			delete mapsWatcher[moduleName][key];
-		}
-		delete mapsWatcher[moduleName];
-	};
+		delete stateDependsOrMapsWatcher[moduleName];
+	}
+	const clearStateProxyCache = clearStateOrMapProxyCache(stateProxyCache, stateDepends);
+	const clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
 	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
 		const targetMapsWatcher = mapsWatcher[moduleName];
 		if (!!changedStateNames) {
@@ -189,10 +187,10 @@ const createStore: CreateStore = (
 			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
 		}
 		if (changedStateKeys.updatedKeys.length === 0) {
-			return;
+			return stateProxyCache[moduleName];
 		}
 		currentModules[moduleName].state = newState;
-		clearModulesCache(moduleName);
+		changedStateKeys.keyHasChanged && clearModulesCache(moduleName);
 		clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
 		runListeners(moduleName);
 		return stateProxyCache[moduleName];
@@ -218,7 +216,7 @@ const createStore: CreateStore = (
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		allModuleNames = undefined;
-		clearAllCache(moduleName);
+		// clearAllCache(moduleName);
 		if (!mapsWatcher[moduleName]) {
 			mapsWatcher[moduleName] = {};
 		}
@@ -236,11 +234,9 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	};
-
 	const createStateProxy = (moduleName: ModuleName): State => {
 		const {state} = currentModules[moduleName];
 		const keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
-		// const stateKeysHasNotChange = ObjHasSameKeys(state, stateProxyCache[moduleName]);
 		const stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
 		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
 			return stateProxyCache[moduleName];
