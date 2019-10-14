@@ -5,9 +5,7 @@
 
 - [设计概念](./doc/design.md)
 
-#### Jest coverage 99.04%!
-
-![测试覆盖率](./doc/images/coverage.png)
+#### 单元测试覆盖率99.04％，放心使用
 
 #### 兼容性
  - 支持react 15.x, 16.x, 以及anujs
