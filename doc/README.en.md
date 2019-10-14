@@ -3,6 +3,8 @@
 
 - [concept of design](./design.en.md)
 
+#### Unit test coverage rate of 99.04%, rest assured to use
+
 #### compatibility
 - support react 15.x, 16.x and anujs
 
