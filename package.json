@@ -8,7 +8,9 @@
 		"build": "npm run build:ts && npm run build:js",
 		"build:ts": "rimraf dist && tsc",
 		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
-		"dev": "webpack-dev-server --config ./example/webpack.config.js"
+		"dev": "webpack-dev-server --config ./example/webpack.config.js",
+		"test": "jest",
+		"test:report": "jest --coverage"
 	},
 	"repository": {
 		"type": "git",
@@ -45,8 +47,11 @@
 		"@types/react": "^16.8.22",
 		"@types/react-dom": "^16.8.4",
 		"babel-loader": "^8.0.6",
+		"enzyme": "^3.10.0",
+		"enzyme-adapter-react-16": "^1.15.1",
 		"fork-ts-checker-webpack-plugin": "^1.5.0",
 		"html-webpack-plugin": "3.2.0",
+		"jest": "^24.9.0",
 		"rimraf": "^2.6.3",
 		"typescript": "3.5.3",
 		"webpack": "4.39.0",
