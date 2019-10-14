@@ -96,19 +96,11 @@ var createStore = function createStore() {
   var clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
 
   var clearMapsWatcherCache = function clearMapsWatcherCache(moduleName, changedStateNames) {
-    var targetMapsWatcher = mapsWatcher[moduleName];
-
-    if (!!changedStateNames) {
-      changedStateNames.forEach(function (stateName) {
-        if (stateDepends[moduleName][stateName]) {
-          stateDepends[moduleName][stateName].notify();
-        }
-      });
-    } else {
-      for (var key in targetMapsWatcher) {
-        targetMapsWatcher[key].update();
+    changedStateNames.forEach(function (stateName) {
+      if (stateDepends[moduleName][stateName]) {
+        stateDepends[moduleName][stateName].notify();
       }
-    }
+    });
   };
 
   var clearModulesCache = function clearModulesCache(moduleName) {
@@ -179,13 +171,11 @@ var createStore = function createStore() {
 
   var addModule = function addModule(moduleName, storeModule) {
     if (!!currentModules[moduleName]) {
-      console.warn(new Error("addModule: ".concat(moduleName, " already exists!")));
-      return currentStoreInstance;
+      throw new Error("addModule: ".concat(moduleName, " already exists!"));
     }
 
     if (!(0, _utils.isStoreModule)(storeModule)) {
-      console.error(new Error('addModule: storeModule is illegal!'));
-      return currentStoreInstance;
+      throw new Error('addModule: storeModule is illegal!');
     }
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
@@ -356,8 +346,7 @@ var createStore = function createStore() {
 
   var setModule = function setModule(moduleName, storeModule) {
     if (!(0, _utils.isStoreModule)(storeModule)) {
-      console.error(new Error('setModule: storeModule is illegal!'));
-      return currentStoreInstance;
+      throw new Error('setModule: storeModule is illegal!');
     }
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));

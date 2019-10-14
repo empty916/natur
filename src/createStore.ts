@@ -148,19 +148,12 @@ const createStore: CreateStore = (
 	}
 	const clearStateProxyCache = clearStateOrMapProxyCache(stateProxyCache, stateDepends);
 	const clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
-	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames?: string[]) => {
-		const targetMapsWatcher = mapsWatcher[moduleName];
-		if (!!changedStateNames) {
-			changedStateNames.forEach(stateName => {
-				if (stateDepends[moduleName][stateName]) {
-					stateDepends[moduleName][stateName].notify();
-				}
-			});
-		} else {
-			for(let key in targetMapsWatcher) {
-				targetMapsWatcher[key].update();
+	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames: string[]) => {
+		changedStateNames.forEach(stateName => {
+			if (stateDepends[moduleName][stateName]) {
+				stateDepends[moduleName][stateName].notify();
 			}
-		}
+		});
 	};
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
@@ -207,12 +200,10 @@ const createStore: CreateStore = (
 	// 添加module
 	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if(!!currentModules[moduleName]) {
-			console.warn(new Error(`addModule: ${moduleName} already exists!`));
-			return currentStoreInstance;
+			throw new Error(`addModule: ${moduleName} already exists!`);
 		}
 		if (!isStoreModule(storeModule)) {
-			console.error(new Error('addModule: storeModule is illegal!'));
-			return currentStoreInstance;
+			throw new Error('addModule: storeModule is illegal!');
 		}
 		currentModules = {
 			...currentModules,
@@ -345,8 +336,7 @@ const createStore: CreateStore = (
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!isStoreModule(storeModule)) {
-			console.error(new Error('setModule: storeModule is illegal!'));
-			return currentStoreInstance;
+			throw new Error('setModule: storeModule is illegal!');
 		}
 		currentModules = {
 			...currentModules,
