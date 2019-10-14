@@ -3,6 +3,11 @@
 
 - [concept of design](./design.en.md)
 
+#### Jest coverage 99.04%!
+
+![测试覆盖率](./images/coverage.png)
+
+
 #### compatibility
 - support react 15.x, 16.x and anujs
 
