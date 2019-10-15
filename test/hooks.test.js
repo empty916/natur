@@ -17,7 +17,7 @@ test('Inject hooks', () => {
 	let app = mount(<App />);
 	let appWithLoadErrorModule = mount(<AppWithLoadErrorModule />)
 	expect(() => mount(<AppWithErrorModuleName />)).toThrow();
-	return new Promise(res => setTimeout(res, 1000))
+	return new Promise(res => setTimeout(res))
 		.then(() => {
 			appWithLoadErrorModule.update();
 			expect(appWithLoadErrorModule.text()).toBe('loading');

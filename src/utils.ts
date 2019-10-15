@@ -26,15 +26,25 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 }
 
 type Obj = {[p: string]: any}
+type anyFn = (...arg: any[]) => any;
+type fnObj = {[p: string]: anyFn};
 
 export const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
+export const isFn = (arg: any): arg is anyFn => typeof arg === 'function';
+export const isFnObj = (obj: any): obj is fnObj => {
+	if (isObj(obj)) {
+		return Object.keys(obj).every(key => isFn(obj[key]));
+	}
+	return false;
+}
+
 export const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
 export const isVoid = <T>(ar: T | void): ar is void => !ar;
 export const isStoreModule = (obj: any): obj is StoreModule => {
-	if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+	if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
 		return false;
 	}
-	if (!!obj.maps && !isObj(obj.maps)){
+	if (!!obj.maps && !isFnObj(obj.maps)){
 		return false;
 	}
 	return true;
@@ -85,7 +95,6 @@ export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
  */
-type anyFn = (...arg: any[]) => any;
 
 export function compose(...funcs: anyFn[]) {
   if (funcs.length === 0) {

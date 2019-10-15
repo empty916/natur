@@ -22,7 +22,7 @@ test('Inject Hoc', () => {
 	expect(app.text()).toBe('loading');
 
 	expect(appWithoutModule.text()).toBe('aaa');
-	return new Promise(res => setTimeout(res, 1000))
+	return new Promise(res => setTimeout(res))
 		.then(() => {
 			appWithLoadErrorModule.update();
 			expect(appWithLoadErrorModule.text()).toBe('loading');
