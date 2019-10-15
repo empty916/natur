@@ -192,6 +192,11 @@ describe('init', () => {
 			actions: {a: () => {}},
 			maps: {a: () => {}}
 		}})).not.toThrow();
+		expect(() => store = createStore({ count: {
+			state: {},
+			actions: {},
+			maps: {}
+		}})).not.toThrow();
 	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
@@ -245,6 +250,14 @@ describe('addModule', () => {
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).not.toThrow();
+		expect(() => store.addModule('name11', {
+			state: {},
+			actions: {},
+			maps: {}
+		})).not.toThrow();
+		expect(store.getModule('name11').state).toEqual({});
+		expect(store.getModule('name11').actions).toEqual({});
+		expect(store.getModule('name11').maps).toEqual({});
 
 	})
 	test('run actions', updateCountState);
@@ -374,21 +387,27 @@ describe('setModule', () => {
 	test('maps cache', countMapsCache);
 	test('set illegal module', () => {
 		expect(() => store.setModule('name1', {})).toThrow();
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:1},
 			maps: {a:1}
-		})).toThrow('addModule: storeModule is illegal!');
-		expect(() => store.addModule('name1', {
+		})).toThrow('storeModule is illegal!');
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:1}
-		})).toThrow('addModule: storeModule is illegal!');
+		})).toThrow('storeModule is illegal!');
 
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
+		})).not.toThrow();
+
+		expect(() => store.setModule('name1', {
+			state: {},
+			actions: {},
+			maps: {}
 		})).not.toThrow();
 
 	})
