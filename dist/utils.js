@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.compose = compose;
 exports.isEqualWithDepthLimit = isEqualWithDepthLimit;
-exports.Watcher = exports.Depend = exports.ObjChangedKeys = exports.isStoreModule = exports.isVoid = exports.isPromise = exports.isObj = exports.ObjHasSameKeys = void 0;
+exports.Watcher = exports.Depend = exports.ObjChangedKeys = exports.isStoreModule = exports.isVoid = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = exports.ObjHasSameKeys = void 0;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -50,6 +50,24 @@ var isObj = function isObj(obj) {
 
 exports.isObj = isObj;
 
+var isFn = function isFn(arg) {
+  return typeof arg === 'function';
+};
+
+exports.isFn = isFn;
+
+var isFnObj = function isFnObj(obj) {
+  if (isObj(obj)) {
+    return Object.keys(obj).every(function (key) {
+      return isFn(obj[key]);
+    });
+  }
+
+  return false;
+};
+
+exports.isFnObj = isFnObj;
+
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 };
@@ -63,11 +81,11 @@ var isVoid = function isVoid(ar) {
 exports.isVoid = isVoid;
 
 var isStoreModule = function isStoreModule(obj) {
-  if (!isObj(obj) || !isObj(obj.state) || !isObj(obj.actions)) {
+  if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
     return false;
   }
 
-  if (!!obj.maps && !isObj(obj.maps)) {
+  if (!!obj.maps && !isFnObj(obj.maps)) {
     return false;
   }
 
@@ -116,6 +134,17 @@ var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
     keyHasChanged: keyHasChanged
   };
 };
+/**
+ * Composes single-argument functions from right to left. The rightmost
+ * function can take multiple arguments as it provides the signature for
+ * the resulting composite function.
+ *
+ * @param {...Function} funcs The functions to compose.
+ * @returns {Function} A function obtained by composing the argument functions
+ * from right to left. For example, compose(f, g, h) is identical to doing
+ * (...args) => f(g(h(...args))).
+ */
+
 
 exports.ObjChangedKeys = ObjChangedKeys;
 

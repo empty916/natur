@@ -173,6 +173,26 @@ describe('init', () => {
 	beforeEach(() => {
 		store = createStore({ count, countWithoutMaps });
 	});
+	test('createStore with illegal module', () => {
+		expect(() => store = createStore({ count: {
+			state: {a: 1},
+			actions: {a: 1},
+			maps: {a: 1}
+		} })).toThrow();
+		expect(() => store = createStore({ count: {
+			state: {a: 1},
+			actions: {a: 1},
+		}})).toThrow();
+		expect(() => store = createStore({ count: {
+			state: {a: 1},
+			actions: {a: () => {}},
+		}})).not.toThrow();
+		expect(() => store = createStore({ count: {
+			state: {a: 1},
+			actions: {a: () => {}},
+			maps: {a: () => {}}
+		}})).not.toThrow();
+	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
 			'addModule',
@@ -208,6 +228,27 @@ describe('addModule', () => {
 		store.addModule('name', name);
 		store.addModule('nameWithMaps', nameWithMaps);
 	});
+	test('add illegal module', () => {
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:1},
+			maps: {a:1}
+		})).toThrow('addModule: storeModule is illegal!');
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:() => {}},
+			maps: {a:1}
+		})).toThrow('addModule: storeModule is illegal!');
+
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:() => {}},
+			maps: {a:() => {}}
+		})).not.toThrow();
+
+	})
+	test('run actions', updateCountState);
+	test('maps cache', countMapsCache);
 	test('add module', () => {
 		expect(store.addModule('name1', name)).toBe(store);
 		expect(() => store.addModule('name11', {})).toThrow();
@@ -256,13 +297,16 @@ describe('addModule then removeModule', () => {
 		store = createStore({ name });
 		store.addModule('count', count);
 		store.addModule('nameWithMaps', nameWithMaps);
-		store.removeModule('count');
+		store.removeModule('nameWithMaps');
 	});
+	test('run actions', updateCountState);
+	test('maps cache', countMapsCache);
+
 	test('hasModule', hasModule('name'));
 	test('get module', getModule('name', name));
-	test('hasNotModule', hasNotModule('count'));
-	test('get module not exist', getModuleNotExist('count'));
-	test('getAllModuleName', getAllModuleName(['name', 'nameWithMaps']))
+	test('hasNotModule', hasNotModule('nameWithMaps'));
+	test('get module not exist', getModuleNotExist('nameWithMaps'));
+	test('getAllModuleName', getAllModuleName(['name', 'count']))
 });
 
 describe('removeModule then addModule', () => {
@@ -273,9 +317,12 @@ describe('removeModule then addModule', () => {
 		store.addModule('name', name);
 		store.addModule('nameWithMaps', nameWithMaps);
 	});
+	test('run actions', updateCountState);
+	test('maps cache', countMapsCache);
 	test('add module', () => {
 		expect(store.addModule('name1', name)).toBe(store);
 	});
+
 	test('add module repeat', () => {
 		const nameModule = store.getModule('name');
 		expect(() => store.addModule('name', name)).toThrow();
@@ -318,13 +365,32 @@ describe('lazyModule', () => {
 
 describe('setModule', () => {
 	beforeEach(() => {
-		store = createStore({ count });
-		store.addModule('name', count);
+		store = createStore({ name });
+		store.addModule('count', name);
 		store.addModule('nameWithMaps', nameWithMaps);
-		store.setModule('name', name);
+		store.setModule('count', count);
 	});
+	test('run actions', updateCountState);
+	test('maps cache', countMapsCache);
 	test('set illegal module', () => {
 		expect(() => store.setModule('name1', {})).toThrow();
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:1},
+			maps: {a:1}
+		})).toThrow('addModule: storeModule is illegal!');
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:() => {}},
+			maps: {a:1}
+		})).toThrow('addModule: storeModule is illegal!');
+
+		expect(() => store.addModule('name1', {
+			state: {a:1},
+			actions: {a:() => {}},
+			maps: {a:() => {}}
+		})).not.toThrow();
+
 	})
 	test('add module', () => {
 		expect(store.addModule('name1', name)).toBe(store);
@@ -346,7 +412,7 @@ describe('setModule', () => {
 	test('get module not exist', getModuleNotExist('name1'));
 	test('get moduleWithoutMaps', getModuleWithoutMaps('name', name));
 	test('get moduleWithMaps', getModuleWithMaps('nameWithMaps', nameWithMaps));
-	test('getAllModuleName', getAllModuleName(['count', 'name', 'nameWithMaps']))
+	test('getAllModuleName', getAllModuleName(['name', 'count', 'nameWithMaps']))
 });
 
 describe('subscribe', () => {
@@ -403,22 +469,34 @@ describe('actions', () => {
 				return next(record)
 			}
 		]);
-		store.removeModule('count');
-		store.addModule('count', count);
+		// store.removeModule('count');
+		// store.addModule('count', count);
 	});
 	test('return false value', () => {
 		const countModule = store.getModule('count');
-
+		expect(countModule.state.count).toBe(1);
 		expect(countModule.actions.returnGet(0)).toBe(0);
+		expect(countModule.actions.returnGet('')).toBe('');
 		expect(countModule.actions.returnGet(false)).toBe(false);
 		expect(countModule.actions.returnGet(null)).toBe(null);
 		expect(countModule.actions.returnGet(undefined)).toBe(undefined);
 
 		expect(countModule.actions.asyncReturnGet(0)).resolves.toBe(0);
+		expect(countModule.actions.asyncReturnGet('')).resolves.toBe('');
 		expect(countModule.actions.asyncReturnGet(false)).resolves.toBe(false);
 		expect(countModule.actions.asyncReturnGet(null)).resolves.toBe(null);
 		expect(countModule.actions.asyncReturnGet(undefined)).resolves.toBe(undefined);
 	})
+
+	test('return strange', () => {
+		const countModule = store.getModule('count');
+
+		expect(countModule.actions.returnGet(1)).toBe(countModule.state);
+		expect(countModule.actions.returnGet('null')).toBe(countModule.state);
+		expect(countModule.actions.returnGet([1,2,3])).toEqual({0:1,1:2,2:3});
+		expect(countModule.actions.returnGet({})).toEqual({});
+
+	});
 	test('return normal', () => {
 		const countModule = store.getModule('count');
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
@@ -442,15 +520,6 @@ describe('actions', () => {
 				expect(deletedNameState.name).toBe(undefined);
 				expect(countModule.actions.asyncReturnGet(deleteKeyState)).resolves.toBe(deletedNameState);
 			});
-	});
-	test('return strange', () => {
-		const countModule = store.getModule('count');
-
-		expect(countModule.actions.returnGet(1)).toBe(countModule.state);
-		expect(countModule.actions.returnGet('null')).toBe(countModule.state);
-		expect(countModule.actions.returnGet([1,2,3])).toEqual({0:1,1:2,2:3});
-		expect(countModule.actions.returnGet({})).toEqual({});
-
 	});
 	test('throw error', () => {
 		const countModule = store.getModule('count');

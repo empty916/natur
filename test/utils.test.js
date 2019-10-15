@@ -1,4 +1,11 @@
-import { isEqualWithDepthLimit, ObjHasSameKeys } from '../src/utils'
+import {
+	isEqualWithDepthLimit,
+	ObjHasSameKeys,
+	compose,
+	isStoreModule,
+	isFn,
+	isFnObj,
+} from '../src/utils'
 
 
 const a = {
@@ -60,4 +67,69 @@ describe('utils', () => {
 		expect(ObjHasSameKeys(null, {})).toBe(false);
 		expect(ObjHasSameKeys(null, undefined)).toBe(false);
 	})
+	test('is fn', () => {
+		expect(isFn(new Function())).toBe(true);
+		expect(isFn(() => {})).toBe(true);
+		expect(isFn(null)).toBe(false);
+		expect(isFn(undefined)).toBe(false);
+		expect(isFn(1)).toBe(false);
+		expect(isFn('1')).toBe(false);
+		expect(isFn([])).toBe(false);
+		expect(isFn({})).toBe(false);
+		expect(isFn(new Date())).toBe(false);
+	})
+	test('is fn obj', () => {
+
+		const obj1 = {
+			a: () => {},
+			b: () => {},
+		}
+		expect(isFnObj(obj1)).toBe(true);
+		expect(isFnObj({a: null})).toBe(false);
+		expect(isFnObj({a: undefined})).toBe(false);
+		expect(isFnObj({a: 1})).toBe(false);
+		expect(isFnObj({a: '1'})).toBe(false);
+		expect(isFnObj({a: []})).toBe(false);
+		expect(isFnObj({a: {}})).toBe(false);
+		expect(isFnObj({a: new Date()})).toBe(false);
+
+	})
+	test('is store module', () => {
+		const cm = (maps = () => {}, actions = () => {}) => ({
+			state: {a: 1},
+			actions: {a: actions},
+			maps: {a: maps},
+		})
+		const m1 = {
+			state: {a: 1},
+			actions: {ca: () => ({a: 2})},
+			maps: 1,
+		}
+		const m2 = {
+			state: {a: 1},
+			actions: {ca: () => ({a: 2})},
+			maps: undefined,
+		}
+		const m3 = {
+			state: {a: 1},
+			actions: {ca: () => ({a: 2})},
+			maps: {a2s: ({a}) => `${a}`},
+		}
+
+		expect(isStoreModule(m1)).toBe(false);
+		expect(isStoreModule(m2)).toBe(true);
+		expect(isStoreModule(m3)).toBe(true);
+		expect(isStoreModule(cm(1, 2))).toBe(false);
+		expect(isStoreModule(cm(() => {}, 2))).toBe(false);
+		expect(isStoreModule(cm(1, () => {}))).toBe(false);
+		expect(isStoreModule(cm(() => {}, () => {}))).toBe(true);
+	})
+
+	test('compose', () => {
+		const add1 = a => a + 1;
+		const add2 = a => a + 2;
+		expect(compose(add1)).toBe(add1);
+		expect(compose(add1, add2)(1)).toBe(4);
+	})
 })
+

@@ -343,6 +343,12 @@ const createStore: CreateStore = (
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		clearAllCache(moduleName);
+		if (!mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName] = {};
+		}
+		if(!stateDepends[moduleName]) {
+			stateDepends[moduleName] = {};
+		}
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}

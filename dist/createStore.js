@@ -351,6 +351,15 @@ var createStore = function createStore() {
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
     clearAllCache(moduleName);
+
+    if (!mapsWatcher[moduleName]) {
+      mapsWatcher[moduleName] = {};
+    }
+
+    if (!stateDepends[moduleName]) {
+      stateDepends[moduleName] = {};
+    }
+
     runListeners(moduleName);
     return currentStoreInstance;
   };
