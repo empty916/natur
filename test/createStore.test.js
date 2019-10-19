@@ -179,24 +179,44 @@ describe('init', () => {
 			actions: {a: 1},
 			maps: {a: 1}
 		} })).toThrow();
+
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: 1},
 		}})).toThrow();
+
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: () => {}},
 		}})).not.toThrow();
+
+		expect(() => store = createStore({ count: {
+			state: [1],
+			actions: {a: () => {}},
+		}})).toThrow();
+
+		expect(() => store = createStore({ count: {
+			state: () => {},
+			actions: {a: () => {}},
+		}})).toThrow();
+
+		expect(() => store = createStore({ count: {
+			state: new Date(),
+			actions: {a: () => {}},
+		}})).toThrow();
+
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: () => {}},
 			maps: {a: () => {}}
 		}})).not.toThrow();
+
 		expect(() => store = createStore({ count: {
 			state: {},
 			actions: {},
 			maps: {}
 		}})).not.toThrow();
+
 	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
@@ -246,19 +266,32 @@ describe('addModule', () => {
 		})).toThrow('addModule: storeModule is illegal!');
 
 		expect(() => store.addModule('name1', {
+			state: [{a:1}],
+			actions: {a:() => {}},
+			maps: {a:() => {}}
+		})).toThrow('addModule: storeModule is illegal!');
+
+		expect(() => store.addModule('name1', {
+			state: () => {},
+			actions: {a:() => {}},
+			maps: {a:() => {}}
+		})).toThrow();
+
+		expect(() => store.addModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).not.toThrow();
+
 		expect(() => store.addModule('name11', {
 			state: {},
 			actions: {},
 			maps: {}
 		})).not.toThrow();
+
 		expect(store.getModule('name11').state).toEqual({});
 		expect(store.getModule('name11').actions).toEqual({});
 		expect(store.getModule('name11').maps).toEqual({});
-
 	})
 	test('run actions', updateCountState);
 	test('maps cache', countMapsCache);
@@ -491,9 +524,10 @@ describe('actions', () => {
 		// store.removeModule('count');
 		// store.addModule('count', count);
 	});
-	test('return false value', () => {
+
+	test('return invalid type', () => {
 		const countModule = store.getModule('count');
-		expect(countModule.state.count).toBe(1);
+
 		expect(countModule.actions.returnGet(0)).toBe(0);
 		expect(countModule.actions.returnGet('')).toBe('');
 		expect(countModule.actions.returnGet(false)).toBe(false);
@@ -505,19 +539,27 @@ describe('actions', () => {
 		expect(countModule.actions.asyncReturnGet(false)).resolves.toBe(false);
 		expect(countModule.actions.asyncReturnGet(null)).resolves.toBe(null);
 		expect(countModule.actions.asyncReturnGet(undefined)).resolves.toBe(undefined);
-	})
 
-	test('return strange', () => {
-		const countModule = store.getModule('count');
+		function Person() {};
+		const now = new Date();
+		const p = new Person();
+		expect(countModule.actions.returnGet(now)).toBe(now);
+		expect(countModule.actions.returnGet(p)).toBe(p);
+		expect(countModule.actions.returnGet(1)).toBe(1);
+		expect(countModule.actions.returnGet('null')).toBe('null');
+		expect(countModule.actions.returnGet([1,2,3])).toEqual([1,2,3]);
 
-		expect(countModule.actions.returnGet(1)).toBe(countModule.state);
-		expect(countModule.actions.returnGet('null')).toBe(countModule.state);
-		expect(countModule.actions.returnGet([1,2,3])).toEqual({0:1,1:2,2:3});
-		expect(countModule.actions.returnGet({})).toEqual({});
+		expect(countModule.actions.asyncReturnGet(1)).resolves.toBe(0);
+		expect(countModule.actions.asyncReturnGet('null')).resolves.toBe('null');
+		expect(countModule.actions.asyncReturnGet([1,2,3])).resolves.toEqual([1,2,3]);
 
 	});
 	test('return normal', () => {
 		const countModule = store.getModule('count');
+
+		expect(countModule.state.count).toBe(1);
+		expect(countModule.state.name).toBe('count');
+
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state})).toBe(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state, newKey: 1})).not.toBe(countModule.state);

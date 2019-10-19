@@ -29,7 +29,7 @@ type Obj = {[p: string]: any}
 type anyFn = (...arg: any[]) => any;
 type fnObj = {[p: string]: anyFn};
 
-export const isObj = (obj: any): obj is Obj => typeof obj === 'object' && obj !== null;
+export const isObj = <T = Obj>(obj: any): obj is T => typeof obj === 'object' && obj !== null && obj.constructor === Object;
 export const isFn = (arg: any): arg is anyFn => typeof arg === 'function';
 export const isFnObj = (obj: any): obj is fnObj => {
 	if (isObj(obj)) {
@@ -39,7 +39,7 @@ export const isFnObj = (obj: any): obj is fnObj => {
 }
 
 export const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
-export const isVoid = <T>(ar: T | void): ar is void => !ar;
+// export const isVoid = <T>(ar: T | void): ar is void => !ar;
 export const isStoreModule = (obj: any): obj is StoreModule => {
 	if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
 		return false;
@@ -51,7 +51,7 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 }
 
 export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
-	if (!isObj(afterChange) || !isObj(source)) {
+	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
 		return {
 			updatedKeys: [],
 			keyHasChanged: false,

@@ -11,7 +11,7 @@ import {
 	Watcher,
 	compose,
 	isPromise,
-	isVoid,
+	isObj,
 	isStoreModule,
 } from './utils';
 
@@ -172,7 +172,7 @@ const createStore: CreateStore = (
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const _setState = (moduleName: ModuleName, newState: State | void) => {
 		const stateIsNotChanged = newState === stateProxyCache[moduleName];
-		if (isVoid<State>(newState) || stateIsNotChanged) {
+		if (!isObj<State>(newState) || stateIsNotChanged) {
 			return newState;
 		}
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);

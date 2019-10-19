@@ -132,7 +132,7 @@ var createStore = function createStore() {
   var _setState = function _setState(moduleName, newState) {
     var stateIsNotChanged = newState === stateProxyCache[moduleName];
 
-    if ((0, _utils.isVoid)(newState) || stateIsNotChanged) {
+    if (!(0, _utils.isObj)(newState) || stateIsNotChanged) {
       return newState;
     }
 
