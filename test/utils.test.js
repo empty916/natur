@@ -5,6 +5,7 @@ import {
 	isStoreModule,
 	isFn,
 	isFnObj,
+	isObj,
 } from '../src/utils'
 
 
@@ -37,6 +38,20 @@ const a4 = {
 
 
 describe('utils', () => {
+	test('is obj', () => {
+		function Person() {};
+
+		expect(isObj({})).toBe(true);
+		expect(isObj({a: 1})).toBe(true);
+		expect(isObj({1: 1})).toBe(true);
+
+		expect(isObj(undefined)).toBe(false);
+		expect(isObj(null)).toBe(false);
+		expect(isObj([])).toBe(false);
+		expect(isObj(function() {})).toBe(false);
+		expect(isObj(() => {})).toBe(false);
+		expect(isObj(new Person())).toBe(false);
+	})
 	test('is equal with depth limit', () => {
 		expect(isEqualWithDepthLimit(a, a1, 1)).toBe(false);
 		expect(isEqualWithDepthLimit(a2, a3, 1)).toBe(true);

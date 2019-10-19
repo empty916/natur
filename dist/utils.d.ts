@@ -14,11 +14,10 @@ declare type anyFn = (...arg: any[]) => any;
 declare type fnObj = {
     [p: string]: anyFn;
 };
-export declare const isObj: (obj: any) => obj is Obj;
+export declare const isObj: <T = Obj>(obj: any) => obj is T;
 export declare const isFn: (arg: any) => arg is anyFn;
 export declare const isFnObj: (obj: any) => obj is fnObj;
 export declare const isPromise: <T>(obj: any) => obj is Promise<T>;
-export declare const isVoid: <T>(ar: void | T) => ar is void;
 export declare const isStoreModule: (obj: any) => obj is StoreModule;
 export declare const ObjChangedKeys: (source: Obj, afterChange: Obj) => {
     updatedKeys: string[];
