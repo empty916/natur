@@ -25,7 +25,7 @@ export interface States {
 	[type: string]: State,
 };
 export interface Action {
-	(...arg: any[]): State | Promise<State> | void | Promise<void>;
+	(...arg: any[]): any;
 }
 
 export interface Actions {
@@ -170,7 +170,7 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
-	const _setState = (moduleName: ModuleName, newState: State | void) => {
+	const _setState = (moduleName: ModuleName, newState: any) => {
 		const stateIsNotChanged = newState === stateProxyCache[moduleName];
 		if (!isObj<State>(newState) || stateIsNotChanged) {
 			return newState;

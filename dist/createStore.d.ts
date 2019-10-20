@@ -8,7 +8,7 @@ export interface States {
     [type: string]: State;
 }
 export interface Action {
-    (...arg: any[]): State | Promise<State> | void | Promise<void>;
+    (...arg: any[]): any;
 }
 export interface Actions {
     [type: string]: Action;
