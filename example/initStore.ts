@@ -1,6 +1,7 @@
 import { createStore, Middleware } from '../src';
 // import * as nameModule from './name';
 import countModule from './count';
+import longItem from './longItem';
 
 const LogMiddleware:Middleware = ({ setState }) => next => record => {
 	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
@@ -11,6 +12,7 @@ export default () => createStore(
 	{
 		// name: nameModule,
 		count: countModule,
+		longItem,
 	},
 	{
 		name: () => import('./name'),
