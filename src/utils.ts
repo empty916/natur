@@ -8,6 +8,7 @@
 
 import { ModuleName, StoreModule } from './createStore'
 
+const hasOwn = Object.prototype.hasOwnProperty;
 export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 	if (!obj1 || !obj2) {
 		return false;
@@ -16,8 +17,8 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 		return false;
 	}
 	for(let key in obj1) {
-		if (obj1.hasOwnProperty(key)) {
-			if (!obj2.hasOwnProperty(key)) {
+		if (hasOwn.call(obj1, key)) {
+			if (!hasOwn.call(obj2, key)) {
 				return false;
 			}
 		}
@@ -63,19 +64,20 @@ export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
 	let keyHasChanged = false;
 
 	for(let key in source) {
-		if (source.hasOwnProperty(key)) {
-			if (!afterChange.hasOwnProperty(key)) {
+
+		if (hasOwn.call(source, key)) {
+			if (!hasOwn.call(afterChange, key)) {
 				keyHasChanged = true;
 				updatedKeys.push(key);
 			}
-			if (afterChange.hasOwnProperty(key) && source[key] !== afterChange[key]) {
+			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
 				updatedKeys.push(key);
 			}
 		}
 	}
 	for(let key in afterChange) {
-		if (afterChange.hasOwnProperty(key)) {
-			if (!source.hasOwnProperty(key)) {
+		if (hasOwn.call(afterChange, key)) {
+			if (!hasOwn.call(source, key)) {
 				updatedKeys.push(key);
 				keyHasChanged = true;
 			}
@@ -108,7 +110,6 @@ export function compose(...funcs: anyFn[]) {
   return funcs.reduce((a, b) => (...args) => a(b(...args)))
 }
 
-const hasOwn = Object.prototype.hasOwnProperty;
 
 function is(x: any, y: any) {
 	if (x === y) {
