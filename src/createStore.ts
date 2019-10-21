@@ -64,7 +64,6 @@ export type ModuleName = keyof Modules | keyof LazyStoreModules;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
 export interface Store {
-	// createDispatch: (a: string) => Action;
 	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	getModule: (moduleName: ModuleName) => InjectStoreModule;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
@@ -84,6 +83,14 @@ type CreateStore = (
 ) => Store;
 
 let currentStoreInstance: Store;
+let proxySign: string = '$$proxy_sign_' + Math.random().toString(36).slice(2);
+
+const addProxySign = (obj: Object) => Object.defineProperty(obj, proxySign, {
+	// enumerable: false, // default
+	// configurable: false, // default
+	// writable: false, // default
+	value: true,
+});
 
 const createStore: CreateStore = (
 	modules: Modules = {},
@@ -159,7 +166,6 @@ const createStore: CreateStore = (
 	const clearAllCache = (moduleName: ModuleName) => {
 		clearModulesCache(moduleName);
 		clearStateProxyCache(moduleName);
-		// clearMapsWatcherCache(moduleName);
 		clearMapsProxyCache(moduleName);
 		clearActionsProxyCache(moduleName);
 	}
@@ -181,6 +187,9 @@ const createStore: CreateStore = (
 		}
 		if (changedStateKeys.updatedKeys.length === 0) {
 			return stateProxyCache[moduleName];
+		}
+		if (newState[proxySign]) {
+			newState = {...newState};
 		}
 		currentModules[moduleName].state = newState;
 		if (changedStateKeys.keyHasChanged) {
@@ -210,7 +219,30 @@ const createStore: CreateStore = (
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		allModuleNames = undefined;
-		// clearAllCache(moduleName);
+		if (!mapsWatcher[moduleName]) {
+			mapsWatcher[moduleName] = {};
+		}
+		if(!stateDepends[moduleName]) {
+			stateDepends[moduleName] = {};
+		}
+		runListeners(moduleName);
+		return currentStoreInstance;
+	}
+
+	// 修改module
+	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
+		if (!isStoreModule(storeModule)) {
+			throw new Error('setModule: storeModule is illegal!');
+		}
+		if(!hasModule(moduleName)) {
+			allModuleNames = undefined;
+		}
+		currentModules = {
+			...currentModules,
+			[moduleName]: replaceModule(moduleName, storeModule),
+		};
+
+		clearAllCache(moduleName);
 		if (!mapsWatcher[moduleName]) {
 			mapsWatcher[moduleName] = {};
 		}
@@ -235,7 +267,7 @@ const createStore: CreateStore = (
 		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
 			return stateProxyCache[moduleName];
 		}
-		let proxyState = {};
+		let proxyState: typeof state = {};
 		for(let key in state) {
 			if (state.hasOwnProperty(key)) {
 				Object.defineProperty(proxyState, key, {
@@ -253,11 +285,11 @@ const createStore: CreateStore = (
 				});
 			}
 		}
+		addProxySign(proxyState);
 		stateProxyCache[moduleName] = proxyState;
 		keysOfModuleStateChangedRecords[moduleName] = false;
 		return proxyState;
 	}
-
 	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
 		const {maps} = currentModules[moduleName];
 		if (maps === undefined) {
@@ -293,6 +325,7 @@ const createStore: CreateStore = (
 				});
 			}
 		}
+		addProxySign(proxyMaps);
 		mapsProxyCache[moduleName] = proxyMaps;
 		return proxyMaps;
 	}
@@ -333,25 +366,6 @@ const createStore: CreateStore = (
 		}
 		throw new Error(`getLazyModule: ${moduleName} is not exist`);
 	};
-	// 修改module
-	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		if (!isStoreModule(storeModule)) {
-			throw new Error('setModule: storeModule is illegal!');
-		}
-		currentModules = {
-			...currentModules,
-			[moduleName]: replaceModule(moduleName, storeModule),
-		};
-		clearAllCache(moduleName);
-		if (!mapsWatcher[moduleName]) {
-			mapsWatcher[moduleName] = {};
-		}
-		if(!stateDepends[moduleName]) {
-			stateDepends[moduleName] = {};
-		}
-		runListeners(moduleName);
-		return currentStoreInstance;
-	}
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
 		const setStateProxy: Next = ({state}: Record) => setState(moduleName, state);
@@ -389,7 +403,6 @@ const createStore: CreateStore = (
 	init();
 
 	currentStoreInstance = {
-		// createDispatch,
 		addModule,
 		getAllModuleName,
 		getModule,

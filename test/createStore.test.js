@@ -534,12 +534,6 @@ describe('actions', () => {
 		expect(countModule.actions.returnGet(null)).toBe(null);
 		expect(countModule.actions.returnGet(undefined)).toBe(undefined);
 
-		expect(countModule.actions.asyncReturnGet(0)).resolves.toBe(0);
-		expect(countModule.actions.asyncReturnGet('')).resolves.toBe('');
-		expect(countModule.actions.asyncReturnGet(false)).resolves.toBe(false);
-		expect(countModule.actions.asyncReturnGet(null)).resolves.toBe(null);
-		expect(countModule.actions.asyncReturnGet(undefined)).resolves.toBe(undefined);
-
 		function Person() {};
 		const now = new Date();
 		const p = new Person();
@@ -549,13 +543,30 @@ describe('actions', () => {
 		expect(countModule.actions.returnGet('null')).toBe('null');
 		expect(countModule.actions.returnGet([1,2,3])).toEqual([1,2,3]);
 
-		expect(countModule.actions.asyncReturnGet(1)).resolves.toBe(0);
-		expect(countModule.actions.asyncReturnGet('null')).resolves.toBe('null');
-		expect(countModule.actions.asyncReturnGet([1,2,3])).resolves.toEqual([1,2,3]);
+		const {asyncReturnGet} = countModule.actions;
 
+		return Promise.all([
+			asyncReturnGet(0),
+			asyncReturnGet(''),
+			asyncReturnGet(false),
+			asyncReturnGet(null),
+			asyncReturnGet(undefined),
+			asyncReturnGet(1),
+			asyncReturnGet('null'),
+			asyncReturnGet([1,2,3]),
+		]).then(res => {
+			expect(res[0]).toBe(0);
+			expect(res[1]).toBe('');
+			expect(res[2]).toBe(false);
+			expect(res[3]).toBe(null);
+			expect(res[4]).toBe(undefined);
+			expect(res[5]).toBe(1);
+			expect(res[6]).toBe('null');
+			expect(res[7]).toEqual([1,2,3]);
+		});
 	});
 	test('return normal', () => {
-		const countModule = store.getModule('count');
+		let countModule = store.getModule('count');
 
 		expect(countModule.state.count).toBe(1);
 		expect(countModule.state.name).toBe('count');
@@ -563,8 +574,16 @@ describe('actions', () => {
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state})).toBe(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state, newKey: 1})).not.toBe(countModule.state);
-		expect(countModule.actions.asyncReturnGet(countModule.state)).resolves.toBe(countModule.state);
-		expect(countModule.actions.asyncReturnGet({...countModule.state})).resolves.toBe(countModule.state);
+
+		const {asyncReturnGet} = countModule.actions;
+		return Promise.all([
+			asyncReturnGet(countModule.state),
+			asyncReturnGet({...countModule.state}),
+		])
+		.then(res => {
+			expect(res[0]).toStrictEqual(countModule.state);
+			expect(res[1]).toStrictEqual(countModule.state);
+		})
 	});
 	test('return keys changed', () => {
 		const countModule = store.getModule('count');

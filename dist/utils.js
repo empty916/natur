@@ -22,6 +22,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
+var hasOwn = Object.prototype.hasOwnProperty;
+
 var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
   if (!obj1 || !obj2) {
     return false;
@@ -32,8 +34,8 @@ var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
   }
 
   for (var key in obj1) {
-    if (obj1.hasOwnProperty(key)) {
-      if (!obj2.hasOwnProperty(key)) {
+    if (hasOwn.call(obj1, key)) {
+      if (!hasOwn.call(obj2, key)) {
         return false;
       }
     }
@@ -103,21 +105,21 @@ var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
   var keyHasChanged = false;
 
   for (var key in source) {
-    if (source.hasOwnProperty(key)) {
-      if (!afterChange.hasOwnProperty(key)) {
+    if (hasOwn.call(source, key)) {
+      if (!hasOwn.call(afterChange, key)) {
         keyHasChanged = true;
         updatedKeys.push(key);
       }
 
-      if (afterChange.hasOwnProperty(key) && source[key] !== afterChange[key]) {
+      if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
         updatedKeys.push(key);
       }
     }
   }
 
   for (var _key in afterChange) {
-    if (afterChange.hasOwnProperty(_key)) {
-      if (!source.hasOwnProperty(_key)) {
+    if (hasOwn.call(afterChange, _key)) {
+      if (!hasOwn.call(source, _key)) {
         updatedKeys.push(_key);
         keyHasChanged = true;
       }
@@ -164,8 +166,6 @@ function compose() {
     };
   });
 }
-
-var hasOwn = Object.prototype.hasOwnProperty;
 
 function is(x, y) {
   if (x === y) {

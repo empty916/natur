@@ -27,6 +27,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 ;
 ;
 var currentStoreInstance;
+var proxySign = '$$proxy_sign_' + Math.random().toString(36).slice(2);
+
+var addProxySign = function addProxySign(obj) {
+  return Object.defineProperty(obj, proxySign, {
+    // enumerable: false, // default
+    // configurable: false, // default
+    // writable: false, // default
+    value: true
+  });
+};
 
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -109,8 +119,7 @@ var createStore = function createStore() {
 
   var clearAllCache = function clearAllCache(moduleName) {
     clearModulesCache(moduleName);
-    clearStateProxyCache(moduleName); // clearMapsWatcherCache(moduleName);
-
+    clearStateProxyCache(moduleName);
     clearMapsProxyCache(moduleName);
     clearActionsProxyCache(moduleName);
   };
@@ -146,6 +155,10 @@ var createStore = function createStore() {
       return stateProxyCache[moduleName];
     }
 
+    if (newState[proxySign]) {
+      newState = _objectSpread({}, newState);
+    }
+
     currentModules[moduleName].state = newState;
 
     if (changedStateKeys.keyHasChanged) {
@@ -179,7 +192,32 @@ var createStore = function createStore() {
     }
 
     currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
-    allModuleNames = undefined; // clearAllCache(moduleName);
+    allModuleNames = undefined;
+
+    if (!mapsWatcher[moduleName]) {
+      mapsWatcher[moduleName] = {};
+    }
+
+    if (!stateDepends[moduleName]) {
+      stateDepends[moduleName] = {};
+    }
+
+    runListeners(moduleName);
+    return currentStoreInstance;
+  }; // 修改module
+
+
+  var setModule = function setModule(moduleName, storeModule) {
+    if (!(0, _utils.isStoreModule)(storeModule)) {
+      throw new Error('setModule: storeModule is illegal!');
+    }
+
+    if (!hasModule(moduleName)) {
+      allModuleNames = undefined;
+    }
+
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
+    clearAllCache(moduleName);
 
     if (!mapsWatcher[moduleName]) {
       mapsWatcher[moduleName] = {};
@@ -237,6 +275,7 @@ var createStore = function createStore() {
       _loop(key);
     }
 
+    addProxySign(proxyState);
     stateProxyCache[moduleName] = proxyState;
     keysOfModuleStateChangedRecords[moduleName] = false;
     return proxyState;
@@ -287,6 +326,7 @@ var createStore = function createStore() {
       _loop2(key);
     }
 
+    addProxySign(proxyMaps);
     mapsProxyCache[moduleName] = proxyMaps;
     return proxyMaps;
   };
@@ -341,27 +381,6 @@ var createStore = function createStore() {
     }
 
     throw new Error("getLazyModule: ".concat(moduleName, " is not exist"));
-  }; // 修改module
-
-
-  var setModule = function setModule(moduleName, storeModule) {
-    if (!(0, _utils.isStoreModule)(storeModule)) {
-      throw new Error('setModule: storeModule is illegal!');
-    }
-
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
-    clearAllCache(moduleName);
-
-    if (!mapsWatcher[moduleName]) {
-      mapsWatcher[moduleName] = {};
-    }
-
-    if (!stateDepends[moduleName]) {
-      stateDepends[moduleName] = {};
-    }
-
-    runListeners(moduleName);
-    return currentStoreInstance;
   };
 
   var createDispatch = function createDispatch(moduleName) {
@@ -426,7 +445,6 @@ var createStore = function createStore() {
 
   init();
   currentStoreInstance = {
-    // createDispatch,
     addModule: addModule,
     getAllModuleName: getAllModuleName,
     getModule: getModule,
