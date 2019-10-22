@@ -7,7 +7,7 @@
 
 #### compatibility
 - support react 15.x, 16.x and anujs
-
+- browser: IE9+
 
 #### STEP1. Create a store instance
 
@@ -16,28 +16,29 @@
 ```js
 import { createStore} from 'react-natural-store'
 const app = {
+  // State must be an Object, and the child elements are not limited.
   state: {
     name: 'tom',
   },
+  // The actions must be an Object, the child element must be a function
   actions: {
   /*
-  The returned value will be used as the new state.
-    If the original state or undefined is returned,
-    the page will not trigger an update.
+  Returned parameter
+  If it is Object, it will be the new state.
+  If not, it will not be processed and the original value will be returned   to the caller.
+  Need to follow the immutable specification! ! !
   */
   changeName: newName => ({name: newName}),
   /*
-    Support promise return value,
-    the value returned by promise will be used as the new state,
-    if the original state or undefined is returned,
-    the page will not trigger the update.
+    Support promise,
+    The return value behavior is consistent with the above synchronous action
   */
   asyncChangeName: newName => Promise.resolve({name: newName}),
   },
   /*
-   The optional parameters,
-   the maps obtained on the page,
-   will be the return value of the function after the run.
+    Optional parameters, must be an Object, the child element must be a function
+    The maps obtained on the page will be the return value of the function after the run.
+    The maps method automatically collects dependencies and recalculates the results only when the dependencies change.
   */
   maps: {
     nameSplit: state => state.name.split(''),
@@ -89,8 +90,23 @@ export default Inject('app', 'module1', ...)(App);
 
 ```
 
+---
+#### Ok, you have mastered it, here are some additional features.
 
-#### The second step can be replaced by hooks. Use useInject to inject the app module into the component.
+
+- [hooks](#hooks)
+- [Configuring lazy loading module](#config-lazy-module)
+- [Use other state when initializing the store](#init-with-state)
+- [Middleware](#middleware)
+- [When the lazy loading module is loading, the placeholder component is configured](#loading-component)
+- [Use store outside of react](#use-store-without-react)
+- [Manual import module](#manual-import-module)
+- [Used in typescript](#typescript)
+- [<font color=#faad14 >Cautions</font>](#caution)
+
+---
+
+#### <a id='hooks' style="color: black;">The second step can be replaced by hooks. Use useInject to inject the app module into the component.</a>
 
 ```jsx
 
@@ -105,7 +121,7 @@ const App = () => {
 
   But you can use the way to manually add modules
 
-  store.addModule('otherModuleName', otherModule);
+  store.setModule('otherModuleName', otherModule);
 
   See manual import module description for details.
   */
@@ -127,7 +143,7 @@ export default App;
 
 
 ---
-#### - Lazy loading configuration
+#### <a id='config-lazy-module' style="color: black;">Lazy loading configuration</a>
 
 ```js
 /*
@@ -160,7 +176,7 @@ const store = createStore({ app }, { module1, ...otherLazyModules }); // create 
 
 
 
-#### createStore initializes state
+#### <a id='init-with-state' style="color: black;">createStore initializes state</a>
 
 ```jsx
 
@@ -178,7 +194,7 @@ const app = {
 /*
   createStore third parameter
   {
-	  [moduleName: ModuleName]: State,
+	  [moduleName: ModuleName]: Partial<State>,
   }
 */
 const store = createStore(
@@ -201,7 +217,7 @@ export default store;
 
 
 
-#### Middleware
+#### <a id='middleware' style="color: black;">Middleware</a>
 
 ```jsx
 
@@ -259,7 +275,7 @@ export default store;
 
 
 
-#### - when loading the module, the configuration of the loading prompt component
+#### <a id='loading-component' style="color: black;">when loading the module, the configuration of the loading prompt component</a>
 
 ```jsx
 import { inject } from 'react-natural-store';
@@ -270,7 +286,7 @@ inject.setLoadingComponent(() => <div>loading...</div>);
 inject('app')(App, () => <div>loading</div>);
 ```
 
-#### - Use store outside of react
+#### <a id='use-store-without-react' style="color: black;">Use store outside of react</a>
 
 ```js
 // Import the previously created store instance
@@ -323,7 +339,7 @@ unsubscribe();
 ```
 
 
-#### - Manual import module
+#### <a id='manual-import-module' style="color: black;">Manual import module</a>
 
 ```ts
 
@@ -357,7 +373,7 @@ you can't use this module anywhere else.
 If you want to use it elsewhere, 
 you must import it when the store is instantiated.
 */
-store.addModule('lazyModuleName', lazyLoadModule);
+store.setModule('lazyModuleName', lazyLoadModule);
 
 const lazyLoadView = () => {
   // Now you can get the modules you added manually.
@@ -372,7 +388,7 @@ const lazyLoadView = () => {
 
 
 
-#### - typescript support
+#### <a id='typescript' style="color: black;">typescript support</a>
 
 ```ts
 
@@ -412,7 +428,7 @@ ReactDOM.render(
 
 
 
-#### - react-natural-store precautions for use
+#### <a id='caution' style="color: black;">react-natural-store precautions for use</a>
 
  - Since the low version does not support the react.forwardRef method, you cannot directly use ref to get the component instance of the package. You need to use the forwardedRef property to get it (using the same ref).
 
@@ -437,9 +453,9 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 
----
+
 - Starting with version 1.x, the values in maps are dynamically calculated based on changes in dependencies, and the cache is dependent on constants. The principle is to use Object.defineProperty for data hijacking and collect dependencies. So when changing the state, you should use immutable, otherwise maps will not listen to state changes, it will not be recalculated. (Because the immutable specification is followed, the maps listener only listens for changes in the first layer value of the state. If the value of the first layer of the state has not changed, the maps will not be updated.)
----
+
 - In the 1.x version, the first layer attribute of state should be declared in advance. If a new attribute is dynamically added, or an attribute is dynamically deleted, the maps cannot monitor its changes, and the maps cannot be updated in time.
 
 

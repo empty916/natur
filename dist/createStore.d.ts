@@ -7,6 +7,10 @@ export interface State {
 export interface States {
     [type: string]: State;
 }
+declare type PartialState = Partial<State>;
+declare type PartialStates = {
+    [type: string]: PartialState;
+};
 export interface Action {
     (...arg: any[]): any;
 }
@@ -59,7 +63,7 @@ export interface Store {
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
 }
-declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
+declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: PartialStates, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;
 export declare const getStoreInstance: () => Store;
 export default createStore;

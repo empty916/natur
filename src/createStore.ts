@@ -24,6 +24,12 @@ export interface State {
 export interface States {
 	[type: string]: State,
 };
+
+type PartialState = Partial<State>;
+type PartialStates = {
+	[type: string]: PartialState,
+}
+
 export interface Action {
 	(...arg: any[]): any;
 }
@@ -78,7 +84,7 @@ export interface Store {
 type CreateStore = (
 	modules?: Modules,
 	lazyModules?: LazyStoreModules,
-	initStates?: States,
+	initStates?: PartialStates,
 	middlewares?: Middleware[],
 ) => Store;
 
@@ -95,7 +101,7 @@ const addProxySign = (obj: Object) => Object.defineProperty(obj, proxySign, {
 const createStore: CreateStore = (
 	modules: Modules = {},
 	lazyModules: LazyStoreModules = {},
-	initStates: States = {},
+	initStates: PartialStates = {},
 	middlewares: Middleware[] = [],
 ) => {
 	const currentInitStates = {...initStates};
@@ -206,43 +212,22 @@ const createStore: CreateStore = (
 		}
 		return _setState(moduleName, newState);
 	};
-	// 添加module
-	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		if(!!currentModules[moduleName]) {
-			throw new Error(`addModule: ${moduleName} already exists!`);
-		}
-		if (!isStoreModule(storeModule)) {
-			throw new Error('addModule: storeModule is illegal!');
-		}
-		currentModules = {
-			...currentModules,
-			[moduleName]: replaceModule(moduleName, storeModule),
-		};
-		allModuleNames = undefined;
-		if (!mapsWatcher[moduleName]) {
-			mapsWatcher[moduleName] = {};
-		}
-		if(!stateDepends[moduleName]) {
-			stateDepends[moduleName] = {};
-		}
-		runListeners(moduleName);
-		return currentStoreInstance;
-	}
 
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!isStoreModule(storeModule)) {
-			throw new Error('setModule: storeModule is illegal!');
+			throw new Error('storeModule is illegal!');
 		}
-		if(!hasModule(moduleName)) {
-			allModuleNames = undefined;
-		}
+		const isModuleExist = hasModule(moduleName)
 		currentModules = {
 			...currentModules,
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
-
-		clearAllCache(moduleName);
+		if(isModuleExist) {
+			clearAllCache(moduleName);
+		} else {
+			allModuleNames = undefined;
+		}
 		if (!mapsWatcher[moduleName]) {
 			mapsWatcher[moduleName] = {};
 		}
@@ -252,6 +237,14 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
+	// 添加module
+	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
+		if(!!currentModules[moduleName]) {
+			throw new Error(`${moduleName} already exists!`);
+		}
+		return setModule(moduleName, storeModule);
+	}
+
 	const removeModule = (moduleName: ModuleName) => {
 		delete currentModules[moduleName];
 		delete currentLazyModules[moduleName];

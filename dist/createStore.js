@@ -179,45 +179,22 @@ var createStore = function createStore() {
     }
 
     return _setState(moduleName, newState);
-  }; // 添加module
-
-
-  var addModule = function addModule(moduleName, storeModule) {
-    if (!!currentModules[moduleName]) {
-      throw new Error("addModule: ".concat(moduleName, " already exists!"));
-    }
-
-    if (!(0, _utils.isStoreModule)(storeModule)) {
-      throw new Error('addModule: storeModule is illegal!');
-    }
-
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
-    allModuleNames = undefined;
-
-    if (!mapsWatcher[moduleName]) {
-      mapsWatcher[moduleName] = {};
-    }
-
-    if (!stateDepends[moduleName]) {
-      stateDepends[moduleName] = {};
-    }
-
-    runListeners(moduleName);
-    return currentStoreInstance;
   }; // 修改module
 
 
   var setModule = function setModule(moduleName, storeModule) {
     if (!(0, _utils.isStoreModule)(storeModule)) {
-      throw new Error('setModule: storeModule is illegal!');
+      throw new Error('storeModule is illegal!');
     }
 
-    if (!hasModule(moduleName)) {
+    var isModuleExist = hasModule(moduleName);
+    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
+
+    if (isModuleExist) {
+      clearAllCache(moduleName);
+    } else {
       allModuleNames = undefined;
     }
-
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
-    clearAllCache(moduleName);
 
     if (!mapsWatcher[moduleName]) {
       mapsWatcher[moduleName] = {};
@@ -229,6 +206,15 @@ var createStore = function createStore() {
 
     runListeners(moduleName);
     return currentStoreInstance;
+  }; // 添加module
+
+
+  var addModule = function addModule(moduleName, storeModule) {
+    if (!!currentModules[moduleName]) {
+      throw new Error("".concat(moduleName, " already exists!"));
+    }
+
+    return setModule(moduleName, storeModule);
   };
 
   var removeModule = function removeModule(moduleName) {

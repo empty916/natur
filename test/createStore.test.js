@@ -258,18 +258,18 @@ describe('addModule', () => {
 			state: {a:1},
 			actions: {a:1},
 			maps: {a:1}
-		})).toThrow('addModule: storeModule is illegal!');
+		})).toThrow('storeModule is illegal!');
 		expect(() => store.addModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:1}
-		})).toThrow('addModule: storeModule is illegal!');
+		})).toThrow('storeModule is illegal!');
 
 		expect(() => store.addModule('name1', {
 			state: [{a:1}],
 			actions: {a:() => {}},
 			maps: {a:() => {}}
-		})).toThrow('addModule: storeModule is illegal!');
+		})).toThrow('storeModule is illegal!');
 
 		expect(() => store.addModule('name1', {
 			state: () => {},
