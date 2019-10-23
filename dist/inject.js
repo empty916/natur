@@ -119,7 +119,7 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
           var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
           Promise.all(loadModulesPromise).then(function (modules) {
             modules.forEach(function (storeModule, index) {
-              return store.addModule(unLoadedModules[index], storeModule);
+              return store.setModule(unLoadedModules[index], storeModule);
             });
 
             _this2.setState({

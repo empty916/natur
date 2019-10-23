@@ -53,7 +53,6 @@ declare type MiddlewareParams = {
 export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
 export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 export interface Store {
-    addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     getModule: (moduleName: ModuleName) => InjectStoreModule;
     setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     removeModule: (moduleName: ModuleName) => Store;
@@ -62,6 +61,7 @@ export interface Store {
     getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
+    destory: () => void;
 }
 declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: PartialStates, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;

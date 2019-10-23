@@ -83,7 +83,7 @@ const connect = <P, S, SP>(
 				Promise.all(loadModulesPromise)
 					.then((modules: StoreModule[]) => {
 						modules.forEach((storeModule, index) =>
-							store.addModule(unLoadedModules[index], storeModule)
+							store.setModule(unLoadedModules[index], storeModule)
 						);
 						this.setState({
 							modulesHasLoaded: true,

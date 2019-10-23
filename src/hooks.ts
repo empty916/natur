@@ -45,7 +45,7 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
                 Promise.all(loadModulesPromise)
                     .then((modules: StoreModule[]) => {
                         modules.forEach((storeModule, index) =>
-                            store.addModule(unLoadedModules[index], storeModule)
+                            store.setModule(unLoadedModules[index], storeModule)
                         );
                         setModulesHasLoaded(true);
                     })

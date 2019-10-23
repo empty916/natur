@@ -3,11 +3,13 @@
 
 - [concept of design](./design.en.md)
 
-#### Unit test coverage rate of 99%, rest assured to use
 
-#### compatibility
+#### basic introduction
+- This is a simple and efficient react state manager
+- Browser compatible: IE9+
 - support react 15.x, 16.x and anujs
-- browser: IE9+
+- Unit test coverage rate of 99%, rest assured to use
+- minizipped size 5k
 
 #### STEP1. Create a store instance
 
@@ -15,6 +17,11 @@
 
 ```js
 import { createStore} from 'react-natural-store'
+
+/*
+Here the app is treated as a module
+The data structure of a module is like this
+*/
 const app = {
   // State must be an Object, and the child elements are not limited.
   state: {
@@ -91,7 +98,7 @@ export default Inject('app', 'module1', ...)(App);
 ```
 
 ---
-#### Ok, you have mastered it, here are some additional features.
+#### Ok, you have mastered it. here are some additional features.
 
 
 - [hooks](#hooks)
@@ -119,7 +126,7 @@ const App = () => {
   and wait until the lazy load module is loaded to return the module you need, 
   so useInject is not recommended for lazy loading module.
 
-  But you can use the way to manually add modules
+  But you can use the way to manually set modules
 
   store.setModule('otherModuleName', otherModule);
 
@@ -367,7 +374,7 @@ const lazyLoadModule = {
   },
 };
 /*
-Add modules manually. 
+Set modules manually. 
 Before this module is added, 
 you can't use this module anywhere else. 
 If you want to use it elsewhere, 
@@ -454,8 +461,8 @@ const App = @inject<storeProps>('count', 'name')(_App);
  ```
 
 
-- Starting with version 1.x, the values in maps are dynamically calculated based on changes in dependencies, and the cache is dependent on constants. The principle is to use Object.defineProperty for data hijacking and collect dependencies. So when changing the state, you should use immutable, otherwise maps will not listen to state changes, it will not be recalculated. (Because the immutable specification is followed, the maps listener only listens for changes in the first layer value of the state. If the value of the first layer of the state has not changed, the maps will not be updated.)
+- **When the action modifies the state, it should follow the immutable specification**.Starting with version 1.x, the values in maps are dynamically calculated based on changes in dependencies, and the cache is dependent on constants. The principle is to use Object.defineProperty for data hijacking and collect dependencies. So when changing the state, you should use immutable, otherwise maps will not listen to state changes, it will not be recalculated. (Because the immutable specification is followed, the maps listener only listens for changes in the first layer value of the state. If the value of the first layer of the state has not changed, the maps will not be updated.)
 
-- In the 1.x version, the first layer attribute of state should be declared in advance. If a new attribute is dynamically added, or an attribute is dynamically deleted, the maps cannot monitor its changes, and the maps cannot be updated in time.
+- **Please try to avoid dynamically adding or deleting the state key in the action**.In the 1.x version, the first layer attribute of state should be declared in advance. If a new attribute is dynamically added, or an attribute is dynamically deleted, the maps cannot monitor its changes, and the maps cannot be updated in time.
 
 

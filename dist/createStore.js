@@ -206,22 +206,17 @@ var createStore = function createStore() {
 
     runListeners(moduleName);
     return currentStoreInstance;
-  }; // 添加module
-
-
-  var addModule = function addModule(moduleName, storeModule) {
-    if (!!currentModules[moduleName]) {
-      throw new Error("".concat(moduleName, " already exists!"));
-    }
-
-    return setModule(moduleName, storeModule);
   };
 
-  var removeModule = function removeModule(moduleName) {
+  var destoryModule = function destoryModule(moduleName) {
     delete currentModules[moduleName];
     delete currentLazyModules[moduleName];
     allModuleNames = undefined;
     clearAllCache(moduleName);
+  };
+
+  var removeModule = function removeModule(moduleName) {
+    destoryModule(moduleName);
     runListeners(moduleName);
     return currentStoreInstance;
   };
@@ -423,15 +418,27 @@ var createStore = function createStore() {
     ;
   };
 
+  var destory = function destory() {
+    Object.keys(currentModules).forEach(destoryModule);
+    currentInitStates = {};
+    currentLazyModules = {};
+    listeners = {};
+    allModuleNames = undefined;
+    currentMiddlewares = [];
+  };
+
   var init = function init() {
+    if (!!currentStoreInstance) {
+      currentStoreInstance.destory();
+    }
+
     Object.keys(modules).forEach(function (moduleName) {
-      addModule(moduleName, modules[moduleName]);
+      setModule(moduleName, modules[moduleName]);
     });
   };
 
   init();
   currentStoreInstance = {
-    addModule: addModule,
     getAllModuleName: getAllModuleName,
     getModule: getModule,
     removeModule: removeModule,
@@ -439,7 +446,8 @@ var createStore = function createStore() {
     getLazyModule: getLazyModule,
     setModule: setModule,
     hasModule: hasModule,
-    subscribe: subscribe
+    subscribe: subscribe,
+    destory: destory
   };
   return currentStoreInstance;
 };
