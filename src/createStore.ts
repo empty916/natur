@@ -70,7 +70,6 @@ export type ModuleName = keyof Modules | keyof LazyStoreModules;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
 export interface Store {
-	addModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	getModule: (moduleName: ModuleName) => InjectStoreModule;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	removeModule: (moduleName: ModuleName) => Store;
@@ -79,6 +78,7 @@ export interface Store {
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
+	destory: () => void;
 }
 
 type CreateStore = (
@@ -104,12 +104,12 @@ const createStore: CreateStore = (
 	initStates: PartialStates = {},
 	middlewares: Middleware[] = [],
 ) => {
-	const currentInitStates = {...initStates};
+	let currentInitStates = {...initStates};
 	let currentModules: Modules = {};
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
-	const currentMiddlewares = middlewares;
+	let currentMiddlewares = middlewares;
 	const actionsProxyCache: {[p: string]: Actions} = {};
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: InjectMaps} = {};
@@ -237,19 +237,14 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	}
-	// 添加module
-	const addModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		if(!!currentModules[moduleName]) {
-			throw new Error(`${moduleName} already exists!`);
-		}
-		return setModule(moduleName, storeModule);
-	}
-
-	const removeModule = (moduleName: ModuleName) => {
+	const destoryModule = (moduleName: ModuleName) => {
 		delete currentModules[moduleName];
 		delete currentLazyModules[moduleName];
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
+	}
+	const removeModule = (moduleName: ModuleName) => {
+		destoryModule(moduleName);
 		runListeners(moduleName);
 		return currentStoreInstance;
 	};
@@ -388,15 +383,26 @@ const createStore: CreateStore = (
 		listeners[moduleName].push(listener);
 		return () => listeners[moduleName] = listeners[moduleName].filter((lis: Listener) => listener !== lis);;
 	};
+	const destory = () => {
+		Object.keys(currentModules).forEach(destoryModule);
+		currentInitStates = {};
+		currentLazyModules = {};
+		listeners = {};
+		allModuleNames = undefined;
+		currentMiddlewares = [];
+	}
 	const init = () => {
+		if (!!currentStoreInstance) {
+			currentStoreInstance.destory();
+		}
 		Object.keys(modules).forEach((moduleName: ModuleName) => {
-			addModule(moduleName, modules[moduleName]);
+			setModule(moduleName, modules[moduleName]);
 		});
 	};
+
 	init();
 
 	currentStoreInstance = {
-		addModule,
 		getAllModuleName,
 		getModule,
 		removeModule,
@@ -405,6 +411,7 @@ const createStore: CreateStore = (
 		setModule,
 		hasModule,
 		subscribe,
+		destory,
 	};
 	return currentStoreInstance;
 };

@@ -5,11 +5,13 @@
 
 - [设计概念](./doc/design.md)
 
-#### 单元测试覆盖率99％，放心使用
 
-#### 兼容性
- - 支持react 15.x, 16.x, 以及anujs
- - 浏览器：IE9+
+#### 基本介绍
+- 这是一个简洁、高效的react状态管理器
+- 浏览器兼容：IE9+
+- 支持react 15.x, 16.x, 以及anujs
+- 单元测试覆盖率99％，放心使用
+- 包体积，minizip 5k(uglify+gzip压缩后5k)
 <!-- # react-natural-store 使用手册 -->
 
 #### 第一步 创建 store 实例
@@ -17,6 +19,11 @@
 
 ```js
 import { createStore } from 'react-natural-store';
+
+/*
+此处app视为一个模块
+一个模块的数据结构就是如此
+*/
 const app = {
   // state 必须是Object对象，子元素不限
   state: {
@@ -47,11 +54,14 @@ const app = {
     addName: state => lastName => state.name + lastName,
   },
 };
+
+// 其他的模块
 const otherModules = { 
   //... 
-}；
+};
 
-const store = createStore({ app, ...otherModules }); // 创建store实例
+// 创建store实例
+const store = createStore({ app, ...otherModules }); 
 
 export default store;
 
@@ -94,7 +104,7 @@ export default inject('app', 'otherModuleName')(App);
 ```  
 
 ---
-#### 好了，你已经掌握了，以下是一些附加功能。
+#### 好了，你已经掌握了。以下是一些附加功能。
 
 - [hooks方式](#hooks)
 - [配置懒加载模块](#config-lazy-module)
@@ -291,7 +301,7 @@ const app = store.getModule('app');
   你可以监听懒加载模块，然后获取
 */
 store.subscribe('lazyModuleName', () => {
-const lazyModule = store.getModule('lazyModuleName');
+  const lazyModule = store.getModule('lazyModuleName');
 });
 
 /*
@@ -439,7 +449,8 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 
- - 从1.x版本开始，maps中的值会根据依赖的变化进行动态计算，依赖不变的则使用缓存，原理是使用了Object.defineProperty作数据劫持，收集依赖，所以在改变state时，应该使用immutable写法，否则maps不会监听到state变化，就不会重新计算。（因为遵循着immutable的规范，所以maps监听只是监听了state第一层值的变化，如果state第一层的值没有变化，那么maps也不会更新。)  
+- **在actions中修改state，需要遵循immutable规范**。maps只监听state下第一层值的变化，所以如果第一层值没有变化，但是state深层值确实有变化，那么对应的maps缓存不会刷新。 
 
-  - 在1.x的版本中，state的第一层属性应该提前声明，如果动态新增某个属性，或动态删除某个属性，此时maps无法监听其变化，导致maps无法及时更新。
+- **请尽量避免在actions中动态增加或删除state的key**。这会导致一个问题，当maps依赖state动态增加或删除的key时，由于Object.defineProperty无法监听到增加key或删除key的变化，所以对应的maps不会重新计算，依然会使用上次的缓存。
+
 

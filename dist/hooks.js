@@ -79,7 +79,7 @@ function useInject() {
       var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
       Promise.all(loadModulesPromise).then(function (modules) {
         modules.forEach(function (storeModule, index) {
-          return store.addModule(unLoadedModules[index], storeModule);
+          return store.setModule(unLoadedModules[index], storeModule);
         });
         setModulesHasLoaded(true);
       })["catch"](function (e) {

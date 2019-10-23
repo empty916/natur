@@ -220,7 +220,6 @@ describe('init', () => {
 	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
-			'addModule',
 			'getAllModuleName',
 			'getModule',
 			'removeModule',
@@ -229,6 +228,7 @@ describe('init', () => {
 			'setModule',
 			'hasModule',
 			'subscribe',
+			'destory',
 		]);
 		expect(getStoreInstance()).toBe(store);
 	});
@@ -247,43 +247,47 @@ describe('init', () => {
 
 });
 
-describe('addModule', () => {
+describe('setModule', () => {
 	beforeEach(() => {
-		store = createStore({ count });
-		store.addModule('name', name);
-		store.addModule('nameWithMaps', nameWithMaps);
+		store = createStore({ name });
+		store.setModule('count', name);
+		store.setModule('nameWithMaps', nameWithMaps);
+		store.setModule('count', count);
 	});
-	test('add illegal module', () => {
-		expect(() => store.addModule('name1', {
+	test('run actions', updateCountState);
+	test('maps cache', countMapsCache);
+	test('set illegal module', () => {
+		expect(() => store.setModule('name1', {})).toThrow();
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:1},
 			maps: {a:1}
 		})).toThrow('storeModule is illegal!');
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:1}
 		})).toThrow('storeModule is illegal!');
 
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: [{a:1}],
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).toThrow('storeModule is illegal!');
 
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: () => {},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).toThrow();
 
-		expect(() => store.addModule('name1', {
+		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).not.toThrow();
 
-		expect(() => store.addModule('name11', {
+		expect(() => store.setModule('name11', {
 			state: {},
 			actions: {},
 			maps: {}
@@ -293,23 +297,21 @@ describe('addModule', () => {
 		expect(store.getModule('name11').actions).toEqual({});
 		expect(store.getModule('name11').maps).toEqual({});
 	})
-	test('run actions', updateCountState);
-	test('maps cache', countMapsCache);
-	test('add module', () => {
-		expect(store.addModule('name1', name)).toBe(store);
-		expect(() => store.addModule('name11', {})).toThrow();
+	test('set module', () => {
+		expect(store.setModule('name1', name)).toBe(store);
+		expect(() => store.setModule('name11', {})).toThrow();
 		expect(store.hasModule('name11')).toBe(false);
 	});
-	test('add module repeat', () => {
+	test('set module repeat', () => {
 		const nameModule = store.getModule('name');
-		expect(() => store.addModule('name', name)).toThrow();
+		expect(() => store.setModule('name', name)).not.toThrow();
 		const name2Module = store.getModule('name');
-		expect(nameModule).toBe(name2Module);
+		expect(nameModule).not.toBe(name2Module);
 	});
 	test('hasModule', hasModule('count'));
 	test('hasNotModule', () => {
 		hasNotModule('name1')()
-		store.addModule('name1', name);
+		store.setModule('name1', name);
 		hasModule('name1')()
 	});
 	test('get module', getModule('name', name));
@@ -317,17 +319,17 @@ describe('addModule', () => {
 	test('get module not exist', getModuleNotExist('name1'));
 	test('get moduleWithoutMaps', getModuleWithoutMaps('name', name));
 	test('get moduleWithMaps', getModuleWithMaps('nameWithMaps', nameWithMaps));
-	test('getAllModuleName', getAllModuleName(['count', 'name', 'nameWithMaps']))
+	test('getAllModuleName', getAllModuleName(['name', 'count', 'nameWithMaps']))
 });
 
 describe('removeModule', () => {
 	beforeEach(() => {
 		store = createStore({ count, name });
-		store.addModule('nameWithMaps', nameWithMaps);
+		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('count');
 	});
 	test('module destory', () => {
-		store.addModule('count', count);
+		store.setModule('count', count);
 		countMapsCache();
 		store.removeModule('count', count);
 	})
@@ -338,11 +340,11 @@ describe('removeModule', () => {
 	test('getAllModuleName', getAllModuleName(['name', 'nameWithMaps']))
 });
 
-describe('addModule then removeModule', () => {
+describe('setModule then removeModule', () => {
 	beforeEach(() => {
 		store = createStore({ name });
-		store.addModule('count', count);
-		store.addModule('nameWithMaps', nameWithMaps);
+		store.setModule('count', count);
+		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('nameWithMaps');
 	});
 	test('run actions', updateCountState);
@@ -355,30 +357,30 @@ describe('addModule then removeModule', () => {
 	test('getAllModuleName', getAllModuleName(['name', 'count']))
 });
 
-describe('removeModule then addModule', () => {
+describe('removeModule then setModule', () => {
 	beforeEach(() => {
 		store = createStore({ count });
 		store.removeModule('count');
-		store.addModule('count', count);
-		store.addModule('name', name);
-		store.addModule('nameWithMaps', nameWithMaps);
+		store.setModule('count', count);
+		store.setModule('name', name);
+		store.setModule('nameWithMaps', nameWithMaps);
 	});
 	test('run actions', updateCountState);
 	test('maps cache', countMapsCache);
-	test('add module', () => {
-		expect(store.addModule('name1', name)).toBe(store);
+	test('set module', () => {
+		expect(store.setModule('name1', name)).toBe(store);
 	});
 
-	test('add module repeat', () => {
+	test('set module repeat', () => {
 		const nameModule = store.getModule('name');
-		expect(() => store.addModule('name', name)).toThrow();
+		expect(() => store.setModule('name', name)).not.toThrow();
 		const name2Module = store.getModule('name');
-		expect(nameModule).toBe(name2Module);
+		expect(nameModule).not.toBe(name2Module);
 	});
 	test('hasModule', hasModule('count'));
 	test('hasNotModule', () => {
 		hasNotModule('name1')()
-		store.addModule('name1', name);
+		store.setModule('name1', name);
 		hasModule('name1')()
 	});
 	test('get module', getModule('name', name));
@@ -409,72 +411,16 @@ describe('lazyModule', () => {
 	test('getAllModuleName', getAllModuleName(['count', 'name', 'lazyModule', 'lazyModuleWithoutMaps']))
 });
 
-describe('setModule', () => {
-	beforeEach(() => {
-		store = createStore({ name });
-		store.addModule('count', name);
-		store.addModule('nameWithMaps', nameWithMaps);
-		store.setModule('count', count);
-	});
-	test('run actions', updateCountState);
-	test('maps cache', countMapsCache);
-	test('set illegal module', () => {
-		expect(() => store.setModule('name1', {})).toThrow();
-		expect(() => store.setModule('name1', {
-			state: {a:1},
-			actions: {a:1},
-			maps: {a:1}
-		})).toThrow('storeModule is illegal!');
-		expect(() => store.setModule('name1', {
-			state: {a:1},
-			actions: {a:() => {}},
-			maps: {a:1}
-		})).toThrow('storeModule is illegal!');
-
-		expect(() => store.setModule('name1', {
-			state: {a:1},
-			actions: {a:() => {}},
-			maps: {a:() => {}}
-		})).not.toThrow();
-
-		expect(() => store.setModule('name1', {
-			state: {},
-			actions: {},
-			maps: {}
-		})).not.toThrow();
-
-	})
-	test('add module', () => {
-		expect(store.addModule('name1', name)).toBe(store);
-	});
-	test('add module repeat', () => {
-		const nameModule = store.getModule('name');
-		expect(() => store.addModule('name', name)).toThrow();
-		const name2Module = store.getModule('name');
-		expect(nameModule).toBe(name2Module);
-	});
-	test('hasModule', hasModule('count'));
-	test('hasNotModule', () => {
-		hasNotModule('name1')()
-		store.addModule('name1', name);
-		hasModule('name1')()
-	});
-	test('get module', getModule('name', name));
-	test('get origin module', getOriginModule('count', count));
-	test('get module not exist', getModuleNotExist('name1'));
-	test('get moduleWithoutMaps', getModuleWithoutMaps('name', name));
-	test('get moduleWithMaps', getModuleWithMaps('nameWithMaps', nameWithMaps));
-	test('getAllModuleName', getAllModuleName(['name', 'count', 'nameWithMaps']))
-});
-
 describe('subscribe', () => {
 	beforeEach(() => {
 		store = createStore({ count });
 	});
+
 	test('subscribe listener', done => {
 		const countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
 		const unsub = store.subscribe('count', () => {
+			expect(Object.keys(countModule.state)).toEqual(['count', 'name']);
 			expect(countModule.state.count).toBe(oldCount + 1);
 			expect(countModule.maps.isOdd).toBe(true);
 			done();
@@ -522,7 +468,7 @@ describe('actions', () => {
 			}
 		]);
 		// store.removeModule('count');
-		// store.addModule('count', count);
+		// store.setModule('count', count);
 	});
 
 	test('return invalid type', () => {
