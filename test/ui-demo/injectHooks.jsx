@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { inject, createStore, useInject } from "../../src";
 
 const name = {
@@ -24,8 +24,8 @@ const lazyName = {
 	}
 }
 const App = () => {
-	const [name, lazyName] = useInject('name', 'lazyName');
-	const [] = useInject();
+	const [moduleNames, setModuleNames] = useState(['name', 'lazyName'])
+	const [name, lazyName] = useInject(...moduleNames);
 	if (!name) {
 		return null;
 	}
@@ -41,7 +41,6 @@ const App = () => {
 
 const AppWithErrorModuleName = () => {
 	const [name] = useInject('name', 'aaa');
-	const [] = useInject();
 	const { state, actions, maps } = name;
 	return (
 		<>
@@ -64,14 +63,36 @@ const AppWithLoadErrorModule = () => {
 		</>
 	);
 };
-const initStore = () => createStore({name}, {
-	lazyName: () => Promise.resolve(lazyName),
-	lazyLoadError: () => Promise.reject(lazyName),
-})
+
+
+const AppWithNoModule = () => {
+	const storeModules = useInject();
+	if (!storeModules.length) {
+		return 'loading';
+	}
+	return (
+		<>
+			aaa
+		</>
+	);
+};
+const initStore = () => createStore(
+	{
+		name,
+		name1: name,
+		name2: name,
+		name3: name,
+	},
+	{
+		lazyName: () => Promise.resolve(lazyName),
+		lazyLoadError: () => Promise.reject(lazyName),
+	}
+)
 
 export {
 	App,
 	AppWithErrorModuleName,
 	AppWithLoadErrorModule,
+	AppWithNoModule,
 	initStore,
 };

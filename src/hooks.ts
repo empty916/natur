@@ -10,58 +10,62 @@ import {
 	StoreModule,
 	InjectStoreModule,
 } from './createStore';
+import { isEqualWithDepthLimit } from './utils';
 
 const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 
 export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
 	if (moduleNames.length === 0) {
-        return [];
-    }
+		throw new Error('useInject: moduleNames param is required!')
+	}
+	const [$moduleNames, setModuleNames] = useState(moduleNames);
+	if (!isEqualWithDepthLimit(moduleNames.slice().sort(), $moduleNames.slice().sort(), 1)) {
+		setModuleNames(moduleNames);
+	}
     const store = getStoreInstance();
     const allModuleNames = store.getAllModuleName();
     // 获取store中不存在的模块
-    const invalidModulesNames = moduleNames.filter(mn => !allModuleNames.includes(mn));
+    const invalidModulesNames = $moduleNames.filter(mn => !allModuleNames.includes(mn));
     if (!!invalidModulesNames.length) {
         console.error(`useInject: ${invalidModulesNames.join()} module is not exits!`);
         return [];
     }
     const [stateChanged, setStateChanged] = useState({});
     // 获取moduleNames中是否存在未加载的模块
-    const unLoadedModules = moduleNames.filter(mn => !store.hasModule(mn));
-    const [modulesHasLoaded, setModulesHasLoaded] = useState(!unLoadedModules.length);
+	const unLoadedModules = $moduleNames.filter(mn => !store.hasModule(mn));
+	const hasUnloadModules = !!unLoadedModules.length;
     const $setStateChanged = useCallback(() => setStateChanged({}), [setStateChanged]);
-
     // 初始化store监听
     useEffect(() => {
-        const unsubscribes = moduleNames.map(mn => store.subscribe(mn, $setStateChanged));
+        const unsubscribes = $moduleNames.map(mn => store.subscribe(mn, $setStateChanged));
         return () => unsubscribes.forEach(fn => fn());
-    }, []);
+    }, [$moduleNames]);
 
     useEffect(
         () => {
             // 动态加载moduleName中还未加载的模块
-            if (!modulesHasLoaded) {
+            if (hasUnloadModules) {
                 const loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
                 Promise.all(loadModulesPromise)
                     .then((modules: StoreModule[]) => {
                         modules.forEach((storeModule, index) =>
                             store.setModule(unLoadedModules[index], storeModule)
                         );
-                        setModulesHasLoaded(true);
+                        setStateChanged({});
                     })
                     .catch((e: Error) => {
-                        setModulesHasLoaded(false);
+                        setStateChanged({});
                     });
             }
         },
-        []
+        [hasUnloadModules]
     );
     // 计算moduleName对应的store、action,放入props中
-    if (!modulesHasLoaded) {
+    if (hasUnloadModules) {
         console.log('store module is loading.');
         return [];
     }
-    return moduleNames.reduce((res, mn: ModuleName) => {
+    return $moduleNames.reduce((res, mn: ModuleName) => {
         res.push(store.getModule(mn));
         return res;
 	}, [] as InjectStoreModule[]);

@@ -9,6 +9,8 @@ var _react = require("react");
 
 var _createStore = require("./createStore");
 
+var _utils = require("./utils");
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -29,13 +31,22 @@ function useInject() {
   }
 
   if (moduleNames.length === 0) {
-    return [];
+    throw new Error('useInject: moduleNames param is required!');
+  }
+
+  var _useState = (0, _react.useState)(moduleNames),
+      _useState2 = _slicedToArray(_useState, 2),
+      $moduleNames = _useState2[0],
+      setModuleNames = _useState2[1];
+
+  if (!(0, _utils.isEqualWithDepthLimit)(moduleNames.slice().sort(), $moduleNames.slice().sort(), 1)) {
+    setModuleNames(moduleNames);
   }
 
   var store = (0, _createStore.getStoreInstance)();
   var allModuleNames = store.getAllModuleName(); // 获取store中不存在的模块
 
-  var invalidModulesNames = moduleNames.filter(function (mn) {
+  var invalidModulesNames = $moduleNames.filter(function (mn) {
     return !allModuleNames.includes(mn);
   });
 
@@ -44,27 +55,22 @@ function useInject() {
     return [];
   }
 
-  var _useState = (0, _react.useState)({}),
-      _useState2 = _slicedToArray(_useState, 2),
-      stateChanged = _useState2[0],
-      setStateChanged = _useState2[1]; // 获取moduleNames中是否存在未加载的模块
+  var _useState3 = (0, _react.useState)({}),
+      _useState4 = _slicedToArray(_useState3, 2),
+      stateChanged = _useState4[0],
+      setStateChanged = _useState4[1]; // 获取moduleNames中是否存在未加载的模块
 
 
-  var unLoadedModules = moduleNames.filter(function (mn) {
+  var unLoadedModules = $moduleNames.filter(function (mn) {
     return !store.hasModule(mn);
   });
-
-  var _useState3 = (0, _react.useState)(!unLoadedModules.length),
-      _useState4 = _slicedToArray(_useState3, 2),
-      modulesHasLoaded = _useState4[0],
-      setModulesHasLoaded = _useState4[1];
-
+  var hasUnloadModules = !!unLoadedModules.length;
   var $setStateChanged = (0, _react.useCallback)(function () {
     return setStateChanged({});
   }, [setStateChanged]); // 初始化store监听
 
   (0, _react.useEffect)(function () {
-    var unsubscribes = moduleNames.map(function (mn) {
+    var unsubscribes = $moduleNames.map(function (mn) {
       return store.subscribe(mn, $setStateChanged);
     });
     return function () {
@@ -72,28 +78,28 @@ function useInject() {
         return fn();
       });
     };
-  }, []);
+  }, [$moduleNames]);
   (0, _react.useEffect)(function () {
     // 动态加载moduleName中还未加载的模块
-    if (!modulesHasLoaded) {
+    if (hasUnloadModules) {
       var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
       Promise.all(loadModulesPromise).then(function (modules) {
         modules.forEach(function (storeModule, index) {
           return store.setModule(unLoadedModules[index], storeModule);
         });
-        setModulesHasLoaded(true);
+        setStateChanged({});
       })["catch"](function (e) {
-        setModulesHasLoaded(false);
+        setStateChanged({});
       });
     }
-  }, []); // 计算moduleName对应的store、action,放入props中
+  }, [hasUnloadModules]); // 计算moduleName对应的store、action,放入props中
 
-  if (!modulesHasLoaded) {
+  if (hasUnloadModules) {
     console.log('store module is loading.');
     return [];
   }
 
-  return moduleNames.reduce(function (res, mn) {
+  return $moduleNames.reduce(function (res, mn) {
     res.push(store.getModule(mn));
     return res;
   }, []);
