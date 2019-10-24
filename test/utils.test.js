@@ -61,6 +61,7 @@ describe('utils', () => {
 
 
 		expect(isEqualWithDepthLimit([], {}, 1)).toBe(true);
+		expect(isEqualWithDepthLimit([1,2,3], [1,2,3], 1)).toBe(true);
 		expect(isEqualWithDepthLimit({}, [], 1)).toBe(true);
 		expect(isEqualWithDepthLimit(null, [], 1)).toBe(false);
 		expect(isEqualWithDepthLimit(null, {}, 1)).toBe(false);

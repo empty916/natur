@@ -11,37 +11,9 @@ type otherProps = {
 
 const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 	const { state, actions, maps } = count;
-	const incProxy = () => {
-		actions.inc(state);
-		// console.log('state实时获取最新值测试', {...state});
-		// console.log('maps实时获取最新值测试', {...maps});
-	};
+	const incProxy = () => actions.inc(state);
 	const decProxy = () => actions.dec(state);
-	const stateHasNoChange = () => actions.doNothing(state);
-	const asyncStateHasNoChange = () => actions.asyncDoNothing(state);
-	// React.useEffect(() => {
-	// 	console.log({...maps});
-	// });
-	// React.useEffect(() => {
-	// 	console.log('state缓存测试：当state改变时才会打印');
-	// }, [state]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当maps改变时才会打印');
-	// }, [maps]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当name改变时才会打印');
-	// }, [maps.splitName]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当state中有值改变时就会打印');
-	// }, [maps.combine]);
-	// React.useEffect(() => {
-	// 	console.log('maps缓存测试：当count改变时才会打印');
-	// }, [maps.count]);
 
-
-	// React.useEffect(() => {
-	// 	console.log('maps动态依赖测试: 当count是奇数时，才会打印name', maps.returnNameWhenCountIsOdd);
-	// }, [maps.returnNameWhenCountIsOdd]);
 	return (
 		<div>
 			<button onClick={incProxy}>+</button>
@@ -53,14 +25,6 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 			<br/>
 			<br/>
 			<div>maps.isOdd: {maps.isOdd + ''}</div>
-			<br/>
-			<button onClick={stateHasNoChange}>stateHasNoChange</button>
-			<br/>
-			<button onClick={asyncStateHasNoChange}>asyncStateHasNoChange</button>
-			<br/>
-			<button onClick={() => actions.addKey(state)}>add new key</button>
-			<br/>
-			<button onClick={() => actions.deleteKey(state)}>delete new key</button>
 			<br/>
 		</div>
 	);
