@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-import { ModuleName, StoreModule } from './createStore'
+import { StoreModule, State } from './createStore'
 
 const hasOwn = Object.prototype.hasOwnProperty;
 export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
@@ -29,12 +29,19 @@ export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
 type Obj = {[p: string]: any}
 type anyFn = (...arg: any[]) => any;
 type fnObj = {[p: string]: anyFn};
+type mapsObj = {[p: string]: Array<any> | Function};
 
 export const isObj = <T = Obj>(obj: any): obj is T => typeof obj === 'object' && obj !== null && obj.constructor === Object;
 export const isFn = (arg: any): arg is anyFn => typeof arg === 'function';
 export const isFnObj = (obj: any): obj is fnObj => {
 	if (isObj(obj)) {
 		return Object.keys(obj).every(key => isFn(obj[key]));
+	}
+	return false;
+}
+const isMapsObj = (obj: any): obj is mapsObj => {
+	if (isObj(obj)) {
+		return Object.keys(obj).every(key => isFn(obj[key]) || obj[key].constructor === Array);
 	}
 	return false;
 }
@@ -45,7 +52,7 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 	if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
 		return false;
 	}
-	if (!!obj.maps && !isFnObj(obj.maps)){
+	if (!!obj.maps && !isMapsObj(obj.maps)){
 		return false;
 	}
 	return true;
@@ -165,88 +172,123 @@ export function isEqualWithDepthLimit(
 	return true;
 }
 
-
-
-export class Depend {
-	id: string;
-	moduleName: ModuleName;
-	stateName: string;
-	watchers: Watcher[] = [];
-	watchersMap: {[p: string]: true} = {};
-	static targetWatcher: Watcher | undefined = undefined;
-	constructor(moduleName: ModuleName, stateName: string) {
-		this.moduleName = moduleName;
-		this.stateName = stateName;
-		this.id = `${moduleName}-${stateName}`;
-	}
-	addWatcher(watcher: Watcher) {
-		if (!this.watchersMap[watcher.id]) {
-			this.watchers.push(watcher);
-			this.watchersMap[watcher.id] = true;
-			watcher.addDepend(this);
+/**
+ *
+ * @param obj State
+ * @param keyPath 'a.b[0].c'
+ */
+const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
+	const formatKeyArr = keyPath.replace(/\[/g, '.').replace('/\]/g', '').split('.');
+	let value = obj;
+	for(let i = 0; i < formatKeyArr.length; i ++) {
+		try {
+			value = value[formatKeyArr[i]];
+		} catch (error) {
+			return undefined;
 		}
 	}
-	removeWatcher(watcher: Watcher) {
-		this.watchers = this.watchers.filter(w => w !== watcher);
-		delete this.watchersMap[watcher.id];
-	}
-	clearWatcher() {
-		this.watchers.forEach(w => w.removeDepend(this));
-		this.watchersMap = {};
-		this.watchers = [];
-	}
-	notify() {
-		this.watchers.forEach(w => w.update());
-	}
-	destroy() {
-		this.clearWatcher();
-	}
+	return value;
 }
 
-export class Watcher {
-	depends: Depend[] = [];
-	useCache: boolean = false;
-	cache: any;
-	moduleName: ModuleName;
-	mapName: string;
-	dependsMap: {[p: string]: true} = {};
-	id: string;
-	mapRunner: (...arg: any[]) => any;
-	constructor(moduleName: ModuleName, mapName: string, runner: (...arg: any[]) => any) {
-		this.moduleName = moduleName;
-		this.mapName = mapName;
-		this.mapRunner = runner;
-		this.id = `${moduleName}-${mapName}`;
+const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
+	if (arr1.length !== arr2.length) {
+		return false;
 	}
-	update() {
-		this.useCache = false;
-	}
-	run() {
-		Depend.targetWatcher = this;
-		this.cache = this.mapRunner();
-		Depend.targetWatcher = undefined;
-		this.useCache = true;
-	}
-	addDepend(depend: Depend) {
-		if (!this.dependsMap[depend.id]) {
-			this.depends.push(depend);
-			this.dependsMap[depend.id] = true;
+	for(let i = 0; i < arr1.length; i ++) {
+		if (arr1[i] !== arr2[i] ) {
+			return false;
 		}
 	}
-	removeDepend(depend: Depend) {
-		this.depends.filter(dep => dep !== depend);
-		delete this.dependsMap[depend.id];
+	return true;
+}
+export class MapCache {
+
+	type: 'function' | 'array' = 'function';
+	map: Function;
+	mapDepends: Array<Function> = [];
+	depCache: Array<any> = [];
+	getState: () => State;
+
+	dependKeys: {[key: string]: true} = {};
+
+	shouldCheckDependsCache: boolean = true;
+	hasComparedDep: boolean = false;
+
+
+	firstRun: boolean = true;
+	value: any;
+
+	static runningMap: MapCache | undefined;
+
+	constructor(
+		getState: () => State,
+		map: Array<string | Function> | Function
+	) {
+		this.getState = getState;
+		if (typeof map === 'function') {
+			this.type = 'function';
+			this.map = map;
+		} else {
+			this.type = 'array';
+			const copyMap = map.slice();
+			this.map = copyMap.pop() as Function;
+			copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
+		}
 	}
-	clearDepends() {
-		this.depends.forEach(dep => dep.removeWatcher(this));
-		this.depends = [];
-		this.dependsMap = {};
+	createGetDepByKeyPath(keyPath: string | Function) {
+		if (typeof keyPath === 'string') {
+			return () => getValueFromObjByKeyPath(this.getState(), keyPath);
+		}
+		return keyPath;
 	}
+	shouldCheckCache() {
+		this.shouldCheckDependsCache = true;
+		this.hasComparedDep = false;
+	}
+	addDependKey(key: string) {
+		if (!this.dependKeys[key] && this.type === 'function') {
+			this.dependKeys[key] = true;
+			this.mapDepends.push(this.createGetDepByKeyPath(key));
+		}
+	}
+	hasDepChanged() {
+		if (this.shouldCheckDependsCache && !this.hasComparedDep) {
+			const newDepCache = this.mapDepends.map(dep => dep());
+			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
+			// 首次运行map，还没有缓存，只有在type是函数的情况下存在。
+			if (this.firstRun) {
+				depHasChanged =  true;
+			}
+			if (depHasChanged) {
+				this.depCache = newDepCache;
+			}
+			this.shouldCheckDependsCache = false;
+			this.hasComparedDep = true;
+			return depHasChanged;
+		}
+		return false;
+	}
+	getValue() {
+		if (this.hasDepChanged()) {
+			if (this.type === 'function') {
+				MapCache.runningMap = this;
+				this.value = this.map(this.getState());
+				MapCache.runningMap = undefined;
+			} else {
+				this.value = this.map(...this.depCache);
+			}
+		}
+		if (this.firstRun) {
+			this.firstRun = false;
+		}
+		return this.value;
+	}
+
 	destroy() {
-		this.clearDepends();
-		this.cache = null;
-		this.mapRunner = () => {};
+		this.map = () => {};
+		this.mapDepends = [];
+		this.depCache = [];
+		this.getState = () => ({});
+		this.dependKeys = {};
 	}
 }
-
-

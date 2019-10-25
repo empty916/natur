@@ -139,6 +139,7 @@ describe('utils', () => {
 		expect(isStoreModule(cm(() => {}, 2))).toBe(false);
 		expect(isStoreModule(cm(1, () => {}))).toBe(false);
 		expect(isStoreModule(cm(() => {}, () => {}))).toBe(true);
+		expect(isStoreModule(cm(['a', 'b', () => {}], () => {}))).toBe(true);
 	})
 
 	test('compose', () => {

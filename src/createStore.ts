@@ -7,8 +7,7 @@
  */
 import {
 	ObjChangedKeys,
-	Depend,
-	Watcher,
+	MapCache,
 	compose,
 	isPromise,
 	isObj,
@@ -114,8 +113,8 @@ const createStore: CreateStore = (
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: InjectMaps} = {};
 
-	const mapsWatcher: {[p: string]: {[p: string]: Watcher}} = {};
-	const stateDepends: {[p: string]: {[p: string]: Depend}} = {};
+	const mapsCache: {[p: string]: {[p: string]: MapCache}} = {};
+	const mapsCacheList: {[p: string]: MapCache[] } = {};
 
 	const modulesCache: Modules = {};
 	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
@@ -148,25 +147,16 @@ const createStore: CreateStore = (
 		}
 	}
 	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
-	const clearStateOrMapProxyCache = (
-		stateOrMapProxyCache: States | typeof mapsProxyCache,
-		stateDependsOrMapsWatcher: typeof stateDepends | typeof mapsWatcher
-	) => (moduleName: ModuleName) => {
-		delete stateOrMapProxyCache[moduleName];
-		for(let key in stateDependsOrMapsWatcher[moduleName]) {
-			stateDependsOrMapsWatcher[moduleName][key].destroy();
-			delete stateDependsOrMapsWatcher[moduleName][key];
-		}
-		delete stateDependsOrMapsWatcher[moduleName];
-	}
-	const clearStateProxyCache = clearStateOrMapProxyCache(stateProxyCache, stateDepends);
-	const clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
-	const clearMapsWatcherCache = (moduleName: ModuleName, changedStateNames: string[]) => {
-		changedStateNames.forEach(stateName => {
-			if (stateDepends[moduleName][stateName]) {
-				stateDepends[moduleName][stateName].notify();
-			}
-		});
+
+	const clearStateProxyCache = (moduleName: ModuleName) => delete stateProxyCache[moduleName];
+	const clearMapsProxyCache = (moduleName: ModuleName) => {
+		delete mapsProxyCache[moduleName];
+		delete mapsCache[moduleName];
+		mapsCacheList[moduleName].forEach(i => i.destroy())
+		delete mapsCacheList[moduleName];
+	};
+	const mapsCacheShouldCheckForValid = (moduleName: ModuleName) => {
+		mapsCacheList[moduleName].forEach(i => i.shouldCheckCache());
 	};
 	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
@@ -202,7 +192,7 @@ const createStore: CreateStore = (
 			clearModulesCache(moduleName);
 			createStateProxy(moduleName);
 		}
-		clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
+		mapsCacheShouldCheckForValid(moduleName);
 		runListeners(moduleName);
 		return stateProxyCache[moduleName];
 	}
@@ -228,11 +218,9 @@ const createStore: CreateStore = (
 		} else {
 			allModuleNames = undefined;
 		}
-		if (!mapsWatcher[moduleName]) {
-			mapsWatcher[moduleName] = {};
-		}
-		if(!stateDepends[moduleName]) {
-			stateDepends[moduleName] = {};
+		if (!mapsCache[moduleName]) {
+			mapsCache[moduleName] = {};
+			mapsCacheList[moduleName] = [];
 		}
 		runListeners(moduleName);
 		return currentStoreInstance;
@@ -262,11 +250,8 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (Depend.targetWatcher) {
-							if (!stateDepends[moduleName][key]) {
-								stateDepends[moduleName][key] = new Depend(moduleName, key);
-							}
-							stateDepends[moduleName][key].addWatcher(Depend.targetWatcher);
+						if (MapCache.runningMap) {
+							MapCache.runningMap.addDependKey(key);
 						}
 						return currentModules[moduleName].state[key];
 					}
@@ -293,22 +278,15 @@ const createStore: CreateStore = (
 					enumerable: true,
 					configurable: true,
 					get() {
-						if (mapsWatcher[moduleName][key] === undefined) {
-							mapsWatcher[moduleName][key] = new Watcher(
-								moduleName,
-								key,
-								() => (currentModules[moduleName].maps as Maps)[key](stateProxyCache[moduleName])
+						if (mapsCache[moduleName][key] === undefined) {
+							mapsCache[moduleName][key] = new MapCache(
+								() => stateProxyCache[moduleName],
+								maps[key],
 							);
+							mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
 						}
-						const targetWatcher = mapsWatcher[moduleName][key];
-						if (targetWatcher.useCache) {
-							return targetWatcher.cache;
-						}
-						// 清除旧的依赖
-						targetWatcher.clearDepends();
-						// 重新收集依赖
-						targetWatcher.run();
-						return targetWatcher.cache;
+						const targetWatcher = mapsCache[moduleName][key];
+						return targetWatcher.getValue();
 					}
 				});
 			}
