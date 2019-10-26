@@ -177,8 +177,8 @@ export function isEqualWithDepthLimit(
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */
-const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
-	const formatKeyArr = keyPath.replace(/\[/g, '.').replace('/\]/g', '').split('.');
+export const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
+	const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
 	let value = obj;
 	for(let i = 0; i < formatKeyArr.length; i ++) {
 		try {
@@ -237,7 +237,7 @@ export class MapCache {
 	}
 	createGetDepByKeyPath(keyPath: string | Function) {
 		if (typeof keyPath === 'string') {
-			return () => getValueFromObjByKeyPath(this.getState(), keyPath);
+			return (s: State) => getValueFromObjByKeyPath(s, keyPath);
 		}
 		return keyPath;
 	}
@@ -251,9 +251,12 @@ export class MapCache {
 			this.mapDepends.push(this.createGetDepByKeyPath(key));
 		}
 	}
+	getDepsValue() {
+		return this.mapDepends.map(dep => dep(this.getState()));
+	}
 	hasDepChanged() {
 		if (this.shouldCheckDependsCache && !this.hasComparedDep) {
-			const newDepCache = this.mapDepends.map(dep => dep());
+			const newDepCache = this.getDepsValue();
 			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
 			// 首次运行map，还没有缓存，只有在type是函数的情况下存在。
 			if (this.firstRun) {
@@ -274,6 +277,9 @@ export class MapCache {
 				MapCache.runningMap = this;
 				this.value = this.map(this.getState());
 				MapCache.runningMap = undefined;
+				if(this.firstRun) {
+					this.depCache = this.getDepsValue();
+				}
 			} else {
 				this.value = this.map(...this.depCache);
 			}

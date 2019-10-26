@@ -16,15 +16,39 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 
 	return (
 		<div>
+			count:
 			<button onClick={incProxy}>+</button>
 			<span>{state.count}</span>
 			<button onClick={decProxy}>-</button>
 			<br/>
 			<br/>
+
+			deep count:
+			<button onClick={() => {
+				const start = performance.now();
+				actions.incDeep(state);
+				console.log(performance.now() - start);
+			}}>+</button>
+			<span>{state.deep.count}</span>
+			<br/>
+			<br/>
+
+			deeep count:
+			<button onClick={() => {
+				const start = performance.now();
+				actions.incDeeep(state)
+				console.log(performance.now() - start);
+			}}>+</button>
+			<span>{state.deeep.deep.count}</span>
+			<br/>
+			<br/>
+
 			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
 			<br/>
 			<br/>
 			<div>maps.isOdd: {maps.isOdd + ''}</div>
+			<div>maps.deepCountIsOdd: {maps.deepCountIsOdd + ''}</div>
+			<div>maps.deeepCountIsOdd: {maps.deeepCountIsOdd + ''}</div>
 			<br/>
 		</div>
 	);

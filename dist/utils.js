@@ -5,7 +5,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.compose = compose;
 exports.isEqualWithDepthLimit = isEqualWithDepthLimit;
-exports.Watcher = exports.Depend = exports.ObjChangedKeys = exports.isStoreModule = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = exports.ObjHasSameKeys = void 0;
+exports.MapCache = exports.getValueFromObjByKeyPath = exports.ObjChangedKeys = exports.isStoreModule = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = exports.ObjHasSameKeys = void 0;
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -70,6 +78,16 @@ var isFnObj = function isFnObj(obj) {
 
 exports.isFnObj = isFnObj;
 
+var isMapsObj = function isMapsObj(obj) {
+  if (isObj(obj)) {
+    return Object.keys(obj).every(function (key) {
+      return isFn(obj[key]) || obj[key].constructor === Array;
+    });
+  }
+
+  return false;
+};
+
 var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 }; // export const isVoid = <T>(ar: T | void): ar is void => !ar;
@@ -82,7 +100,7 @@ var isStoreModule = function isStoreModule(obj) {
     return false;
   }
 
-  if (!!obj.maps && !isFnObj(obj.maps)) {
+  if (!!obj.maps && !isMapsObj(obj.maps)) {
     return false;
   }
 
@@ -200,134 +218,170 @@ function isEqualWithDepthLimit(objA, objB) {
 
   return true;
 }
+/**
+ *
+ * @param obj State
+ * @param keyPath 'a.b[0].c'
+ */
 
-var Depend =
-/*#__PURE__*/
-function () {
-  function Depend(moduleName, stateName) {
-    _classCallCheck(this, Depend);
 
-    this.watchers = [];
-    this.watchersMap = {};
-    this.moduleName = moduleName;
-    this.stateName = stateName;
-    this.id = "".concat(moduleName, "-").concat(stateName);
+var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, keyPath) {
+  var formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
+  var value = obj;
+
+  for (var i = 0; i < formatKeyArr.length; i++) {
+    try {
+      value = value[formatKeyArr[i]];
+    } catch (error) {
+      return undefined;
+    }
   }
 
-  _createClass(Depend, [{
-    key: "addWatcher",
-    value: function addWatcher(watcher) {
-      if (!this.watchersMap[watcher.id]) {
-        this.watchers.push(watcher);
-        this.watchersMap[watcher.id] = true;
-        watcher.addDepend(this);
+  return value;
+};
+
+exports.getValueFromObjByKeyPath = getValueFromObjByKeyPath;
+
+var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+
+  for (var i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+var MapCache =
+/*#__PURE__*/
+function () {
+  function MapCache(getState, map) {
+    var _this = this;
+
+    _classCallCheck(this, MapCache);
+
+    this.type = 'function';
+    this.mapDepends = [];
+    this.depCache = [];
+    this.dependKeys = {};
+    this.shouldCheckDependsCache = true;
+    this.hasComparedDep = false;
+    this.firstRun = true;
+    this.getState = getState;
+
+    if (typeof map === 'function') {
+      this.type = 'function';
+      this.map = map;
+    } else {
+      this.type = 'array';
+      var copyMap = map.slice();
+      this.map = copyMap.pop();
+      copyMap.forEach(function (item) {
+        return _this.mapDepends.push(_this.createGetDepByKeyPath(item));
+      });
+    }
+  }
+
+  _createClass(MapCache, [{
+    key: "createGetDepByKeyPath",
+    value: function createGetDepByKeyPath(keyPath) {
+      if (typeof keyPath === 'string') {
+        return function (s) {
+          return getValueFromObjByKeyPath(s, keyPath);
+        };
+      }
+
+      return keyPath;
+    }
+  }, {
+    key: "shouldCheckCache",
+    value: function shouldCheckCache() {
+      this.shouldCheckDependsCache = true;
+      this.hasComparedDep = false;
+    }
+  }, {
+    key: "addDependKey",
+    value: function addDependKey(key) {
+      if (!this.dependKeys[key] && this.type === 'function') {
+        this.dependKeys[key] = true;
+        this.mapDepends.push(this.createGetDepByKeyPath(key));
       }
     }
   }, {
-    key: "removeWatcher",
-    value: function removeWatcher(watcher) {
-      this.watchers = this.watchers.filter(function (w) {
-        return w !== watcher;
-      });
-      delete this.watchersMap[watcher.id];
-    }
-  }, {
-    key: "clearWatcher",
-    value: function clearWatcher() {
-      var _this = this;
-
-      this.watchers.forEach(function (w) {
-        return w.removeDepend(_this);
-      });
-      this.watchersMap = {};
-      this.watchers = [];
-    }
-  }, {
-    key: "notify",
-    value: function notify() {
-      this.watchers.forEach(function (w) {
-        return w.update();
-      });
-    }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.clearWatcher();
-    }
-  }]);
-
-  return Depend;
-}();
-
-exports.Depend = Depend;
-Depend.targetWatcher = undefined;
-
-var Watcher =
-/*#__PURE__*/
-function () {
-  function Watcher(moduleName, mapName, runner) {
-    _classCallCheck(this, Watcher);
-
-    this.depends = [];
-    this.useCache = false;
-    this.dependsMap = {};
-    this.moduleName = moduleName;
-    this.mapName = mapName;
-    this.mapRunner = runner;
-    this.id = "".concat(moduleName, "-").concat(mapName);
-  }
-
-  _createClass(Watcher, [{
-    key: "update",
-    value: function update() {
-      this.useCache = false;
-    }
-  }, {
-    key: "run",
-    value: function run() {
-      Depend.targetWatcher = this;
-      this.cache = this.mapRunner();
-      Depend.targetWatcher = undefined;
-      this.useCache = true;
-    }
-  }, {
-    key: "addDepend",
-    value: function addDepend(depend) {
-      if (!this.dependsMap[depend.id]) {
-        this.depends.push(depend);
-        this.dependsMap[depend.id] = true;
-      }
-    }
-  }, {
-    key: "removeDepend",
-    value: function removeDepend(depend) {
-      this.depends.filter(function (dep) {
-        return dep !== depend;
-      });
-      delete this.dependsMap[depend.id];
-    }
-  }, {
-    key: "clearDepends",
-    value: function clearDepends() {
+    key: "getDepsValue",
+    value: function getDepsValue() {
       var _this2 = this;
 
-      this.depends.forEach(function (dep) {
-        return dep.removeWatcher(_this2);
+      return this.mapDepends.map(function (dep) {
+        return dep(_this2.getState());
       });
-      this.depends = [];
-      this.dependsMap = {};
+    }
+  }, {
+    key: "hasDepChanged",
+    value: function hasDepChanged() {
+      if (this.shouldCheckDependsCache && !this.hasComparedDep) {
+        var newDepCache = this.getDepsValue();
+        var depHasChanged = !arrayIsEqual(this.depCache, newDepCache); // 首次运行map，还没有缓存，只有在type是函数的情况下存在。
+
+        if (this.firstRun) {
+          depHasChanged = true;
+        }
+
+        if (depHasChanged) {
+          this.depCache = newDepCache;
+        }
+
+        this.shouldCheckDependsCache = false;
+        this.hasComparedDep = true;
+        return depHasChanged;
+      }
+
+      return false;
+    }
+  }, {
+    key: "getValue",
+    value: function getValue() {
+      if (this.hasDepChanged()) {
+        if (this.type === 'function') {
+          MapCache.runningMap = this;
+          this.value = this.map(this.getState());
+          MapCache.runningMap = undefined;
+
+          if (this.firstRun) {
+            this.depCache = this.getDepsValue();
+          }
+        } else {
+          this.value = this.map.apply(this, _toConsumableArray(this.depCache));
+        }
+      }
+
+      if (this.firstRun) {
+        this.firstRun = false;
+      }
+
+      return this.value;
     }
   }, {
     key: "destroy",
     value: function destroy() {
-      this.clearDepends();
-      this.cache = null;
+      this.map = function () {};
 
-      this.mapRunner = function () {};
+      this.mapDepends = [];
+      this.depCache = [];
+
+      this.getState = function () {
+        return {};
+      };
+
+      this.dependKeys = {};
     }
   }]);
 
-  return Watcher;
+  return MapCache;
 }();
 
-exports.Watcher = Watcher;
+exports.MapCache = MapCache;

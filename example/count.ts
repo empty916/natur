@@ -13,14 +13,14 @@ export const state = {
 };
 export const maps = {
 	isOdd: ({ count }) => count % 2 !== 0,
-	deepCountIsOdd: ({ deep }) => {
+	deepCountIsOdd: ['deep.count', count => {
 		console.log('run deep map');
-		return deep.count % 2 !== 0;
-	},
-	deeepCountIsOdd: ({ deeep }) => {
+		return count % 2 !== 0;
+	}],
+	deeepCountIsOdd: ['deeep.deep.count', (count) => {
 		console.log('run deeep map');
-		return deeep.deep.count % 2 !== 0;
-	},
+		return count % 2 !== 0;
+	}],
 	splitName: state => {
 		return state.name.split("");
 	},

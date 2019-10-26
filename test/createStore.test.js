@@ -7,6 +7,15 @@ const count = {
 	state: {
 		count: 0,
 		name: 'count',
+		obj: [{
+			t: {
+				a: 1,
+			}
+		}, {
+			a: {
+				a: 2
+			},
+		}]
 	},
 	actions: {
 		inc: state => ({ ...state, count: state.count + 1 }),
@@ -20,16 +29,45 @@ const count = {
 			throw new Error('something error');
 		},
 		asyncThrowErrorAction: () => Promise.reject('async something error'),
+		addA1: state => ({
+			...state,
+			obj: [{
+				t: {
+					a: 5,
+				}
+			}, {
+				a: {
+					a: 2
+				},
+			}]
+		}),
+		addA2: state => ({
+			...state,
+			obj: [{
+				t: {
+					a: 2,
+				}
+			}, {
+				a: {
+					a: 10
+				},
+			}]
+		})
 	},
 	maps: {
 		isOdd: state => state.count % 2 !== 0,
-		getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
+		getSplitNameWhenCountIsOdd: (state) => {
 			countMapCallTimes ++;
-			if (count % 2 !== 0) {
-				return name.split('');
+			if (state.count % 2 !== 0) {
+				return state.name.split('');
 			}
-			return count;
-		}]
+			return state.count;
+		},
+		a1: ['obj[0].t.a', a => a + 1],
+		a2: [
+			state => state.obj[1].a.a,
+			a => a + 1
+		],
 	}
 }
 const countWithoutMaps = {
@@ -138,7 +176,17 @@ const updateCountState = () => {
 const countMapsCache = () => {
 	countMapCallTimes = 0;
 	const countModule = store.getModule('count');
+
+	expect(countModule.maps.a1).toBe(2)
+	expect(countModule.maps.a2).toBe(3)
+	countModule.actions.addA1(countModule.state);
+	expect(countModule.maps.a1).toBe(6)
+	countModule.actions.addA2(countModule.state);
+	expect(countModule.maps.a2).toBe(11)
+
+
 	// count: 0, isOdd: false
+	countModule.maps.getSplitNameWhenCountIsOdd;
 	countModule.maps.getSplitNameWhenCountIsOdd;
 	expect(countMapCallTimes).toBe(1);
 
@@ -147,12 +195,12 @@ const countMapsCache = () => {
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(2);
+	expect(countMapCallTimes).toBe(1);
 
 	// name: 'count11'
 	countModule.actions.updateName(countModule.state);
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(3);
+	expect(countMapCallTimes).toBe(1);
 
 	// count: 1, isOdd: true
 	countModule.actions.inc(countModule.state);
@@ -162,17 +210,17 @@ const countMapsCache = () => {
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(4);
+	expect(countMapCallTimes).toBe(2);
 
 	// name: 'count111'
 	countModule.actions.updateName(countModule.state);
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(5);
+	expect(countMapCallTimes).toBe(3);
 
 	// name: 'count1111'
 	countModule.actions.updateName(countModule.state);
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(6);
+	expect(countMapCallTimes).toBe(4);
 
 }
 
@@ -427,7 +475,7 @@ describe('subscribe', () => {
 		const countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
 		const unsub = store.subscribe('count', () => {
-			expect(Object.keys(countModule.state)).toEqual(['count', 'name']);
+			expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
 			expect(countModule.state.count).toBe(oldCount + 1);
 			expect(countModule.maps.isOdd).toBe(true);
 			done();
