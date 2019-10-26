@@ -29,7 +29,7 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 				actions.incDeep(state);
 				console.log(performance.now() - start);
 			}}>+</button>
-			<span>{state.deep.count}</span>
+			<span>{state.deeep.deep.count2}</span>
 			<br/>
 			<br/>
 

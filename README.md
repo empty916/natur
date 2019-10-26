@@ -28,6 +28,10 @@ const app = {
   // state 必须是Object对象，子元素不限
   state: {
     name: 'tom',
+    todos: [{
+      text: 'play game ',
+    }],
+    games: new Map(['favorite', 'lol'])
   },
   // actions必须是Object对象，子元素必须是function
   actions: {
@@ -45,13 +49,29 @@ const app = {
     asyncChangeName: newName => Promise.resolve({ name: newName }), // 
   },
   /*
-  可选的参数，必须是Object对象，子元素必须是function
+  可选的参数，必须是Object对象，子元素必须是Function 或者 Array<String | Function>
   在页面获取的maps，会是运行后的函数返回值，
   maps方法会自动收集依赖，只有在依赖发生变化时，才会重新计算结果。
   */
   maps: { 
-    nameSplit: state => state.name.split(''),
+    // 如果map仅仅是使用state第一层数据，可以直接写一个函数
+    nameSplit: state => state.name.split(''), 
     addName: state => lastName => state.name + lastName,
+
+    /** 
+     * 如果你的map对性能有要求，
+     * 并且依赖state的深层数据、或复杂数据，可以手动依赖声明
+     * 这个示例只有在 todos[0].text 或者 s.info.get('favorite')数据发生变化时，才会重新计算结果
+    */
+    deepDep: [
+      /*
+      对于常见数据类型，你可以使用字符串路径声明依赖
+      如果获取的时候发生错误，则会自动返回undefined
+      */
+      'todos[0].text',
+      (s: State) => s.info.get('favorite'), // 对于复杂类型，你可以使用函数声明依赖
+      (firstTodo, favorite) => firstTodo + favorite; // 'play game lol'
+    ]
   },
 };
 

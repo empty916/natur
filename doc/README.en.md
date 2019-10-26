@@ -26,6 +26,10 @@ const app = {
   // State must be an Object, and the child elements are not limited.
   state: {
     name: 'tom',
+    todos: [{
+      text: 'play game ',
+    }],
+    games: new Map(['favorite', 'lol'])
   },
   // The actions must be an Object, the child element must be a function
   actions: {
@@ -43,13 +47,32 @@ const app = {
   asyncChangeName: newName => Promise.resolve({name: newName}),
   },
   /*
-    Optional parameters, must be an Object, the child element must be a function
+    Optional parameters, must be an Object, the child element must be a Function or Array<String | Function>
     The maps obtained on the page will be the return value of the function after the run.
     The maps method automatically collects dependencies and recalculates the results only when the dependencies change.
   */
   maps: {
+    /*
+    If the map is just using the first layer of state data, you can write a function directly.
+    */
     nameSplit: state => state.name.split(''),
     addName: state => lastName => state.name + lastName,
+	
+    /** 
+     * If your map requires performance，
+     * And rely on state deep data, or complex data, you can manually rely on the declaration
+     * This example will only recalculate the result if the todos[0].text or s.info.get('favorite') data changes.
+    */
+    deepDep: [
+      /*
+      For common data types, 
+      you can declare dependencies using string paths.
+      If an error occurs while getting, it will automatically return to undefined
+      */
+      'todos[0].text', 
+      (s: State) => s.info.get('favorite'), // For complex types, you can use functions to declare dependencies.
+      (firstTodo, favorite) => firstTodo + favorite; // 'play game lol'
+    ]
   }
 }
 

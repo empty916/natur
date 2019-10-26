@@ -8,12 +8,13 @@ export const state = {
 	deeep: {
 		deep: {
 			count: 1,
+			count2: 1,
 		}
 	}
 };
 export const maps = {
 	isOdd: ({ count }) => count % 2 !== 0,
-	deepCountIsOdd: ['deep.count', count => {
+	deepCountIsOdd: ['deeep.deep.count2', count => {
 		console.log('run deep map');
 		return count % 2 !== 0;
 	}],
@@ -45,8 +46,14 @@ export const actions = {
 	incDeep: state => {
 		return {
 			...state,
-			deep: {
-				count: state.deep.count + 1,
+			// deep: {
+			// 	count: state.deep.count + 1,
+			// }
+			deeep: {
+				deep: {
+					...state.deeep.deep,
+					count2: state.deeep.deep.count2 + 1,
+				}
 			}
 		};
 	},
@@ -55,6 +62,7 @@ export const actions = {
 			...state,
 			deeep: {
 				deep: {
+					...state.deeep.deep,
 					count: state.deeep.deep.count + 1,
 				}
 			}
