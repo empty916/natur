@@ -54,8 +54,8 @@ var createStore = function createStore() {
   var actionsProxyCache = {};
   var stateProxyCache = {};
   var mapsProxyCache = {};
-  var mapsWatcher = {};
-  var stateDepends = {};
+  var mapsCache = {};
+  var mapsCacheList = {};
   var modulesCache = {};
   var keysOfModuleStateChangedRecords = {};
 
@@ -89,27 +89,22 @@ var createStore = function createStore() {
     return delete actionsProxyCache[moduleName];
   };
 
-  var clearStateOrMapProxyCache = function clearStateOrMapProxyCache(stateOrMapProxyCache, stateDependsOrMapsWatcher) {
-    return function (moduleName) {
-      delete stateOrMapProxyCache[moduleName];
-
-      for (var key in stateDependsOrMapsWatcher[moduleName]) {
-        stateDependsOrMapsWatcher[moduleName][key].destroy();
-        delete stateDependsOrMapsWatcher[moduleName][key];
-      }
-
-      delete stateDependsOrMapsWatcher[moduleName];
-    };
+  var clearStateProxyCache = function clearStateProxyCache(moduleName) {
+    return delete stateProxyCache[moduleName];
   };
 
-  var clearStateProxyCache = clearStateOrMapProxyCache(stateProxyCache, stateDepends);
-  var clearMapsProxyCache = clearStateOrMapProxyCache(mapsProxyCache, mapsWatcher);
+  var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
+    delete mapsProxyCache[moduleName];
+    delete mapsCache[moduleName];
+    mapsCacheList[moduleName].forEach(function (i) {
+      return i.destroy();
+    });
+    delete mapsCacheList[moduleName];
+  };
 
-  var clearMapsWatcherCache = function clearMapsWatcherCache(moduleName, changedStateNames) {
-    changedStateNames.forEach(function (stateName) {
-      if (stateDepends[moduleName][stateName]) {
-        stateDepends[moduleName][stateName].notify();
-      }
+  var mapsCacheShouldCheckForValid = function mapsCacheShouldCheckForValid(moduleName) {
+    mapsCacheList[moduleName].forEach(function (i) {
+      return i.shouldCheckCache();
     });
   };
 
@@ -166,7 +161,7 @@ var createStore = function createStore() {
       createStateProxy(moduleName);
     }
 
-    clearMapsWatcherCache(moduleName, changedStateKeys.updatedKeys);
+    mapsCacheShouldCheckForValid(moduleName);
     runListeners(moduleName);
     return stateProxyCache[moduleName];
   };
@@ -196,12 +191,9 @@ var createStore = function createStore() {
       allModuleNames = undefined;
     }
 
-    if (!mapsWatcher[moduleName]) {
-      mapsWatcher[moduleName] = {};
-    }
-
-    if (!stateDepends[moduleName]) {
-      stateDepends[moduleName] = {};
+    if (!mapsCache[moduleName]) {
+      mapsCache[moduleName] = {};
+      mapsCacheList[moduleName] = [];
     }
 
     runListeners(moduleName);
@@ -238,12 +230,8 @@ var createStore = function createStore() {
           enumerable: true,
           configurable: true,
           get: function get() {
-            if (_utils.Depend.targetWatcher) {
-              if (!stateDepends[moduleName][key]) {
-                stateDepends[moduleName][key] = new _utils.Depend(moduleName, key);
-              }
-
-              stateDepends[moduleName][key].addWatcher(_utils.Depend.targetWatcher);
+            if (_utils.MapCache.runningMap) {
+              _utils.MapCache.runningMap.addDependKey(key);
             }
 
             return currentModules[moduleName].state[key];
@@ -281,23 +269,15 @@ var createStore = function createStore() {
           enumerable: true,
           configurable: true,
           get: function get() {
-            if (mapsWatcher[moduleName][key] === undefined) {
-              mapsWatcher[moduleName][key] = new _utils.Watcher(moduleName, key, function () {
-                return currentModules[moduleName].maps[key](stateProxyCache[moduleName]);
-              });
+            if (mapsCache[moduleName][key] === undefined) {
+              mapsCache[moduleName][key] = new _utils.MapCache(function () {
+                return stateProxyCache[moduleName];
+              }, maps[key]);
+              mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
             }
 
-            var targetWatcher = mapsWatcher[moduleName][key];
-
-            if (targetWatcher.useCache) {
-              return targetWatcher.cache;
-            } // 清除旧的依赖
-
-
-            targetWatcher.clearDepends(); // 重新收集依赖
-
-            targetWatcher.run();
-            return targetWatcher.cache;
+            var targetWatcher = mapsCache[moduleName][key];
+            return targetWatcher.getValue();
           }
         });
       }

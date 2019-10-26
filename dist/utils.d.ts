@@ -5,7 +5,7 @@
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
-import { ModuleName, StoreModule } from './createStore';
+import { StoreModule, State } from './createStore';
 export declare const ObjHasSameKeys: (obj1: Object, obj2: Object) => boolean;
 declare type Obj = {
     [p: string]: any;
@@ -35,39 +35,33 @@ export declare const ObjChangedKeys: (source: Obj, afterChange: Obj) => {
  */
 export declare function compose(...funcs: anyFn[]): anyFn;
 export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?: number, depth?: number): boolean;
-export declare class Depend {
-    id: string;
-    moduleName: ModuleName;
-    stateName: string;
-    watchers: Watcher[];
-    watchersMap: {
-        [p: string]: true;
+/**
+ *
+ * @param obj State
+ * @param keyPath 'a.b[0].c'
+ */
+export declare const getValueFromObjByKeyPath: (obj: State, keyPath: string) => State | undefined;
+export declare class MapCache {
+    type: 'function' | 'array';
+    map: Function;
+    mapDepends: Array<Function>;
+    depCache: Array<any>;
+    getState: () => State;
+    dependKeys: {
+        [key: string]: true;
     };
-    static targetWatcher: Watcher | undefined;
-    constructor(moduleName: ModuleName, stateName: string);
-    addWatcher(watcher: Watcher): void;
-    removeWatcher(watcher: Watcher): void;
-    clearWatcher(): void;
-    notify(): void;
-    destroy(): void;
-}
-export declare class Watcher {
-    depends: Depend[];
-    useCache: boolean;
-    cache: any;
-    moduleName: ModuleName;
-    mapName: string;
-    dependsMap: {
-        [p: string]: true;
-    };
-    id: string;
-    mapRunner: (...arg: any[]) => any;
-    constructor(moduleName: ModuleName, mapName: string, runner: (...arg: any[]) => any);
-    update(): void;
-    run(): void;
-    addDepend(depend: Depend): void;
-    removeDepend(depend: Depend): void;
-    clearDepends(): void;
+    shouldCheckDependsCache: boolean;
+    hasComparedDep: boolean;
+    firstRun: boolean;
+    value: any;
+    static runningMap: MapCache | undefined;
+    constructor(getState: () => State, map: Array<string | Function> | Function);
+    createGetDepByKeyPath(keyPath: string | Function): Function;
+    shouldCheckCache(): void;
+    addDependKey(key: string): void;
+    getDepsValue(): any[];
+    hasDepChanged(): boolean;
+    getValue(): any;
     destroy(): void;
 }
 export {};

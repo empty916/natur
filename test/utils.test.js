@@ -6,6 +6,7 @@ import {
 	isFn,
 	isFnObj,
 	isObj,
+	getValueFromObjByKeyPath,
 } from '../src/utils'
 
 
@@ -107,6 +108,7 @@ describe('utils', () => {
 		expect(isFnObj({a: '1'})).toBe(false);
 		expect(isFnObj({a: []})).toBe(false);
 		expect(isFnObj({a: {}})).toBe(false);
+		expect(isFnObj(1)).toBe(false);
 		expect(isFnObj({a: new Date()})).toBe(false);
 
 	})
@@ -139,6 +141,7 @@ describe('utils', () => {
 		expect(isStoreModule(cm(() => {}, 2))).toBe(false);
 		expect(isStoreModule(cm(1, () => {}))).toBe(false);
 		expect(isStoreModule(cm(() => {}, () => {}))).toBe(true);
+		expect(isStoreModule(cm(['a', 'b', () => {}], () => {}))).toBe(true);
 	})
 
 	test('compose', () => {
@@ -146,6 +149,31 @@ describe('utils', () => {
 		const add2 = a => a + 2;
 		expect(compose(add1)).toBe(add1);
 		expect(compose(add1, add2)(1)).toBe(4);
+	})
+
+	test('getValueFromObjByKeyPath', () => {
+		const obj = {
+			a: 1,
+			b: {
+				b1: 2
+			},
+			c: {
+				c1: {
+					c11: 3,
+				}
+			},
+			d: {
+				d1: [{
+					d11: 4
+				}]
+			},
+		}
+		expect(getValueFromObjByKeyPath(obj, 'a')).toBe(1);
+		expect(getValueFromObjByKeyPath(obj, 'b.b1')).toBe(2);
+		expect(getValueFromObjByKeyPath(obj, 'c.c1.c11')).toBe(3);
+		expect(getValueFromObjByKeyPath(obj, 'd.d1[0].d11')).toBe(4);
+		expect(getValueFromObjByKeyPath(obj, 'd.d1[1].d11')).toBe(undefined);
+
 	})
 })
 
