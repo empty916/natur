@@ -9,22 +9,22 @@
 import { StoreModule, State } from './createStore'
 
 const hasOwn = Object.prototype.hasOwnProperty;
-export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
-	if (!obj1 || !obj2) {
-		return false;
-	}
-	if (Object.keys(obj1).length !== Object.keys(obj2).length) {
-		return false;
-	}
-	for(let key in obj1) {
-		if (hasOwn.call(obj1, key)) {
-			if (!hasOwn.call(obj2, key)) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
+// export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
+// 	if (!obj1 || !obj2) {
+// 		return false;
+// 	}
+// 	if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+// 		return false;
+// 	}
+// 	for(let key in obj1) {
+// 		if (hasOwn.call(obj1, key)) {
+// 			if (!hasOwn.call(obj2, key)) {
+// 				return false;
+// 			}
+// 		}
+// 	}
+// 	return true;
+// }
 
 type Obj = {[p: string]: any}
 type anyFn = (...arg: any[]) => any;
@@ -58,40 +58,40 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 	return true;
 }
 
-export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
-	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
-		return {
-			updatedKeys: [],
-			keyHasChanged: false,
-		};
-	}
-	// KEY还在，但是值变化了的
-	const updatedKeys = [];
-	// KEY是否变动
-	let keyHasChanged = false;
+// export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
+// 	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
+// 		return {
+// 			updatedKeys: [],
+// 			keyHasChanged: false,
+// 		};
+// 	}
+// 	// KEY还在，但是值变化了的
+// 	const updatedKeys = [];
+// 	// KEY是否变动
+// 	let keyHasChanged = false;
 
-	for(let key in source) {
+// 	for(let key in source) {
 
-		if (hasOwn.call(source, key)) {
-			if (!hasOwn.call(afterChange, key)) {
-				keyHasChanged = true;
-				updatedKeys.push(key);
-			}
-			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
-				updatedKeys.push(key);
-			}
-		}
-	}
-	for(let key in afterChange) {
-		if (hasOwn.call(afterChange, key)) {
-			if (!hasOwn.call(source, key)) {
-				updatedKeys.push(key);
-				keyHasChanged = true;
-			}
-		}
-	}
-	return {updatedKeys, keyHasChanged};
-}
+// 		if (hasOwn.call(source, key)) {
+// 			if (!hasOwn.call(afterChange, key)) {
+// 				keyHasChanged = true;
+// 				updatedKeys.push(key);
+// 			}
+// 			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
+// 				updatedKeys.push(key);
+// 			}
+// 		}
+// 	}
+// 	for(let key in afterChange) {
+// 		if (hasOwn.call(afterChange, key)) {
+// 			if (!hasOwn.call(source, key)) {
+// 				updatedKeys.push(key);
+// 				keyHasChanged = true;
+// 			}
+// 		}
+// 	}
+// 	return {updatedKeys, keyHasChanged};
+// }
 
 
 /**
@@ -173,7 +173,6 @@ export function isEqualWithDepthLimit(
 }
 
 /**
- *
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */

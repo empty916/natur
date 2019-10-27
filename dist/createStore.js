@@ -46,15 +46,15 @@ var createStore = function createStore() {
   var mapsCacheList = {};
 
   var replaceModule = function replaceModule(moduleName, storeModule) {
-    var res = _objectSpread({}, storeModule, {
-      state: _objectSpread({}, storeModule.state)
-    });
+    var res;
 
     if (!!currentInitStates[moduleName]) {
       res = _objectSpread({}, storeModule, {
-        state: _objectSpread({}, storeModule.state, {}, currentInitStates[moduleName])
+        state: currentInitStates[moduleName]
       });
       delete currentInitStates[moduleName];
+    } else {
+      res = _objectSpread({}, storeModule);
     }
 
     return res;
@@ -111,14 +111,8 @@ var createStore = function createStore() {
   var _setState = function _setState(moduleName, newState) {
     var stateIsNotChanged = newState === currentModules[moduleName].state;
 
-    if (!(0, _utils.isObj)(newState) || stateIsNotChanged) {
+    if (stateIsNotChanged || newState === undefined) {
       return newState;
-    }
-
-    var changedStateKeys = (0, _utils.ObjChangedKeys)(currentModules[moduleName].state, newState);
-
-    if (changedStateKeys.updatedKeys.length === 0) {
-      return currentModules[moduleName].state;
     }
 
     currentModules[moduleName].state = newState;

@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.compose = compose;
 exports.isEqualWithDepthLimit = isEqualWithDepthLimit;
-exports.MapCache = exports.getValueFromObjByKeyPath = exports.ObjChangedKeys = exports.isStoreModule = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = exports.ObjHasSameKeys = void 0;
+exports.MapCache = exports.getValueFromObjByKeyPath = exports.isStoreModule = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = void 0;
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -31,28 +31,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
  * @desc [description]
  */
 var hasOwn = Object.prototype.hasOwnProperty;
-
-var ObjHasSameKeys = function ObjHasSameKeys(obj1, obj2) {
-  if (!obj1 || !obj2) {
-    return false;
-  }
-
-  if (Object.keys(obj1).length !== Object.keys(obj2).length) {
-    return false;
-  }
-
-  for (var key in obj1) {
-    if (hasOwn.call(obj1, key)) {
-      if (!hasOwn.call(obj2, key)) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-};
-
-exports.ObjHasSameKeys = ObjHasSameKeys;
 
 var isObj = function isObj(obj) {
   return _typeof(obj) === 'object' && obj !== null && obj.constructor === Object;
@@ -105,50 +83,39 @@ var isStoreModule = function isStoreModule(obj) {
   }
 
   return true;
-};
+}; // export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
+// 	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
+// 		return {
+// 			updatedKeys: [],
+// 			keyHasChanged: false,
+// 		};
+// 	}
+// 	// KEY还在，但是值变化了的
+// 	const updatedKeys = [];
+// 	// KEY是否变动
+// 	let keyHasChanged = false;
+// 	for(let key in source) {
+// 		if (hasOwn.call(source, key)) {
+// 			if (!hasOwn.call(afterChange, key)) {
+// 				keyHasChanged = true;
+// 				updatedKeys.push(key);
+// 			}
+// 			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
+// 				updatedKeys.push(key);
+// 			}
+// 		}
+// 	}
+// 	for(let key in afterChange) {
+// 		if (hasOwn.call(afterChange, key)) {
+// 			if (!hasOwn.call(source, key)) {
+// 				updatedKeys.push(key);
+// 				keyHasChanged = true;
+// 			}
+// 		}
+// 	}
+// 	return {updatedKeys, keyHasChanged};
+// }
 
-exports.isStoreModule = isStoreModule;
-
-var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
-  if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
-    return {
-      updatedKeys: [],
-      keyHasChanged: false
-    };
-  } // KEY还在，但是值变化了的
-
-
-  var updatedKeys = []; // KEY是否变动
-
-  var keyHasChanged = false;
-
-  for (var key in source) {
-    if (hasOwn.call(source, key)) {
-      if (!hasOwn.call(afterChange, key)) {
-        keyHasChanged = true;
-        updatedKeys.push(key);
-      }
-
-      if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
-        updatedKeys.push(key);
-      }
-    }
-  }
-
-  for (var _key in afterChange) {
-    if (hasOwn.call(afterChange, _key)) {
-      if (!hasOwn.call(source, _key)) {
-        updatedKeys.push(_key);
-        keyHasChanged = true;
-      }
-    }
-  }
-
-  return {
-    updatedKeys: updatedKeys,
-    keyHasChanged: keyHasChanged
-  };
-};
 /**
  * Composes single-argument functions from right to left. The rightmost
  * function can take multiple arguments as it provides the signature for
@@ -161,11 +128,11 @@ var ObjChangedKeys = function ObjChangedKeys(source, afterChange) {
  */
 
 
-exports.ObjChangedKeys = ObjChangedKeys;
+exports.isStoreModule = isStoreModule;
 
 function compose() {
-  for (var _len = arguments.length, funcs = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
-    funcs[_key2] = arguments[_key2];
+  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
+    funcs[_key] = arguments[_key];
   }
 
   if (funcs.length === 0) {
@@ -219,7 +186,6 @@ function isEqualWithDepthLimit(objA, objB) {
   return true;
 }
 /**
- *
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */

@@ -1,4 +1,5 @@
 import { createStore } from '../src';
+import { isObj } from '../src/utils';
 import { getStoreInstance } from '../src/createStore';
 
 let countMapCallTimes = 0;
@@ -109,14 +110,14 @@ const hasNotModule = (notExistModuleName) => () => {
 }
 const getModule = (moduleName, originModule) => () => {
 	const targetModule = store.getModule(moduleName);
-	expect(targetModule.state).not.toBe(originModule.state);
+	expect(targetModule.state).toBe(originModule.state);
 	expect(targetModule.state).toEqual(originModule.state);
 	expect(targetModule.actions).not.toEqual(originModule.actions);
 	expect(Object.keys(targetModule.actions)).toEqual(Object.keys(originModule.actions));
 }
 const getOriginModule = (moduleName, originModule) => () => {
 	const targetModule = store.getOriginModule(moduleName);
-	expect(targetModule.state).not.toBe(originModule.state);
+	expect(targetModule.state).toBe(originModule.state);
 	expect(targetModule.state).toEqual(originModule.state);
 	expect(targetModule.actions).toBe(originModule.actions);
 	expect(targetModule.maps).toBe(originModule.maps);
@@ -526,6 +527,7 @@ describe('actions', () => {
 		let recordCache = null;
 		store = createStore({ name, count }, {}, {
 			count: {
+				...count.state,
 				count: 1,
 			}
 		}, [
@@ -536,6 +538,7 @@ describe('actions', () => {
 			},
 			() => next => record => {
 				expect(record).toBe(recordCache);
+				if (!isObj(record.state)) return record.state;
 				return next(record)
 			}
 		]);
@@ -590,7 +593,7 @@ describe('actions', () => {
 		expect(countModule.state.name).toBe('count');
 
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
-		expect(countModule.actions.returnGet({...countModule.state})).toBe(countModule.state);
+		expect(countModule.actions.returnGet({...countModule.state})).not.toBe(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state, newKey: 1})).not.toBe(countModule.state);
 
 		const {asyncReturnGet} = countModule.actions;

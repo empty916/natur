@@ -6,11 +6,11 @@
  * @desc [description]
  */
 import {
-	ObjChangedKeys,
+	// ObjChangedKeys,
 	MapCache,
 	compose,
 	isPromise,
-	isObj,
+	// isObj,
 	isStoreModule,
 } from './utils';
 
@@ -151,13 +151,8 @@ const createStore: CreateStore = (
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const _setState = (moduleName: ModuleName, newState: any) => {
 		const stateIsNotChanged = newState === currentModules[moduleName].state;
-		if (!isObj<State>(newState) || stateIsNotChanged) {
+		if (stateIsNotChanged || newState === undefined) {
 			return newState;
-		}
-		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
-
-		if (changedStateKeys.updatedKeys.length === 0) {
-			return currentModules[moduleName].state;
 		}
 		currentModules[moduleName].state = newState;
 		mapsCacheShouldCheckForValid(moduleName);
