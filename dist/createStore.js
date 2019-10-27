@@ -27,16 +27,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 ;
 ;
 var currentStoreInstance;
-var proxySign = '$$proxy_sign_' + Math.random().toString(36).slice(2);
-
-var addProxySign = function addProxySign(obj) {
-  return Object.defineProperty(obj, proxySign, {
-    // enumerable: false, // default
-    // configurable: false, // default
-    // writable: false, // default
-    value: true
-  });
-};
 
 var createStore = function createStore() {
   var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -52,12 +42,8 @@ var createStore = function createStore() {
   var allModuleNames;
   var currentMiddlewares = middlewares;
   var actionsProxyCache = {};
-  var stateProxyCache = {};
-  var mapsProxyCache = {};
   var mapsCache = {};
   var mapsCacheList = {};
-  var modulesCache = {};
-  var keysOfModuleStateChangedRecords = {};
 
   var replaceModule = function replaceModule(moduleName, storeModule) {
     var res = _objectSpread({}, storeModule, {
@@ -89,12 +75,7 @@ var createStore = function createStore() {
     return delete actionsProxyCache[moduleName];
   };
 
-  var clearStateProxyCache = function clearStateProxyCache(moduleName) {
-    return delete stateProxyCache[moduleName];
-  };
-
   var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
-    delete mapsProxyCache[moduleName];
     delete mapsCache[moduleName];
     mapsCacheList[moduleName].forEach(function (i) {
       return i.destroy();
@@ -108,13 +89,7 @@ var createStore = function createStore() {
     });
   };
 
-  var clearModulesCache = function clearModulesCache(moduleName) {
-    return delete modulesCache[moduleName];
-  };
-
   var clearAllCache = function clearAllCache(moduleName) {
-    clearModulesCache(moduleName);
-    clearStateProxyCache(moduleName);
     clearMapsProxyCache(moduleName);
     clearActionsProxyCache(moduleName);
   };
@@ -134,7 +109,7 @@ var createStore = function createStore() {
   };
 
   var _setState = function _setState(moduleName, newState) {
-    var stateIsNotChanged = newState === stateProxyCache[moduleName];
+    var stateIsNotChanged = newState === currentModules[moduleName].state;
 
     if (!(0, _utils.isObj)(newState) || stateIsNotChanged) {
       return newState;
@@ -142,28 +117,14 @@ var createStore = function createStore() {
 
     var changedStateKeys = (0, _utils.ObjChangedKeys)(currentModules[moduleName].state, newState);
 
-    if (!keysOfModuleStateChangedRecords[moduleName]) {
-      keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
-    }
-
     if (changedStateKeys.updatedKeys.length === 0) {
-      return stateProxyCache[moduleName];
-    }
-
-    if (newState[proxySign]) {
-      newState = _objectSpread({}, newState);
+      return currentModules[moduleName].state;
     }
 
     currentModules[moduleName].state = newState;
-
-    if (changedStateKeys.keyHasChanged) {
-      clearModulesCache(moduleName);
-      createStateProxy(moduleName);
-    }
-
     mapsCacheShouldCheckForValid(moduleName);
     runListeners(moduleName);
-    return stateProxyCache[moduleName];
+    return currentModules[moduleName].state;
   };
 
   var setState = function setState(moduleName, newState) {
@@ -213,43 +174,6 @@ var createStore = function createStore() {
     return currentStoreInstance;
   };
 
-  var createStateProxy = function createStateProxy(moduleName) {
-    var state = currentModules[moduleName].state;
-    var keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
-    var stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
-
-    if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
-      return stateProxyCache[moduleName];
-    }
-
-    var proxyState = {};
-
-    var _loop = function _loop(key) {
-      if (state.hasOwnProperty(key)) {
-        Object.defineProperty(proxyState, key, {
-          enumerable: true,
-          configurable: true,
-          get: function get() {
-            if (_utils.MapCache.runningMap) {
-              _utils.MapCache.runningMap.addDependKey(key);
-            }
-
-            return currentModules[moduleName].state[key];
-          }
-        });
-      }
-    };
-
-    for (var key in state) {
-      _loop(key);
-    }
-
-    addProxySign(proxyState);
-    stateProxyCache[moduleName] = proxyState;
-    keysOfModuleStateChangedRecords[moduleName] = false;
-    return proxyState;
-  };
-
   var createMapsProxy = function createMapsProxy(moduleName) {
     var maps = currentModules[moduleName].maps;
 
@@ -257,38 +181,22 @@ var createStore = function createStore() {
       return undefined;
     }
 
-    if (!!mapsProxyCache[moduleName]) {
-      return mapsProxyCache[moduleName];
-    }
-
     var proxyMaps = {};
 
-    var _loop2 = function _loop2(key) {
-      if (maps.hasOwnProperty(key)) {
-        Object.defineProperty(proxyMaps, key, {
-          enumerable: true,
-          configurable: true,
-          get: function get() {
-            if (mapsCache[moduleName][key] === undefined) {
-              mapsCache[moduleName][key] = new _utils.MapCache(function () {
-                return stateProxyCache[moduleName];
-              }, maps[key]);
-              mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
-            }
-
-            var targetWatcher = mapsCache[moduleName][key];
-            return targetWatcher.getValue();
-          }
-        });
-      }
-    };
-
     for (var key in maps) {
-      _loop2(key);
+      if (maps.hasOwnProperty(key)) {
+        if (mapsCache[moduleName][key] === undefined) {
+          mapsCache[moduleName][key] = new _utils.MapCache(function () {
+            return currentModules[moduleName].state;
+          }, maps[key]);
+          mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
+        }
+
+        var targetWatcher = mapsCache[moduleName][key];
+        proxyMaps[key] = targetWatcher.getValue();
+      }
     }
 
-    addProxySign(proxyMaps);
-    mapsProxyCache[moduleName] = proxyMaps;
     return proxyMaps;
   };
 
@@ -316,17 +224,11 @@ var createStore = function createStore() {
 
   var getModule = function getModule(moduleName) {
     checkModuleIsValid(moduleName);
-
-    if (!!modulesCache[moduleName]) {
-      return modulesCache[moduleName];
-    }
-
     var proxyModule = {
-      state: createStateProxy(moduleName),
+      state: currentModules[moduleName].state,
       actions: createActionsProxy(moduleName),
       maps: createMapsProxy(moduleName)
     };
-    modulesCache[moduleName] = proxyModule;
     return proxyModule;
   }; // 获取原本的module
 
@@ -355,7 +257,7 @@ var createStore = function createStore() {
     var middlewareParams = {
       setState: setStateProxy,
       getState: function getState() {
-        return stateProxyCache[moduleName];
+        return currentModules[moduleName].state;
       }
     };
     var chain = currentMiddlewares.map(function (middleware) {
