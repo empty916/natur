@@ -21,7 +21,7 @@ export default () => createStore(
 		name: () => import('./name'),
 	},
 	{
-		count: { count: 111 },
+		// count: { count: 111 },
 		name: { name: 'wxg' },
 	},
 	[
