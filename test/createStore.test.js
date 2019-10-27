@@ -55,14 +55,14 @@ const count = {
 		})
 	},
 	maps: {
-		isOdd: state => state.count % 2 !== 0,
-		getSplitNameWhenCountIsOdd: (state) => {
+		isOdd: ['count', count => count % 2 !== 0],
+		getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
 			countMapCallTimes ++;
-			if (state.count % 2 !== 0) {
-				return state.name.split('');
+			if (count % 2 !== 0) {
+				return name && name.split('');
 			}
-			return state.count;
-		},
+			return count;
+		}],
 		a1: ['obj[0].t.a', a => a + 1],
 		a2: [
 			state => state.obj[1].a.a,
@@ -97,7 +97,7 @@ const nameWithMaps = {
 		updateName: name => ({ name }),
 	},
 	maps: {
-		splitName: state => state.name.split(''),
+		splitName: ['name', name => name.split('')],
 	}
 }
 
@@ -141,7 +141,7 @@ const getAllModuleName = (expectAllModuleName) => () => {
 }
 
 const updateCountState = () => {
-	const countModule = store.getModule('count');
+	let countModule = store.getModule('count');
 
 	// count = 0, name='count', isOdd = false, getSplitNameWhenCountIsOdd = 'count'.split('');
 	// mapCallTime: 1,
@@ -151,6 +151,7 @@ const updateCountState = () => {
 
 	// count = 1, name='count', isOdd = true, getSplitNameWhenCountIsOdd = 'count'.split('');
 	countModule.actions.inc(countModule.state);
+	countModule = store.getModule('count');
 	expect(countModule.state.count).toBe(1);
 	expect(countModule.maps.isOdd).toBe(true);
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toEqual(countModule.state.name.split(''));
@@ -158,16 +159,19 @@ const updateCountState = () => {
 
 	// count = 1, name='count1', isOdd = true, getSplitNameWhenCountIsOdd = 'count1'.split(''),
 	countModule.actions.updateName(countModule.state);
+	countModule = store.getModule('count');
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toEqual('count1'.split(''));
 
 	// count = 0; isOdd = false, getSplitNameWhenCountIsOdd = 0;
 	countModule.actions.dec(countModule.state);
+	countModule = store.getModule('count');
 	expect(countModule.state.count).toBe(0);
 	expect(countModule.maps.isOdd).toBe(false);
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toBe(0);
 
 	return countModule.actions.asyncInc(countModule.state)
 		.then(state => {
+			countModule = store.getModule('count');
 			expect(countModule.state).toBe(state);
 			expect(countModule.state.count).toBe(1);
 			expect(countModule.maps.isOdd).toBe(true);
@@ -175,13 +179,15 @@ const updateCountState = () => {
 }
 const countMapsCache = () => {
 	countMapCallTimes = 0;
-	const countModule = store.getModule('count');
+	let countModule = store.getModule('count');
 
 	expect(countModule.maps.a1).toBe(2)
 	expect(countModule.maps.a2).toBe(3)
 	countModule.actions.addA1(countModule.state);
+	countModule = store.getModule('count');
 	expect(countModule.maps.a1).toBe(6)
 	countModule.actions.addA2(countModule.state);
+	countModule = store.getModule('count');
 	expect(countModule.maps.a2).toBe(11)
 
 
@@ -192,35 +198,40 @@ const countMapsCache = () => {
 
 	// name: 'count1'
 	countModule.actions.updateName(countModule.state);
-	countModule.maps.getSplitNameWhenCountIsOdd
-	countModule.maps.getSplitNameWhenCountIsOdd
-	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(1);
-
-	// name: 'count11'
-	countModule.actions.updateName(countModule.state);
-	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(1);
-
-	// count: 1, isOdd: true
-	countModule.actions.inc(countModule.state);
-	countModule.maps.getSplitNameWhenCountIsOdd
-	countModule.maps.getSplitNameWhenCountIsOdd
-	countModule.maps.getSplitNameWhenCountIsOdd
+	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	expect(countMapCallTimes).toBe(2);
 
-	// name: 'count111'
+	// name: 'count11'
 	countModule.actions.updateName(countModule.state);
+	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
 	expect(countMapCallTimes).toBe(3);
 
-	// name: 'count1111'
-	countModule.actions.updateName(countModule.state);
+	// count: 1, isOdd: true
+	countModule.actions.inc(countModule.state);
+	countModule = store.getModule('count');
+	countModule.maps.getSplitNameWhenCountIsOdd
+	countModule.maps.getSplitNameWhenCountIsOdd
+	countModule.maps.getSplitNameWhenCountIsOdd
+	countModule.maps.getSplitNameWhenCountIsOdd
+	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	expect(countMapCallTimes).toBe(4);
+
+	// name: 'count111'
+	countModule.actions.updateName(countModule.state);
+	countModule = store.getModule('count');
+	countModule.maps.getSplitNameWhenCountIsOdd
+	expect(countMapCallTimes).toBe(5);
+
+	// name: 'count1111'
+	countModule.actions.updateName(countModule.state);
+	countModule = store.getModule('count');
+	countModule.maps.getSplitNameWhenCountIsOdd
+	expect(countMapCallTimes).toBe(6);
 
 }
 
@@ -472,9 +483,10 @@ describe('subscribe', () => {
 	});
 
 	test('subscribe listener', done => {
-		const countModule = store.getModule('count');
+		let countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
 		const unsub = store.subscribe('count', () => {
+			countModule = store.getModule('count');
 			expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
 			expect(countModule.state.count).toBe(oldCount + 1);
 			expect(countModule.maps.isOdd).toBe(true);
@@ -483,20 +495,25 @@ describe('subscribe', () => {
 		countModule.actions.inc(countModule.state);
 	});
 	test('subscribe unsuscribe', () => {
-		const countModule = store.getModule('count');
+		let countModule = store.getModule('count');
 		let callTimes = 0;
-		const unsub = store.subscribe('count', () => callTimes ++);
+		const unsub = store.subscribe('count', () => {
+			callTimes ++;
+		});
 		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
 		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
 		unsub();
 		countModule.actions.inc(countModule.state);
 		expect(callTimes).toBe(2);
 	});
 	test('subscribe async actions unsuscribe', () => {
-		const countModule = store.getModule('count');
+		let countModule = store.getModule('count');
 		let callTimes = 0;
 		const unsub = store.subscribe('count', () => callTimes ++);
 		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
 		return countModule.actions.asyncInc(countModule.state)
 			.then(() => {
 				expect(callTimes).toBe(2);

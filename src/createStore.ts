@@ -88,14 +88,6 @@ type CreateStore = (
 ) => Store;
 
 let currentStoreInstance: Store;
-let proxySign: string = '$$proxy_sign_' + Math.random().toString(36).slice(2);
-
-const addProxySign = (obj: Object) => Object.defineProperty(obj, proxySign, {
-	// enumerable: false, // default
-	// configurable: false, // default
-	// writable: false, // default
-	value: true,
-});
 
 const createStore: CreateStore = (
 	modules: Modules = {},
@@ -110,14 +102,10 @@ const createStore: CreateStore = (
 	let allModuleNames: string[] | undefined;
 	let currentMiddlewares = middlewares;
 	const actionsProxyCache: {[p: string]: Actions} = {};
-	const stateProxyCache: States = {};
-	const mapsProxyCache: {[p: string]: InjectMaps} = {};
 
 	const mapsCache: {[p: string]: {[p: string]: MapCache}} = {};
 	const mapsCacheList: {[p: string]: MapCache[] } = {};
 
-	const modulesCache: Modules = {};
-	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
 	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		let res = {
 			...storeModule,
@@ -148,9 +136,7 @@ const createStore: CreateStore = (
 	}
 	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
 
-	const clearStateProxyCache = (moduleName: ModuleName) => delete stateProxyCache[moduleName];
 	const clearMapsProxyCache = (moduleName: ModuleName) => {
-		delete mapsProxyCache[moduleName];
 		delete mapsCache[moduleName];
 		mapsCacheList[moduleName].forEach(i => i.destroy())
 		delete mapsCacheList[moduleName];
@@ -158,10 +144,7 @@ const createStore: CreateStore = (
 	const mapsCacheShouldCheckForValid = (moduleName: ModuleName) => {
 		mapsCacheList[moduleName].forEach(i => i.shouldCheckCache());
 	};
-	const clearModulesCache = (moduleName: ModuleName) => delete modulesCache[moduleName];
 	const clearAllCache = (moduleName: ModuleName) => {
-		clearModulesCache(moduleName);
-		clearStateProxyCache(moduleName);
 		clearMapsProxyCache(moduleName);
 		clearActionsProxyCache(moduleName);
 	}
@@ -173,28 +156,19 @@ const createStore: CreateStore = (
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const _setState = (moduleName: ModuleName, newState: any) => {
-		const stateIsNotChanged = newState === stateProxyCache[moduleName];
+		const stateIsNotChanged = newState === currentModules[moduleName].state;
 		if (!isObj<State>(newState) || stateIsNotChanged) {
 			return newState;
 		}
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
-		if(!keysOfModuleStateChangedRecords[moduleName]) {
-			keysOfModuleStateChangedRecords[moduleName] = changedStateKeys.keyHasChanged;
-		}
+
 		if (changedStateKeys.updatedKeys.length === 0) {
-			return stateProxyCache[moduleName];
-		}
-		if (newState[proxySign]) {
-			newState = {...newState};
+			return currentModules[moduleName].state;
 		}
 		currentModules[moduleName].state = newState;
-		if (changedStateKeys.keyHasChanged) {
-			clearModulesCache(moduleName);
-			createStateProxy(moduleName);
-		}
 		mapsCacheShouldCheckForValid(moduleName);
 		runListeners(moduleName);
-		return stateProxyCache[moduleName];
+		return currentModules[moduleName].state;
 	}
 	const setState = (moduleName: ModuleName, newState: ReturnType<Action>): ReturnType<Action> => {
 		if(isPromise<ReturnType<Action>>(newState)) {
@@ -236,63 +210,25 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return currentStoreInstance;
 	};
-	const createStateProxy = (moduleName: ModuleName): State => {
-		const {state} = currentModules[moduleName];
-		const keyHasChanged = keysOfModuleStateChangedRecords[moduleName];
-		const stateKeysHasNotChange = keyHasChanged === undefined ? true : !keyHasChanged;
-		if (!!stateProxyCache[moduleName] && stateKeysHasNotChange) {
-			return stateProxyCache[moduleName];
-		}
-		let proxyState: typeof state = {};
-		for(let key in state) {
-			if (state.hasOwnProperty(key)) {
-				Object.defineProperty(proxyState, key, {
-					enumerable: true,
-					configurable: true,
-					get() {
-						if (MapCache.runningMap) {
-							MapCache.runningMap.addDependKey(key);
-						}
-						return currentModules[moduleName].state[key];
-					}
-				});
-			}
-		}
-		addProxySign(proxyState);
-		stateProxyCache[moduleName] = proxyState;
-		keysOfModuleStateChangedRecords[moduleName] = false;
-		return proxyState;
-	}
 	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
 		const {maps} = currentModules[moduleName];
 		if (maps === undefined) {
 			return undefined;
 		}
-		if (!!mapsProxyCache[moduleName]) {
-			return mapsProxyCache[moduleName];
-		}
-		let proxyMaps = {};
+		let proxyMaps: {[p: string]: any} = {};
 		for(let key in maps) {
 			if (maps.hasOwnProperty(key)) {
-				Object.defineProperty(proxyMaps, key, {
-					enumerable: true,
-					configurable: true,
-					get() {
-						if (mapsCache[moduleName][key] === undefined) {
-							mapsCache[moduleName][key] = new MapCache(
-								() => stateProxyCache[moduleName],
-								maps[key],
-							);
-							mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
-						}
-						const targetWatcher = mapsCache[moduleName][key];
-						return targetWatcher.getValue();
-					}
-				});
+				if (mapsCache[moduleName][key] === undefined) {
+					mapsCache[moduleName][key] = new MapCache(
+						() => currentModules[moduleName].state,
+						maps[key],
+					);
+					mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
+				}
+				const targetWatcher = mapsCache[moduleName][key];
+				proxyMaps[key] = targetWatcher.getValue();
 			}
 		}
-		addProxySign(proxyMaps);
-		mapsProxyCache[moduleName] = proxyMaps;
 		return proxyMaps;
 	}
 	const createActionsProxy = (moduleName: ModuleName) => {
@@ -309,15 +245,11 @@ const createStore: CreateStore = (
 	const getModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
 
-		if (!!modulesCache[moduleName]) {
-			return modulesCache[moduleName];
-		}
 		const proxyModule: InjectStoreModule = {
-			state: createStateProxy(moduleName),
+			state: currentModules[moduleName].state,
 			actions: createActionsProxy(moduleName),
 			maps: createMapsProxy(moduleName),
 		};
-		modulesCache[moduleName] = proxyModule;
 		return proxyModule;
 	}
 
@@ -337,7 +269,7 @@ const createStore: CreateStore = (
 		const setStateProxy: Next = ({state}: Record) => setState(moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
-			getState: () => stateProxyCache[moduleName],
+			getState: () => currentModules[moduleName].state,
 		}
 		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams))
 		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setStateProxy);

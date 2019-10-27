@@ -9,7 +9,7 @@ const name = {
 		updateText: text => ({text}),
 	},
 	maps: {
-		textSplit: ({text}) => text.split('').join(','),
+		textSplit: ['text', text => text.split('').join(',')],
 	}
 }
 const count = {

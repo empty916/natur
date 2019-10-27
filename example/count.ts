@@ -13,24 +13,24 @@ export const state = {
 	}
 };
 export const maps = {
-	isOdd: ({ count }) => count % 2 !== 0,
+	isOdd: ['count', count => count % 2 !== 0],
 	deepCountIsOdd: ['deeep.deep.count2', count => {
-		console.log('run deep map');
+		// console.log('run deep map');
 		return count % 2 !== 0;
 	}],
 	deeepCountIsOdd: ['deeep.deep.count', (count) => {
-		console.log('run deeep map');
+		// console.log('run deeep map');
 		return count % 2 !== 0;
 	}],
-	splitName: state => {
-		return state.name.split("");
-	},
-	returnNameWhenCountIsOdd: state => {
-		if (state.count % 2 !== 0) {
-			return state.name;
+	splitName: ['name', name => {
+		return name.split("");
+	}],
+	returnNameWhenCountIsOdd: ['count', 'name', (count, name) => {
+		if (count % 2 !== 0) {
+			return name;
 		}
-		return state.count;
-	},
+		return count;
+	}],
 	count: state => ({count: state.count}),
 	combine: state => ({ ...state }),
 	showNewKey: state => !!state.newKey && state.newKey,
