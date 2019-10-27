@@ -107,21 +107,15 @@ const createStore: CreateStore = (
 	const mapsCacheList: {[p: string]: MapCache[] } = {};
 
 	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		let res = {
-			...storeModule,
-			state: {
-				...storeModule.state,
-			}
-		};
+		let res;
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
-				state: {
-					...storeModule.state,
-					...currentInitStates[moduleName],
-				},
+				state: currentInitStates[moduleName],
 			};
 			delete currentInitStates[moduleName];
+		} else {
+			res = {...storeModule};
 		}
 		return res;
 	};

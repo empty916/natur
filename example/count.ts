@@ -68,6 +68,17 @@ export const actions = {
 			}
 		};
 	},
+	decDeeep: state => {
+		return {
+			...state,
+			deeep: {
+				deep: {
+					...state.deeep.deep,
+					count: state.deeep.deep.count - 1,
+				}
+			}
+		};
+	},
 	addKey: state => ({...state, newKey: 1}),
 	deleteKey: state => {
 		const res = {...state};
@@ -86,8 +97,10 @@ export const actions = {
 	})
 };
 
-export default {
+const a = {
 	state,
 	maps,
 	actions
 };
+
+export default a;
