@@ -116,7 +116,7 @@ const getModule = (moduleName, originModule) => () => {
 }
 const getOriginModule = (moduleName, originModule) => () => {
 	const targetModule = store.getOriginModule(moduleName);
-	expect(targetModule.state).not.toBe(originModule.state);
+	expect(targetModule.state).toBe(originModule.state);
 	expect(targetModule.state).toEqual(originModule.state);
 	expect(targetModule.actions).toBe(originModule.actions);
 	expect(targetModule.maps).toBe(originModule.maps);
@@ -509,6 +509,7 @@ describe('actions', () => {
 		let recordCache = null;
 		store = createStore({ name, count }, {}, {
 			count: {
+				...count.state,
 				count: 1,
 			}
 		}, [
