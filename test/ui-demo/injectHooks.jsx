@@ -1,5 +1,10 @@
 import React, {useState} from "react";
 import { inject, createStore, useInject } from "../../src";
+import {
+	promiseMiddleware,
+	filterIllegalTypeMiddleware,
+	shallowEqualMiddleware,
+} from '../../src/middlewares'
 
 const name = {
 	state: {
@@ -86,7 +91,9 @@ const initStore = () => createStore(
 	{
 		lazyName: () => Promise.resolve(lazyName),
 		lazyLoadError: () => Promise.reject(lazyName),
-	}
+	},
+	{},
+	[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
 )
 
 export {

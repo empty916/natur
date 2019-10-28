@@ -41,7 +41,7 @@ export const isFnObj = (obj: any): obj is fnObj => {
 }
 const isMapsObj = (obj: any): obj is mapsObj => {
 	if (isObj(obj)) {
-		return Object.keys(obj).every(key => isFn(obj[key]) || obj[key].constructor === Array);
+		return Object.keys(obj).every(key => obj[key].constructor === Array);
 	}
 	return false;
 }
@@ -49,7 +49,7 @@ const isMapsObj = (obj: any): obj is mapsObj => {
 export const isPromise = <T>(obj: any): obj is Promise<T> => obj && typeof obj.then === 'function'
 // export const isVoid = <T>(ar: T | void): ar is void => !ar;
 export const isStoreModule = (obj: any): obj is StoreModule => {
-	if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
+	if (!isObj(obj) || !isFnObj(obj.actions)) {
 		return false;
 	}
 	if (!!obj.maps && !isMapsObj(obj.maps)){
@@ -57,42 +57,6 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 	}
 	return true;
 }
-
-// export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
-// 	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
-// 		return {
-// 			updatedKeys: [],
-// 			keyHasChanged: false,
-// 		};
-// 	}
-// 	// KEY还在，但是值变化了的
-// 	const updatedKeys = [];
-// 	// KEY是否变动
-// 	let keyHasChanged = false;
-
-// 	for(let key in source) {
-
-// 		if (hasOwn.call(source, key)) {
-// 			if (!hasOwn.call(afterChange, key)) {
-// 				keyHasChanged = true;
-// 				updatedKeys.push(key);
-// 			}
-// 			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
-// 				updatedKeys.push(key);
-// 			}
-// 		}
-// 	}
-// 	for(let key in afterChange) {
-// 		if (hasOwn.call(afterChange, key)) {
-// 			if (!hasOwn.call(source, key)) {
-// 				updatedKeys.push(key);
-// 				keyHasChanged = true;
-// 			}
-// 		}
-// 	}
-// 	return {updatedKeys, keyHasChanged};
-// }
-
 
 /**
  * Composes single-argument functions from right to left. The rightmost
@@ -214,25 +178,18 @@ export class MapCache {
 	hasComparedDep: boolean = false;
 
 
-	firstRun: boolean = true;
 	value: any;
 
 	static runningMap: MapCache | undefined;
 
 	constructor(
 		getState: () => State,
-		map: Array<string | Function> | Function
+		map: Array<string | Function>
 	) {
 		this.getState = getState;
-		if (typeof map === 'function') {
-			this.type = 'function';
-			this.map = map;
-		} else {
-			this.type = 'array';
-			const copyMap = map.slice();
-			this.map = copyMap.pop() as Function;
-			copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
-		}
+		const copyMap = map.slice();
+		this.map = copyMap.pop() as Function;
+		copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
 	}
 	createGetDepByKeyPath(keyPath: string | Function) {
 		if (typeof keyPath === 'string') {
@@ -244,12 +201,6 @@ export class MapCache {
 		this.shouldCheckDependsCache = true;
 		this.hasComparedDep = false;
 	}
-	addDependKey(key: string) {
-		if (!this.dependKeys[key] && this.type === 'function') {
-			this.dependKeys[key] = true;
-			this.mapDepends.push(this.createGetDepByKeyPath(key));
-		}
-	}
 	getDepsValue() {
 		return this.mapDepends.map(dep => dep(this.getState()));
 	}
@@ -257,10 +208,6 @@ export class MapCache {
 		if (this.shouldCheckDependsCache && !this.hasComparedDep) {
 			const newDepCache = this.getDepsValue();
 			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
-			// 首次运行map，还没有缓存，只有在type是函数的情况下存在。
-			if (this.firstRun) {
-				depHasChanged =  true;
-			}
 			if (depHasChanged) {
 				this.depCache = newDepCache;
 			}
@@ -272,19 +219,7 @@ export class MapCache {
 	}
 	getValue() {
 		if (this.hasDepChanged()) {
-			if (this.type === 'function') {
-				MapCache.runningMap = this;
-				this.value = this.map(this.getState());
-				MapCache.runningMap = undefined;
-				if(this.firstRun) {
-					this.depCache = this.getDepsValue();
-				}
-			} else {
-				this.value = this.map(...this.depCache);
-			}
-		}
-		if (this.firstRun) {
-			this.firstRun = false;
+			this.value = this.map(...this.depCache);
 		}
 		return this.value;
 	}

@@ -1,5 +1,10 @@
 import React from "react";
 import { inject, createStore } from "../../src";
+import {
+	promiseMiddleware,
+	filterIllegalTypeMiddleware,
+	shallowEqualMiddleware
+} from '../../src/middlewares'
 
 const name = {
 	state: {
@@ -54,7 +59,9 @@ const AppWithLoadErrorModule = inject('lazyLoadError')(({lazyLoadError}) => {
 const initStore = () => createStore({name}, {
 	lazyName: () => Promise.resolve(lazyName),
 	lazyLoadError: () => Promise.reject(lazyName),
-});
+}, {},
+[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+);
 
 inject.setLoadingComponent(() => <>loading</>)
 

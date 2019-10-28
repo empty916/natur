@@ -1,6 +1,11 @@
 import { createStore } from '../src';
 import { isObj } from '../src/utils';
 import { getStoreInstance } from '../src/createStore';
+import {
+	promiseMiddleware,
+	filterIllegalTypeMiddleware,
+	shallowEqualMiddleware
+} from '../src/middlewares'
 
 let countMapCallTimes = 0;
 let store;
@@ -238,7 +243,11 @@ const countMapsCache = () => {
 
 describe('init', () => {
 	beforeEach(() => {
-		store = createStore({ count, countWithoutMaps });
+		store = createStore(
+			{ count, countWithoutMaps },
+			{},{},
+			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+		);
 	});
 	test('createStore with illegal module', () => {
 		expect(() => store = createStore({ count: {
@@ -260,30 +269,29 @@ describe('init', () => {
 		expect(() => store = createStore({ count: {
 			state: [1],
 			actions: {a: () => {}},
-		}})).toThrow();
+		}})).not.toThrow();
 
 		expect(() => store = createStore({ count: {
 			state: () => {},
 			actions: {a: () => {}},
-		}})).toThrow();
+		}})).not.toThrow();
 
 		expect(() => store = createStore({ count: {
 			state: new Date(),
 			actions: {a: () => {}},
-		}})).toThrow();
+		}})).not.toThrow();
 
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: () => {}},
 			maps: {a: () => {}}
-		}})).not.toThrow();
+		}})).toThrow();
 
 		expect(() => store = createStore({ count: {
 			state: {},
 			actions: {},
 			maps: {}
 		}})).not.toThrow();
-
 	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
@@ -316,7 +324,11 @@ describe('init', () => {
 
 describe('setModule', () => {
 	beforeEach(() => {
-		store = createStore({ name });
+		store = createStore({ name }, {}, {}, [
+			promiseMiddleware,
+			filterIllegalTypeMiddleware,
+			shallowEqualMiddleware
+		]);
 		store.setModule('count', name);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
@@ -351,7 +363,7 @@ describe('setModule', () => {
 		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
-			maps: {a:() => {}}
+			maps: {a:[() => {}]}
 		})).not.toThrow();
 
 		expect(() => store.setModule('name11', {
@@ -391,7 +403,10 @@ describe('setModule', () => {
 
 describe('removeModule', () => {
 	beforeEach(() => {
-		store = createStore({ count, name });
+		store = createStore(
+			{ count, name }, {}, {},
+			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+		);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('count');
 	});
@@ -409,7 +424,7 @@ describe('removeModule', () => {
 
 describe('setModule then removeModule', () => {
 	beforeEach(() => {
-		store = createStore({ name });
+		store = createStore({ name }, {}, {}, [promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]);
 		store.setModule('count', count);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('nameWithMaps');
@@ -426,7 +441,9 @@ describe('setModule then removeModule', () => {
 
 describe('removeModule then setModule', () => {
 	beforeEach(() => {
-		store = createStore({ count });
+		store = createStore({ count }, {}, {},
+			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+		);
 		store.removeModule('count');
 		store.setModule('count', count);
 		store.setModule('name', name);
@@ -480,7 +497,10 @@ describe('lazyModule', () => {
 
 describe('subscribe', () => {
 	beforeEach(() => {
-		store = createStore({ count });
+		store = createStore(
+			{ count }, {}, {},
+			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+		);
 	});
 
 	test('subscribe listener', done => {
@@ -540,7 +560,10 @@ describe('actions', () => {
 				expect(record).toBe(recordCache);
 				if (!isObj(record.state)) return record.state;
 				return next(record)
-			}
+			},
+			promiseMiddleware,
+			filterIllegalTypeMiddleware,
+			shallowEqualMiddleware
 		]);
 		// store.removeModule('count');
 		// store.setModule('count', count);
@@ -627,4 +650,35 @@ describe('actions', () => {
 		expect(countModule.actions.throwErrorAction).toThrow();
 		expect(countModule.actions.asyncThrowErrorAction()).rejects.toMatch('async something error');
 	});
+
+	test('unlimit state type', () => {
+		store = createStore({
+			unlimit: {
+				state: [1],
+				actions: {
+					changeState: a => a,
+				},
+				maps: {
+					firstAdd1: ['0', f => f + 1]
+				}
+			}
+		});
+
+		let unlimit = store.getModule('unlimit');
+		expect(unlimit.maps.firstAdd1).toBe(2)
+		expect(unlimit.state).toStrictEqual([1])
+		unlimit.actions.changeState([2])
+
+		unlimit = store.getModule('unlimit');
+		expect(unlimit.state).toStrictEqual([2])
+		expect(unlimit.maps.firstAdd1).toBe(3);
+
+		unlimit = store.getModule('unlimit');
+		const ns = new Map();
+		ns.set('a', 10);
+		unlimit.actions.changeState(ns)
+		unlimit = store.getModule('unlimit');
+		expect(unlimit.state).toBe(ns)
+		expect(unlimit.maps.firstAdd1).toBe(NaN);
+	})
 });

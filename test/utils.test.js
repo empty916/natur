@@ -113,7 +113,7 @@ describe('utils', () => {
 
 	})
 	test('is store module', () => {
-		const cm = (maps = () => {}, actions = () => {}) => ({
+		const cm = (maps = [() => {}], actions = () => {}) => ({
 			state: {a: 1},
 			actions: {a: actions},
 			maps: {a: maps},
@@ -131,7 +131,7 @@ describe('utils', () => {
 		const m3 = {
 			state: {a: 1},
 			actions: {ca: () => ({a: 2})},
-			maps: {a2s: ({a}) => `${a}`},
+			maps: {a2s: [({a}) => `${a}`]},
 		}
 
 		expect(isStoreModule(m1)).toBe(false);
@@ -140,7 +140,7 @@ describe('utils', () => {
 		expect(isStoreModule(cm(1, 2))).toBe(false);
 		expect(isStoreModule(cm(() => {}, 2))).toBe(false);
 		expect(isStoreModule(cm(1, () => {}))).toBe(false);
-		expect(isStoreModule(cm(() => {}, () => {}))).toBe(true);
+		expect(isStoreModule(cm([() => {}], () => {}))).toBe(true);
 		expect(isStoreModule(cm(['a', 'b', () => {}], () => {}))).toBe(true);
 	})
 

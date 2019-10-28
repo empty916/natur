@@ -51,17 +51,17 @@ describe('map catch', () => {
 				})
 			},
 			maps: {
-				isOdd: state => {
+				isOdd: ['count', count => {
 					mapCallCount ++;
-					return state.count % 2 !== 0;
-				},
-				getSplitNameWhenCountIsOdd: ({count, name}) => {
+					return count % 2 !== 0;
+				}],
+				getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
 					mapCallCount ++;
 					if (count % 2 !== 0) {
 						return name;
 					}
 					return count;
-				},
+				}],
 				a1: ['obj[0].t.a', a => {
 					mapCallCount ++;
 					return a + 1
