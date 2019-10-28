@@ -9,10 +9,14 @@ import {
 	// ObjChangedKeys,
 	MapCache,
 	compose,
-	isPromise,
-	// isObj,
 	isStoreModule,
 } from './utils';
+
+// import {
+// 	promiseMiddleware,
+// 	filterIllegalTypeMiddleware,
+// 	shallowEqualMiddleware
+// } from './middlewares'
 
 export interface Listener {
 	(): void;
@@ -100,7 +104,7 @@ const createStore: CreateStore = (
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
-	let currentMiddlewares = middlewares;
+	let currentMiddlewares = [...middlewares];
 	const actionsProxyCache: {[p: string]: Actions} = {};
 
 	const mapsCache: {[p: string]: {[p: string]: MapCache}} = {};
@@ -149,22 +153,12 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
-	const _setState = (moduleName: ModuleName, newState: any) => {
-		const stateIsNotChanged = newState === currentModules[moduleName].state;
-		if (stateIsNotChanged || newState === undefined) {
-			return newState;
-		}
+	const setState = (moduleName: ModuleName, newState: any) => {
 		currentModules[moduleName].state = newState;
 		mapsCacheShouldCheckForValid(moduleName);
 		runListeners(moduleName);
 		return currentModules[moduleName].state;
 	}
-	const setState = (moduleName: ModuleName, newState: ReturnType<Action>): ReturnType<Action> => {
-		if(isPromise<ReturnType<Action>>(newState)) {
-			return (newState as Promise<ReturnType<Action>>).then(ns => Promise.resolve(_setState(moduleName, ns)));
-		}
-		return _setState(moduleName, newState);
-	};
 
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
