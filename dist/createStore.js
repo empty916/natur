@@ -25,7 +25,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 ;
 ;
 ;
-;
 var currentStoreInstance;
 
 var createStore = function createStore() {
@@ -40,7 +39,9 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var allModuleNames;
-  var currentMiddlewares = middlewares;
+
+  var currentMiddlewares = _toConsumableArray(middlewares);
+
   var actionsProxyCache = {};
   var mapsCache = {};
   var mapsCacheList = {};
@@ -108,10 +109,10 @@ var createStore = function createStore() {
     });
   };
 
-  var _setState = function _setState(moduleName, newState) {
-    var stateIsNotChanged = newState === currentModules[moduleName].state;
+  var setState = function setState(moduleName, newState) {
+    var stateHasNoChange = currentModules[moduleName].state === newState;
 
-    if (stateIsNotChanged || newState === undefined) {
+    if (stateHasNoChange) {
       return newState;
     }
 
@@ -119,16 +120,6 @@ var createStore = function createStore() {
     mapsCacheShouldCheckForValid(moduleName);
     runListeners(moduleName);
     return currentModules[moduleName].state;
-  };
-
-  var setState = function setState(moduleName, newState) {
-    if ((0, _utils.isPromise)(newState)) {
-      return newState.then(function (ns) {
-        return Promise.resolve(_setState(moduleName, ns));
-      });
-    }
-
-    return _setState(moduleName, newState);
   }; // 修改module
 
 

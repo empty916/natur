@@ -1,9 +1,7 @@
 export interface Listener {
     (): void;
 }
-export interface State {
-    [type: string]: any;
-}
+export declare type State = any;
 export interface States {
     [type: string]: State;
 }
@@ -17,12 +15,12 @@ export interface Action {
 export interface Actions {
     [type: string]: Action;
 }
-declare type StoreMap = (state: State) => any;
+declare type StoreMap = Array<string | Function>;
 export interface Maps {
     [p: string]: StoreMap;
 }
 export interface InjectMaps {
-    [p: string]: ReturnType<StoreMap>;
+    [p: string]: any;
 }
 export interface StoreModule {
     state: State;
@@ -32,7 +30,7 @@ export interface StoreModule {
 export interface InjectStoreModule {
     state: State;
     actions: Actions;
-    maps?: ReturnType<StoreMap>;
+    maps?: any;
 }
 export interface LazyStoreModules {
     [p: string]: () => Promise<StoreModule>;

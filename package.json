@@ -1,6 +1,6 @@
 {
-	"name": "react-natural-store",
-	"version": "1.5.5",
+	"name": "rns-pure",
+	"version": "2.0.2",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
 	],
 	"author": "empty916",
 	"license": "Apache-2.0",
-	"homepage": "https://github.com/empty916/react-natural-store",
+	"homepage": "https://github.com/empty916/react-natural-store/tree/pure",
 	"devDependencies": {
 		"@babel/cli": "^7.5.5",
 		"@babel/core": "^7.4.4",

@@ -59,7 +59,7 @@ exports.isFnObj = isFnObj;
 var isMapsObj = function isMapsObj(obj) {
   if (isObj(obj)) {
     return Object.keys(obj).every(function (key) {
-      return isFn(obj[key]) || obj[key].constructor === Array;
+      return obj[key].constructor === Array;
     });
   }
 
@@ -74,7 +74,7 @@ var isPromise = function isPromise(obj) {
 exports.isPromise = isPromise;
 
 var isStoreModule = function isStoreModule(obj) {
-  if (!isObj(obj) || !isObj(obj.state) || !isFnObj(obj.actions)) {
+  if (!isObj(obj) || !isFnObj(obj.actions)) {
     return false;
   }
 
@@ -83,39 +83,7 @@ var isStoreModule = function isStoreModule(obj) {
   }
 
   return true;
-}; // export const ObjChangedKeys = (source: Obj, afterChange: Obj) => {
-// 	if (!isObj(afterChange) || !isObj(source) || source === afterChange) {
-// 		return {
-// 			updatedKeys: [],
-// 			keyHasChanged: false,
-// 		};
-// 	}
-// 	// KEY还在，但是值变化了的
-// 	const updatedKeys = [];
-// 	// KEY是否变动
-// 	let keyHasChanged = false;
-// 	for(let key in source) {
-// 		if (hasOwn.call(source, key)) {
-// 			if (!hasOwn.call(afterChange, key)) {
-// 				keyHasChanged = true;
-// 				updatedKeys.push(key);
-// 			}
-// 			if (hasOwn.call(afterChange, key) && source[key] !== afterChange[key]) {
-// 				updatedKeys.push(key);
-// 			}
-// 		}
-// 	}
-// 	for(let key in afterChange) {
-// 		if (hasOwn.call(afterChange, key)) {
-// 			if (!hasOwn.call(source, key)) {
-// 				updatedKeys.push(key);
-// 				keyHasChanged = true;
-// 			}
-// 		}
-// 	}
-// 	return {updatedKeys, keyHasChanged};
-// }
-
+};
 /**
  * Composes single-argument functions from right to left. The rightmost
  * function can take multiple arguments as it provides the signature for
@@ -236,20 +204,12 @@ function () {
     this.dependKeys = {};
     this.shouldCheckDependsCache = true;
     this.hasComparedDep = false;
-    this.firstRun = true;
     this.getState = getState;
-
-    if (typeof map === 'function') {
-      this.type = 'function';
-      this.map = map;
-    } else {
-      this.type = 'array';
-      var copyMap = map.slice();
-      this.map = copyMap.pop();
-      copyMap.forEach(function (item) {
-        return _this.mapDepends.push(_this.createGetDepByKeyPath(item));
-      });
-    }
+    var copyMap = map.slice();
+    this.map = copyMap.pop();
+    copyMap.forEach(function (item) {
+      return _this.mapDepends.push(_this.createGetDepByKeyPath(item));
+    });
   }
 
   _createClass(MapCache, [{
@@ -270,14 +230,6 @@ function () {
       this.hasComparedDep = false;
     }
   }, {
-    key: "addDependKey",
-    value: function addDependKey(key) {
-      if (!this.dependKeys[key] && this.type === 'function') {
-        this.dependKeys[key] = true;
-        this.mapDepends.push(this.createGetDepByKeyPath(key));
-      }
-    }
-  }, {
     key: "getDepsValue",
     value: function getDepsValue() {
       var _this2 = this;
@@ -291,11 +243,7 @@ function () {
     value: function hasDepChanged() {
       if (this.shouldCheckDependsCache && !this.hasComparedDep) {
         var newDepCache = this.getDepsValue();
-        var depHasChanged = !arrayIsEqual(this.depCache, newDepCache); // 首次运行map，还没有缓存，只有在type是函数的情况下存在。
-
-        if (this.firstRun) {
-          depHasChanged = true;
-        }
+        var depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
 
         if (depHasChanged) {
           this.depCache = newDepCache;
@@ -312,21 +260,7 @@ function () {
     key: "getValue",
     value: function getValue() {
       if (this.hasDepChanged()) {
-        if (this.type === 'function') {
-          MapCache.runningMap = this;
-          this.value = this.map(this.getState());
-          MapCache.runningMap = undefined;
-
-          if (this.firstRun) {
-            this.depCache = this.getDepsValue();
-          }
-        } else {
-          this.value = this.map.apply(this, _toConsumableArray(this.depCache));
-        }
-      }
-
-      if (this.firstRun) {
-        this.firstRun = false;
+        this.value = this.map.apply(this, _toConsumableArray(this.depCache));
       }
 
       return this.value;

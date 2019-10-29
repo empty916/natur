@@ -21,9 +21,9 @@ import {
 export interface Listener {
 	(): void;
 }
-export interface State {
-	[type: string]: any,
-};
+
+export type State = any;
+
 export interface States {
 	[type: string]: State,
 };
@@ -41,12 +41,12 @@ export interface Actions {
 	[type: string]: Action;
 };
 
-type StoreMap = (state: State) => any;
+type StoreMap = Array<string | Function>;
 export interface Maps {
 	[p: string]: StoreMap;
 };
 export interface InjectMaps {
-	[p: string]: ReturnType<StoreMap>;
+	[p: string]: any;
 };
 export interface StoreModule {
 	state: State;
@@ -56,7 +56,7 @@ export interface StoreModule {
 export interface InjectStoreModule {
 	state: State;
 	actions: Actions;
-	maps?: ReturnType<StoreMap>;
+	maps?: any;
 }
 export interface LazyStoreModules {
 	[p: string]: () => Promise<StoreModule>;
@@ -154,6 +154,10 @@ const createStore: CreateStore = (
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
 	const setState = (moduleName: ModuleName, newState: any) => {
+		const stateHasNoChange = currentModules[moduleName].state === newState;
+		if (stateHasNoChange) {
+			return newState;
+		}
 		currentModules[moduleName].state = newState;
 		mapsCacheShouldCheckForValid(moduleName);
 		runListeners(moduleName);
