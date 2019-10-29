@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 import { inject, InjectStoreModule } from "../src";
+// import { inject, InjectStoreModule } from "../dist/rns";
 import initStore from "./initStore";
 
 type storeProps = { count?: InjectStoreModule; name?: InjectStoreModule };
@@ -9,11 +10,22 @@ type otherProps = {
 	style: Object;
 };
 
+let renderStart = 0;
+
 const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 	const { state, actions, maps } = count;
-	const incProxy = () => actions.inc(state);
-	const decProxy = () => actions.dec(state);
-
+	const incProxy = () => {
+		renderStart = performance.now();
+		actions.inc(state)
+	};
+	const decProxy = () => {
+		renderStart = performance.now();
+		actions.dec(state)
+	};
+	useEffect(() => {
+		console.log(performance.now() - renderStart);
+		renderStart = 0;
+	})
 	return (
 		<div>
 			count:
@@ -26,8 +38,9 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 			deep count:
 			<button onClick={() => {
 				const start = performance.now();
+				renderStart = start;
 				actions.incDeep(state);
-				console.log(performance.now() - start);
+				// console.log(performance.now() - start);
 			}}>+</button>
 			<span>{state.deeep.deep.count2}</span>
 			<br/>
@@ -36,14 +49,19 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 			deeep count:
 			<button onClick={() => {
 				const start = performance.now();
+				renderStart = start;
 				actions.incDeeep(state)
-				console.log(performance.now() - start);
+				// actions.decDeeep(state)
+				// console.log(performance.now() - start);
 			}}>+</button>
 			<span>{state.deeep.deep.count}</span>
 			<br/>
 			<br/>
 
-			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value, state)}/>
+			name:<input type="text" value={state.name} onChange={e => {
+				renderStart = performance.now();
+				actions.changeName(e.target.value, state);
+			}}/>
 			<br/>
 			<br/>
 			<div>maps.isOdd: {maps.isOdd + ''}</div>

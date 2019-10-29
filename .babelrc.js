@@ -30,4 +30,7 @@ module.exports = {
 		['@babel/preset-react'],
 		['@babel/preset-typescript'],
 	],
+	ignore: [
+		"./dist/rns.js",
+	]
 };

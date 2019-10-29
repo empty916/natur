@@ -14,6 +14,11 @@ import {
 	isStoreModule,
 } from './utils';
 
+import {
+	promiseMiddleware,
+	filterIllegalTypeMiddleware,
+} from './middlewares'
+
 export interface Listener {
 	(): void;
 }
@@ -108,7 +113,7 @@ const createStore: CreateStore = (
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
-	let currentMiddlewares = middlewares;
+	let currentMiddlewares = [...middlewares, promiseMiddleware, filterIllegalTypeMiddleware];
 	const actionsProxyCache: {[p: string]: Actions} = {};
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: InjectMaps} = {};
@@ -119,21 +124,15 @@ const createStore: CreateStore = (
 	const modulesCache: Modules = {};
 	const keysOfModuleStateChangedRecords: {[p: string]: boolean} = {};
 	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
-		let res = {
-			...storeModule,
-			state: {
-				...storeModule.state,
-			}
-		};
+		let res;
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
-				state: {
-					...storeModule.state,
-					...currentInitStates[moduleName],
-				},
+				state: currentInitStates[moduleName],
 			};
 			delete currentInitStates[moduleName];
+		} else {
+			res = {...storeModule};
 		}
 		return res;
 	};
@@ -172,9 +171,8 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
-	const _setState = (moduleName: ModuleName, newState: any) => {
-		const stateIsNotChanged = newState === stateProxyCache[moduleName];
-		if (!isObj<State>(newState) || stateIsNotChanged) {
+	const setState = (moduleName: ModuleName, newState: any) => {
+		if (newState === stateProxyCache[moduleName]) {
 			return newState;
 		}
 		const changedStateKeys = ObjChangedKeys(currentModules[moduleName].state, newState);
@@ -196,12 +194,6 @@ const createStore: CreateStore = (
 		runListeners(moduleName);
 		return stateProxyCache[moduleName];
 	}
-	const setState = (moduleName: ModuleName, newState: ReturnType<Action>): ReturnType<Action> => {
-		if(isPromise<ReturnType<Action>>(newState)) {
-			return (newState as Promise<ReturnType<Action>>).then(ns => Promise.resolve(_setState(moduleName, ns)));
-		}
-		return _setState(moduleName, newState);
-	};
 
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {

@@ -1,4 +1,5 @@
 import { createStore, Middleware } from '../src';
+// import { createStore, Middleware } from '../dist/rns';
 import * as nameModule from './name';
 import countModule from './count';
 import longItem from './longItem';
@@ -20,7 +21,7 @@ export default () => createStore(
 		name: () => import('./name'),
 	},
 	{
-		count: { count: 111 },
+		// count: { count: 111 },
 		name: { name: 'wxg' },
 	},
 	[
