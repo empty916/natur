@@ -7,6 +7,8 @@ exports["default"] = exports.getStoreInstance = void 0;
 
 var _utils = require("./utils");
 
+var _middlewares = require("./middlewares");
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -50,7 +52,7 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var allModuleNames;
-  var currentMiddlewares = middlewares;
+  var currentMiddlewares = [].concat(_toConsumableArray(middlewares), [_middlewares.promiseMiddleware, _middlewares.filterIllegalTypeMiddleware]);
   var actionsProxyCache = {};
   var stateProxyCache = {};
   var mapsProxyCache = {};
@@ -60,15 +62,15 @@ var createStore = function createStore() {
   var keysOfModuleStateChangedRecords = {};
 
   var replaceModule = function replaceModule(moduleName, storeModule) {
-    var res = _objectSpread({}, storeModule, {
-      state: _objectSpread({}, storeModule.state)
-    });
+    var res;
 
     if (!!currentInitStates[moduleName]) {
       res = _objectSpread({}, storeModule, {
-        state: _objectSpread({}, storeModule.state, {}, currentInitStates[moduleName])
+        state: currentInitStates[moduleName]
       });
       delete currentInitStates[moduleName];
+    } else {
+      res = _objectSpread({}, storeModule);
     }
 
     return res;
@@ -133,10 +135,8 @@ var createStore = function createStore() {
     });
   };
 
-  var _setState = function _setState(moduleName, newState) {
-    var stateIsNotChanged = newState === stateProxyCache[moduleName];
-
-    if (!(0, _utils.isObj)(newState) || stateIsNotChanged) {
+  var setState = function setState(moduleName, newState) {
+    if (newState === stateProxyCache[moduleName]) {
       return newState;
     }
 
@@ -164,16 +164,6 @@ var createStore = function createStore() {
     mapsCacheShouldCheckForValid(moduleName);
     runListeners(moduleName);
     return stateProxyCache[moduleName];
-  };
-
-  var setState = function setState(moduleName, newState) {
-    if ((0, _utils.isPromise)(newState)) {
-      return newState.then(function (ns) {
-        return Promise.resolve(_setState(moduleName, ns));
-      });
-    }
-
-    return _setState(moduleName, newState);
   }; // 修改module
 
 

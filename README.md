@@ -134,6 +134,7 @@ export default inject('app', 'otherModuleName')(App);
 - [在react外使用store](#use-store-without-react)
 - [手动导入模块](#manual-import-module)
 - [在typescript中使用](#typescript)
+- [其他版本](#other-version)
 - [<font color="#faad14">使用注意事项</font>](#caution)
 
 
@@ -474,3 +475,8 @@ const App = @inject<storeProps>('count', 'name')(_App);
 - **请尽量避免在actions中动态增加或删除state的key**。这会导致一个问题，当maps依赖state动态增加或删除的key时，由于Object.defineProperty无法监听到增加key或删除key的变化，所以对应的maps不会重新计算，依然会使用上次的缓存。
 
 
+
+#### <a id='other-version' style="color: black;">其他版本</a>
+
+- [纯净版](https://www.npmjs.com/package/rns-pure)
+- [taro版本](https://www.npmjs.com/package/rns-taro)
