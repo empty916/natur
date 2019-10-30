@@ -175,8 +175,6 @@ export class MapCache {
 	dependKeys: {[key: string]: true} = {};
 
 	shouldCheckDependsCache: boolean = true;
-	hasComparedDep: boolean = false;
-
 
 	value: any;
 
@@ -199,20 +197,18 @@ export class MapCache {
 	}
 	shouldCheckCache() {
 		this.shouldCheckDependsCache = true;
-		this.hasComparedDep = false;
 	}
 	getDepsValue() {
 		return this.mapDepends.map(dep => dep(this.getState()));
 	}
 	hasDepChanged() {
-		if (this.shouldCheckDependsCache && !this.hasComparedDep) {
+		if (this.shouldCheckDependsCache) {
 			const newDepCache = this.getDepsValue();
 			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
 			if (depHasChanged) {
 				this.depCache = newDepCache;
 			}
 			this.shouldCheckDependsCache = false;
-			this.hasComparedDep = true;
 			return depHasChanged;
 		}
 		return false;
