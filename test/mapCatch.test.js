@@ -1,4 +1,4 @@
-import { MapCache } from '../src/utils'
+import MapCache from '../src/MapCache'
 
 
 describe('map catch', () => {
@@ -19,7 +19,8 @@ describe('map catch', () => {
 					a: {
 						a: 2
 					},
-				}]
+				}],
+				m: new Map([['m1', 1]])
 			},
 			actions: {
 				inc: state => ({ ...state, count: state.count + 1 }),
@@ -171,5 +172,65 @@ describe('map catch', () => {
 		inc();
 		expect(mapsCatche.getSplitNameWhenCountIsOdd.getValue()).toBe(2);
 		expect(mapCallCount).toBe(4);
+	});
+
+	test('map dep parser', () => {
+		const parser = (obj, keyPath) => {
+			const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
+			let value = obj;
+			for(let i = 0; i < formatKeyArr.length; i ++) {
+				try {
+					if (typeof value === 'object' && value !== null && value.constructor === Map) {
+						value = value.get(formatKeyArr[i])
+					} else {
+						value = value[formatKeyArr[i]];
+					}
+				} catch (error) {
+					return undefined;
+				}
+			}
+			return value;
+		}
+		MapCache.setMapDepParser(parser);
+		count = {
+			state: {
+				count: 0,
+				m: new Map([['m1', 1]])
+			},
+			actions: {
+				inc: state => ({ ...state, count: state.count + 1 }),
+			},
+			maps: {
+				mm1: [
+					'm.m1',
+					mm1 => mm1 + 1
+				],
+			}
+		}
+		proxyState = {};
+		for(let key in count.state) {
+			if (count.state.hasOwnProperty(key)) {
+				Object.defineProperty(proxyState, key, {
+					enumerable: true,
+					configurable: true,
+					get() {
+						if (MapCache.runningMap) {
+							MapCache.runningMap.addDependKey(key);
+						}
+						return count.state[key];
+					}
+				});
+			}
+		}
+		Object.keys(count.maps).forEach(mapKey => {
+			mapsCatche[mapKey] = new MapCache(
+				() => proxyState,
+				count.maps[mapKey],
+			)
+		})
+		expect(mapsCatche.mm1.getValue()).toBe(2);
+		MapCache.resetMapDepParser();
+		mapsCatche.mm1.shouldCheckCache();
+		expect(mapsCatche.mm1.getValue()).toBe(NaN);
 	})
 })

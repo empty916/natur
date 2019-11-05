@@ -7,16 +7,15 @@
  */
 import {
 	ObjChangedKeys,
-	MapCache,
 	compose,
-	isPromise,
-	isObj,
 	isStoreModule,
 } from './utils';
 
+import MapCache from './MapCache'
+
 import {
 	promiseMiddleware,
-	filterIllegalTypeMiddleware,
+	filterNonObjectMiddleware,
 } from './middlewares'
 
 export interface Listener {
@@ -113,7 +112,7 @@ const createStore: CreateStore = (
 	let currentLazyModules = lazyModules;
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
-	let currentMiddlewares = [...middlewares, promiseMiddleware, filterIllegalTypeMiddleware];
+	let currentMiddlewares = [...middlewares, promiseMiddleware, filterNonObjectMiddleware];
 	const actionsProxyCache: {[p: string]: Actions} = {};
 	const stateProxyCache: States = {};
 	const mapsProxyCache: {[p: string]: InjectMaps} = {};

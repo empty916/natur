@@ -574,7 +574,7 @@ describe('actions', () => {
 		expect(countModule.state.name).toBe('count');
 
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
-		expect(countModule.actions.returnGet({...countModule.state})).toBe(countModule.state);
+		expect(countModule.actions.returnGet({...countModule.state})).toStrictEqual(countModule.state);
 		expect(countModule.actions.returnGet({...countModule.state, newKey: 1})).not.toBe(countModule.state);
 
 		const {asyncReturnGet} = countModule.actions;
@@ -596,7 +596,7 @@ describe('actions', () => {
 		expect(countModule.actions.returnGet(newKeyState).newKey).toBe(1);
 		expect(countModule.actions.returnGet(newKeyState)).not.toBe(countModule.state);
 		const {state} = store.getModule('count');
-		expect(countModule.actions.returnGet(newKeyState)).toBe(state);
+		expect(countModule.actions.returnGet(newKeyState)).toStrictEqual(state);
 		return countModule.actions.asyncReturnGet(deleteKeyState)
 			.then((deletedNameState) => {
 				expect(deletedNameState.name).toBe(undefined);

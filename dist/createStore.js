@@ -52,7 +52,7 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var allModuleNames;
-  var currentMiddlewares = [].concat(_toConsumableArray(middlewares), [_middlewares.promiseMiddleware, _middlewares.filterIllegalTypeMiddleware]);
+  var currentMiddlewares = [].concat(_toConsumableArray(middlewares), [_middlewares.promiseMiddleware, _middlewares.filterNonObjectMiddleware]);
   var actionsProxyCache = {};
   var stateProxyCache = {};
   var mapsProxyCache = {};

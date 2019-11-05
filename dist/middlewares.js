@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shallowEqualMiddleware = exports.filterIllegalTypeMiddleware = exports.promiseMiddleware = void 0;
+exports.shallowEqualMiddleware = exports.filterNonObjectMiddleware = exports.promiseMiddleware = void 0;
 
 var _utils = require("./utils");
 
@@ -31,7 +31,7 @@ var promiseMiddleware = function promiseMiddleware() {
 
 exports.promiseMiddleware = promiseMiddleware;
 
-var filterIllegalTypeMiddleware = function filterIllegalTypeMiddleware() {
+var filterNonObjectMiddleware = function filterNonObjectMiddleware() {
   return function (next) {
     return function (record) {
       if (!(0, _utils.isObj)(record.state)) {
@@ -43,7 +43,7 @@ var filterIllegalTypeMiddleware = function filterIllegalTypeMiddleware() {
   };
 };
 
-exports.filterIllegalTypeMiddleware = filterIllegalTypeMiddleware;
+exports.filterNonObjectMiddleware = filterNonObjectMiddleware;
 
 var shallowEqualMiddleware = function shallowEqualMiddleware(_ref) {
   var getState = _ref.getState;
