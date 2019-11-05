@@ -7,7 +7,11 @@ exports["default"] = exports.getStoreInstance = void 0;
 
 var _utils = require("./utils");
 
+var _MapCache = _interopRequireDefault(require("./MapCache"));
+
 var _middlewares = require("./middlewares");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -220,8 +224,8 @@ var createStore = function createStore() {
           enumerable: true,
           configurable: true,
           get: function get() {
-            if (_utils.MapCache.runningMap) {
-              _utils.MapCache.runningMap.addDependKey(key);
+            if (_MapCache["default"].runningMap) {
+              _MapCache["default"].runningMap.addDependKey(key);
             }
 
             return currentModules[moduleName].state[key];
@@ -260,7 +264,7 @@ var createStore = function createStore() {
           configurable: true,
           get: function get() {
             if (mapsCache[moduleName][key] === undefined) {
-              mapsCache[moduleName][key] = new _utils.MapCache(function () {
+              mapsCache[moduleName][key] = new _MapCache["default"](function () {
                 return stateProxyCache[moduleName];
               }, maps[key]);
               mapsCacheList[moduleName].push(mapsCache[moduleName][key]);

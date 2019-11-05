@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shallowEqualMiddleware = exports.filterNonObjectMiddleware = exports.promiseMiddleware = void 0;
+exports.filterNonObjectMiddleware = exports.promiseMiddleware = void 0;
 
 var _utils = require("./utils");
 
@@ -41,23 +41,13 @@ var filterNonObjectMiddleware = function filterNonObjectMiddleware() {
       return next(record);
     };
   };
-};
+}; // export const shallowEqualMiddleware: Middleware = ({getState}) => next => record => {
+// 	const oldState = getState();
+// 	if (isEqualWithDepthLimit(record.state, oldState, 1)) {
+// 		return record.state;
+// 	}
+// 	return next(record);
+// }
+
 
 exports.filterNonObjectMiddleware = filterNonObjectMiddleware;
-
-var shallowEqualMiddleware = function shallowEqualMiddleware(_ref) {
-  var getState = _ref.getState;
-  return function (next) {
-    return function (record) {
-      var oldState = getState();
-
-      if (oldState === record.state || (0, _utils.isEqualWithDepthLimit)(record.state, oldState, 1)) {
-        return record.state;
-      }
-
-      return next(record);
-    };
-  };
-};
-
-exports.shallowEqualMiddleware = shallowEqualMiddleware;
