@@ -51,7 +51,7 @@ var shallowEqualMiddleware = function shallowEqualMiddleware(_ref) {
     return function (record) {
       var oldState = getState();
 
-      if (oldState === record.state || (0, _utils.isEqualWithDepthLimit)(record.state, oldState, 1)) {
+      if ((0, _utils.isEqualWithDepthLimit)(record.state, oldState, 1)) {
         return record.state;
       }
 

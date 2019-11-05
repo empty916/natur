@@ -5,7 +5,7 @@
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
-import { StoreModule, State } from './createStore';
+import { StoreModule } from './createStore';
 declare type Obj = {
     [p: string]: any;
 };
@@ -35,24 +35,5 @@ export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?:
  * @param keyPath 'a.b[0].c'
  */
 export declare const getValueFromObjByKeyPath: (obj: any, keyPath: string) => any;
-export declare class MapCache {
-    type: 'function' | 'array';
-    map: Function;
-    mapDepends: Array<Function>;
-    depCache: Array<any>;
-    getState: () => State;
-    dependKeys: {
-        [key: string]: true;
-    };
-    shouldCheckDependsCache: boolean;
-    value: any;
-    static runningMap: MapCache | undefined;
-    constructor(getState: () => State, map: Array<string | Function>);
-    createGetDepByKeyPath(keyPath: string | Function): Function;
-    shouldCheckCache(): void;
-    getDepsValue(): any[];
-    hasDepChanged(): boolean;
-    getValue(): any;
-    destroy(): void;
-}
+export declare const arrayIsEqual: (arr1: any[], arr2: any[]) => boolean;
 export {};

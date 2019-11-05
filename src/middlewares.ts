@@ -19,10 +19,10 @@ export const filterNonObjectMiddleware: Middleware = () => next => record => {
 	return next(record);
 }
 
-// export const shallowEqualMiddleware: Middleware = ({getState}) => next => record => {
-// 	const oldState = getState();
-// 	if (isEqualWithDepthLimit(record.state, oldState, 1)) {
-// 		return record.state;
-// 	}
-// 	return next(record);
-// }
+export const shallowEqualMiddleware: Middleware = ({getState}) => next => record => {
+	const oldState = getState();
+	if (isEqualWithDepthLimit(record.state, oldState, 1)) {
+		return record.state;
+	}
+	return next(record);
+}

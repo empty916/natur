@@ -638,7 +638,7 @@ describe('actions', () => {
 		expect(countModule.actions.returnGet(newKeyState).newKey).toBe(1);
 		expect(countModule.actions.returnGet(newKeyState)).not.toBe(countModule.state);
 		const {state} = store.getModule('count');
-		expect(countModule.actions.returnGet(newKeyState)).toStrictEqual(state);
+		expect(countModule.actions.returnGet(newKeyState)).toBe(state);
 		return countModule.actions.asyncReturnGet(deleteKeyState)
 			.then((deletedNameState) => {
 				expect(deletedNameState.name).toBe(undefined);
