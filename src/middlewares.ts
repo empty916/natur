@@ -12,7 +12,7 @@ export const promiseMiddleware: Middleware = () => next => record => {
 	return next(record);
 }
 
-export const filterIllegalTypeMiddleware: Middleware = () => next => record => {
+export const filterNonObjectMiddleware: Middleware = () => next => record => {
 	if (!isObj<State>(record.state)) {
 		return record.state;
 	}

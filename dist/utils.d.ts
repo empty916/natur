@@ -45,7 +45,6 @@ export declare class MapCache {
         [key: string]: true;
     };
     shouldCheckDependsCache: boolean;
-    hasComparedDep: boolean;
     value: any;
     static runningMap: MapCache | undefined;
     constructor(getState: () => State, map: Array<string | Function>);

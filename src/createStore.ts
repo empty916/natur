@@ -14,7 +14,7 @@ import {
 
 // import {
 // 	promiseMiddleware,
-// 	filterIllegalTypeMiddleware,
+// 	filterNonObjectMiddleware,
 // 	shallowEqualMiddleware
 // } from './middlewares'
 

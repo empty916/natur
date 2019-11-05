@@ -2,7 +2,7 @@ import React from "react";
 import { inject, createStore } from "../../src";
 import {
 	promiseMiddleware,
-	filterIllegalTypeMiddleware,
+	filterNonObjectMiddleware,
 	shallowEqualMiddleware
 } from '../../src/middlewares'
 
@@ -60,7 +60,7 @@ const initStore = () => createStore({name}, {
 	lazyName: () => Promise.resolve(lazyName),
 	lazyLoadError: () => Promise.reject(lazyName),
 }, {},
-[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 );
 
 inject.setLoadingComponent(() => <>loading</>)

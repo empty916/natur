@@ -203,7 +203,6 @@ function () {
     this.depCache = [];
     this.dependKeys = {};
     this.shouldCheckDependsCache = true;
-    this.hasComparedDep = false;
     this.getState = getState;
     var copyMap = map.slice();
     this.map = copyMap.pop();
@@ -227,7 +226,6 @@ function () {
     key: "shouldCheckCache",
     value: function shouldCheckCache() {
       this.shouldCheckDependsCache = true;
-      this.hasComparedDep = false;
     }
   }, {
     key: "getDepsValue",
@@ -241,7 +239,7 @@ function () {
   }, {
     key: "hasDepChanged",
     value: function hasDepChanged() {
-      if (this.shouldCheckDependsCache && !this.hasComparedDep) {
+      if (this.shouldCheckDependsCache) {
         var newDepCache = this.getDepsValue();
         var depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
 
@@ -250,7 +248,6 @@ function () {
         }
 
         this.shouldCheckDependsCache = false;
-        this.hasComparedDep = true;
         return depHasChanged;
       }
 

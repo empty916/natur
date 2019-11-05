@@ -3,7 +3,7 @@ import { isObj } from '../src/utils';
 import { getStoreInstance } from '../src/createStore';
 import {
 	promiseMiddleware,
-	filterIllegalTypeMiddleware,
+	filterNonObjectMiddleware,
 	shallowEqualMiddleware
 } from '../src/middlewares'
 
@@ -246,7 +246,7 @@ describe('init', () => {
 		store = createStore(
 			{ count, countWithoutMaps },
 			{},{},
-			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 		);
 	});
 	test('createStore with illegal module', () => {
@@ -326,7 +326,7 @@ describe('setModule', () => {
 	beforeEach(() => {
 		store = createStore({ name }, {}, {}, [
 			promiseMiddleware,
-			filterIllegalTypeMiddleware,
+			filterNonObjectMiddleware,
 			shallowEqualMiddleware
 		]);
 		store.setModule('count', name);
@@ -405,7 +405,7 @@ describe('removeModule', () => {
 	beforeEach(() => {
 		store = createStore(
 			{ count, name }, {}, {},
-			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 		);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('count');
@@ -424,7 +424,7 @@ describe('removeModule', () => {
 
 describe('setModule then removeModule', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]);
+		store = createStore({ name }, {}, {}, [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]);
 		store.setModule('count', count);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('nameWithMaps');
@@ -442,7 +442,7 @@ describe('setModule then removeModule', () => {
 describe('removeModule then setModule', () => {
 	beforeEach(() => {
 		store = createStore({ count }, {}, {},
-			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 		);
 		store.removeModule('count');
 		store.setModule('count', count);
@@ -499,7 +499,7 @@ describe('subscribe', () => {
 	beforeEach(() => {
 		store = createStore(
 			{ count }, {}, {},
-			[promiseMiddleware, filterIllegalTypeMiddleware, shallowEqualMiddleware]
+			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 		);
 	});
 
@@ -562,7 +562,7 @@ describe('actions', () => {
 				return next(record)
 			},
 			promiseMiddleware,
-			filterIllegalTypeMiddleware,
+			filterNonObjectMiddleware,
 			shallowEqualMiddleware
 		]);
 		// store.removeModule('count');
