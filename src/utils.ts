@@ -140,7 +140,7 @@ export function isEqualWithDepthLimit(
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */
-export const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
+export const getValueFromObjByKeyPath = (obj: State, keyPath: string): any => {
 	const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
 	let value = obj;
 	for(let i = 0; i < formatKeyArr.length; i ++) {
@@ -153,7 +153,7 @@ export const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
 	return value;
 }
 
-const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
+export const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
 	if (arr1.length !== arr2.length) {
 		return false;
 	}
@@ -163,68 +163,4 @@ const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
 		}
 	}
 	return true;
-}
-export class MapCache {
-
-	type: 'function' | 'array' = 'function';
-	map: Function;
-	mapDepends: Array<Function> = [];
-	depCache: Array<any> = [];
-	getState: () => State;
-
-	dependKeys: {[key: string]: true} = {};
-
-	shouldCheckDependsCache: boolean = true;
-
-	value: any;
-
-	static runningMap: MapCache | undefined;
-
-	constructor(
-		getState: () => State,
-		map: Array<string | Function>
-	) {
-		this.getState = getState;
-		const copyMap = map.slice();
-		this.map = copyMap.pop() as Function;
-		copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
-	}
-	createGetDepByKeyPath(keyPath: string | Function) {
-		if (typeof keyPath === 'string') {
-			return (s: State) => getValueFromObjByKeyPath(s, keyPath);
-		}
-		return keyPath;
-	}
-	shouldCheckCache() {
-		this.shouldCheckDependsCache = true;
-	}
-	getDepsValue() {
-		return this.mapDepends.map(dep => dep(this.getState()));
-	}
-	hasDepChanged() {
-		if (this.shouldCheckDependsCache) {
-			const newDepCache = this.getDepsValue();
-			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
-			if (depHasChanged) {
-				this.depCache = newDepCache;
-			}
-			this.shouldCheckDependsCache = false;
-			return depHasChanged;
-		}
-		return false;
-	}
-	getValue() {
-		if (this.hasDepChanged()) {
-			this.value = this.map(...this.depCache);
-		}
-		return this.value;
-	}
-
-	destroy() {
-		this.map = () => {};
-		this.mapDepends = [];
-		this.depCache = [];
-		this.getState = () => ({});
-		this.dependKeys = {};
-	}
 }

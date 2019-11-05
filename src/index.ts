@@ -5,6 +5,7 @@
  * @modify date 2019-08-09 17:12:57
  * @desc [description]
  */
+import MapCache from './MapCache'
 export {
 	default as createStore,
 	Listener,
@@ -23,3 +24,5 @@ export {
 } from "./createStore";
 export { default as inject } from "./inject";
 export { useInject } from "./hooks";
+export const setMapDepParser = MapCache.setMapDepParser;
+export const resetMapDepParser = MapCache.resetMapDepParser;

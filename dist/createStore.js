@@ -7,6 +7,8 @@ exports["default"] = exports.getStoreInstance = void 0;
 
 var _utils = require("./utils");
 
+var _middlewares = require("./middlewares");
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }

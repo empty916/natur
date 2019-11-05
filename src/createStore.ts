@@ -7,7 +7,6 @@
  */
 import {
 	// ObjChangedKeys,
-	MapCache,
 	compose,
 	isStoreModule,
 } from './utils';
@@ -17,6 +16,7 @@ import {
 // 	filterNonObjectMiddleware,
 // 	shallowEqualMiddleware
 // } from './middlewares'
+import MapCache from './MapCache'
 
 export interface Listener {
 	(): void;
