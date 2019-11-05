@@ -177,7 +177,7 @@ export function isEqualWithDepthLimit(
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */
-export const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
+export const getValueFromObjByKeyPath = (obj: State, keyPath: string): any => {
 	const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
 	let value = obj;
 	for(let i = 0; i < formatKeyArr.length; i ++) {
@@ -190,7 +190,7 @@ export const getValueFromObjByKeyPath = (obj: State, keyPath: string) => {
 	return value;
 }
 
-const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
+export const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
 	if (arr1.length !== arr2.length) {
 		return false;
 	}
@@ -200,101 +200,4 @@ const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
 		}
 	}
 	return true;
-}
-export class MapCache {
-
-	type: 'function' | 'array' = 'function';
-	map: Function;
-	mapDepends: Array<Function> = [];
-	depCache: Array<any> = [];
-	getState: () => State;
-
-	dependKeys: {[key: string]: true} = {};
-
-	shouldCheckDependsCache: boolean = true;
-	hasComparedDep: boolean = false;
-
-
-	firstRun: boolean = true;
-	value: any;
-
-	static runningMap: MapCache | undefined;
-
-	constructor(
-		getState: () => State,
-		map: Array<string | Function> | Function
-	) {
-		this.getState = getState;
-		if (typeof map === 'function') {
-			this.type = 'function';
-			this.map = map;
-		} else {
-			this.type = 'array';
-			const copyMap = map.slice();
-			this.map = copyMap.pop() as Function;
-			copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
-		}
-	}
-	createGetDepByKeyPath(keyPath: string | Function) {
-		if (typeof keyPath === 'string') {
-			return (s: State) => getValueFromObjByKeyPath(s, keyPath);
-		}
-		return keyPath;
-	}
-	shouldCheckCache() {
-		this.shouldCheckDependsCache = true;
-		this.hasComparedDep = false;
-	}
-	addDependKey(key: string) {
-		if (!this.dependKeys[key] && this.type === 'function') {
-			this.dependKeys[key] = true;
-			this.mapDepends.push(this.createGetDepByKeyPath(key));
-		}
-	}
-	getDepsValue() {
-		return this.mapDepends.map(dep => dep(this.getState()));
-	}
-	hasDepChanged() {
-		if (this.shouldCheckDependsCache && !this.hasComparedDep) {
-			const newDepCache = this.getDepsValue();
-			let depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
-			// 首次运行map，还没有缓存，只有在type是函数的情况下存在。
-			if (this.firstRun) {
-				depHasChanged =  true;
-			}
-			if (depHasChanged) {
-				this.depCache = newDepCache;
-			}
-			this.shouldCheckDependsCache = false;
-			this.hasComparedDep = true;
-			return depHasChanged;
-		}
-		return false;
-	}
-	getValue() {
-		if (this.hasDepChanged()) {
-			if (this.type === 'function') {
-				MapCache.runningMap = this;
-				this.value = this.map(this.getState());
-				MapCache.runningMap = undefined;
-				if(this.firstRun) {
-					this.depCache = this.getDepsValue();
-				}
-			} else {
-				this.value = this.map(...this.depCache);
-			}
-		}
-		if (this.firstRun) {
-			this.firstRun = false;
-		}
-		return this.value;
-	}
-
-	destroy() {
-		this.map = () => {};
-		this.mapDepends = [];
-		this.depCache = [];
-		this.getState = () => ({});
-		this.dependKeys = {};
-	}
 }

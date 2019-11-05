@@ -40,28 +40,6 @@ export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?:
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */
-export declare const getValueFromObjByKeyPath: (obj: State, keyPath: string) => State | undefined;
-export declare class MapCache {
-    type: 'function' | 'array';
-    map: Function;
-    mapDepends: Array<Function>;
-    depCache: Array<any>;
-    getState: () => State;
-    dependKeys: {
-        [key: string]: true;
-    };
-    shouldCheckDependsCache: boolean;
-    hasComparedDep: boolean;
-    firstRun: boolean;
-    value: any;
-    static runningMap: MapCache | undefined;
-    constructor(getState: () => State, map: Array<string | Function> | Function);
-    createGetDepByKeyPath(keyPath: string | Function): Function;
-    shouldCheckCache(): void;
-    addDependKey(key: string): void;
-    getDepsValue(): any[];
-    hasDepChanged(): boolean;
-    getValue(): any;
-    destroy(): void;
-}
+export declare const getValueFromObjByKeyPath: (obj: State, keyPath: string) => any;
+export declare const arrayIsEqual: (arr1: any[], arr2: any[]) => boolean;
 export {};
