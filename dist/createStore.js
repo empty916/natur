@@ -87,7 +87,9 @@ var createStore = function createStore() {
 
   var checkModuleIsValid = function checkModuleIsValid(moduleName) {
     if (!hasModule(moduleName)) {
-      throw new Error("module: ".concat(moduleName, " is not valid!"));
+      var errMsg = "module: ".concat(moduleName, " is not valid!");
+      console.error(errMsg);
+      throw new Error(errMsg);
     }
   };
 
@@ -173,7 +175,9 @@ var createStore = function createStore() {
 
   var setModule = function setModule(moduleName, storeModule) {
     if (!(0, _utils.isStoreModule)(storeModule)) {
-      throw new Error('storeModule is illegal!');
+      var errMsg = "setModule: storeModule ".concat(moduleName, " is illegal!");
+      console.error(errMsg);
+      throw new Error(errMsg);
     }
 
     var isModuleExist = hasModule(moduleName);
@@ -335,7 +339,9 @@ var createStore = function createStore() {
       return currentLazyModules[moduleName];
     }
 
-    throw new Error("getLazyModule: ".concat(moduleName, " is not exist"));
+    var errMsg = "getLazyModule: ".concat(moduleName, " is not exist");
+    console.error(errMsg);
+    throw new Error(errMsg);
   };
 
   var createDispatch = function createDispatch(moduleName) {

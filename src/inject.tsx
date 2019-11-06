@@ -122,7 +122,9 @@ const connect = <P, S, SP>(
 			const storeContext = getStoreInstance();
 			const store = storeContext;
 			if (store === undefined) {
-				throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+				const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
+				console.error(errMsg);
+				throw new Error(errMsg);
 			}
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块

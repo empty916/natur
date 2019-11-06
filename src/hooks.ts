@@ -10,16 +10,18 @@ import {
 	StoreModule,
 	InjectStoreModule,
 } from './createStore';
-import { isEqualWithDepthLimit } from './utils';
+import { arrayIsEqual } from './utils';
 
 const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 
 export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
 	if (moduleNames.length === 0) {
-		throw new Error('useInject: moduleNames param is required!')
+		const errMsg = 'useInject: moduleNames param is required!';
+		console.error(errMsg);
+		throw new Error(errMsg)
 	}
 	const [$moduleNames, setModuleNames] = useState(moduleNames);
-	if (!isEqualWithDepthLimit(moduleNames.slice().sort(), $moduleNames.slice().sort(), 1)) {
+	if (!arrayIsEqual(moduleNames, $moduleNames)) {
 		setModuleNames(moduleNames);
 	}
     const store = getStoreInstance();
@@ -27,8 +29,9 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
     // 获取store中不存在的模块
     const invalidModulesNames = $moduleNames.filter(mn => !allModuleNames.includes(mn));
     if (!!invalidModulesNames.length) {
-        console.error(`useInject: ${invalidModulesNames.join()} module is not exits!`);
-        return [];
+		const errMsg = `useInject: ${invalidModulesNames.join()} module is not exits!`;
+		console.error(errMsg);
+		throw new Error(errMsg);
     }
     const [stateChanged, setStateChanged] = useState({});
     // 获取moduleNames中是否存在未加载的模块
