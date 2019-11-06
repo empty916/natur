@@ -129,7 +129,9 @@ const createStore: CreateStore = (
 
 	const checkModuleIsValid = (moduleName: ModuleName) => {
 		if (!hasModule(moduleName)) {
-			throw new Error(`module: ${moduleName} is not valid!`);
+			const errMsg = `module: ${moduleName} is not valid!`;
+			console.error(errMsg);
+			throw new Error(errMsg);
 		}
 	}
 	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
@@ -167,7 +169,9 @@ const createStore: CreateStore = (
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!isStoreModule(storeModule)) {
-			throw new Error('storeModule is illegal!');
+			const errMsg = `setModule: storeModule ${moduleName} is illegal!`;
+			console.error(errMsg);
+			throw new Error(errMsg);
 		}
 		const isModuleExist = hasModule(moduleName)
 		currentModules = {
@@ -249,7 +253,9 @@ const createStore: CreateStore = (
 		if (!!currentLazyModules[moduleName]) {
 			return currentLazyModules[moduleName];
 		}
-		throw new Error(`getLazyModule: ${moduleName} is not exist`);
+		const errMsg = `getLazyModule: ${moduleName} is not exist`;
+		console.error(errMsg);
+		throw new Error(errMsg);
 	};
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);

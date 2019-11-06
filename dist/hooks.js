@@ -31,7 +31,9 @@ function useInject() {
   }
 
   if (moduleNames.length === 0) {
-    throw new Error('useInject: moduleNames param is required!');
+    var errMsg = 'useInject: moduleNames param is required!';
+    console.error(errMsg);
+    throw new Error(errMsg);
   }
 
   var _useState = (0, _react.useState)(moduleNames),
@@ -39,7 +41,7 @@ function useInject() {
       $moduleNames = _useState2[0],
       setModuleNames = _useState2[1];
 
-  if (!(0, _utils.isEqualWithDepthLimit)(moduleNames.slice().sort(), $moduleNames.slice().sort(), 1)) {
+  if (!(0, _utils.arrayIsEqual)(moduleNames, $moduleNames)) {
     setModuleNames(moduleNames);
   }
 
@@ -51,8 +53,10 @@ function useInject() {
   });
 
   if (!!invalidModulesNames.length) {
-    console.error("useInject: ".concat(invalidModulesNames.join(), " module is not exits!"));
-    return [];
+    var _errMsg = "useInject: ".concat(invalidModulesNames.join(), " module is not exits!");
+
+    console.error(_errMsg);
+    throw new Error(_errMsg);
   }
 
   var _useState3 = (0, _react.useState)({}),

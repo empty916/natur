@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shallowEqualMiddleware = exports.filterNonObjectMiddleware = exports.promiseMiddleware = void 0;
+exports.filterNonObjectMiddleware = exports.promiseMiddleware = void 0;
 
 var _utils = require("./utils");
 
@@ -55,9 +55,5 @@ var shallowEqualMiddleware = function shallowEqualMiddleware(_ref) {
         return record.state;
       }
 
-      return next(record);
-    };
-  };
-};
 
-exports.shallowEqualMiddleware = shallowEqualMiddleware;
+exports.filterNonObjectMiddleware = filterNonObjectMiddleware;

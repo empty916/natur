@@ -166,7 +166,9 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
         var store = storeContext;
 
         if (store === undefined) {
-          throw new Error('\n 请先创建store实例！\n Please create a store instance first.');
+          var errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
+          console.error(errMsg);
+          throw new Error(errMsg);
         }
 
         var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
