@@ -74,7 +74,6 @@
 		"hoist-non-react-statics": "^3.3.0"
 	},
 	"peerDependencies": {
-		"react": "^15.0.0",
-		"react-dom": "^15.0.0"
+		"react": "^15.0.0"
 	}
 }
