@@ -6,8 +6,11 @@
  * @desc [description]
  */
 import MapCache from './MapCache';
+import { Store } from './createStore';
+import { default as inject } from "./inject";
+import { useInject } from "./hooks";
 export { default as createStore, Listener, State, States, Action, Actions, Maps, InjectMaps, StoreModule, InjectStoreModule, LazyStoreModules, Modules, Store, Middleware, } from "./createStore";
-export { default as inject } from "./inject";
-export { useInject } from "./hooks";
 export declare const setMapDepParser: typeof MapCache.setMapDepParser;
 export declare const resetMapDepParser: typeof MapCache.resetMapDepParser;
+export { inject, useInject, };
+export declare const setInjectStoreGetter: (sg: () => Store) => void;
