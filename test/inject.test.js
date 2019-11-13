@@ -8,6 +8,8 @@ import {
 	initStore
 } from './ui-demo/injectHoc';
 
+import { setInjectStoreGetter } from '../src'
+
 configure({ adapter: new Adapter() });
 
 test('Inject without createStore', () => {
@@ -15,7 +17,8 @@ test('Inject without createStore', () => {
 });
 
 test('Inject Hoc', () => {
-	initStore();
+	const s = initStore();
+	setInjectStoreGetter(() => s);
 	let app = mount(<App />);
 	let appWithoutModule = mount(<AppWithNoModule />);
 	let appWithLoadErrorModule = mount(<AppWithLoadErrorModule />);
@@ -33,7 +36,7 @@ test('Inject Hoc', () => {
 			expect(app.find('input').props().value).toBe('name1');
 			expect(app.text()).toBe('name1'.split('').join(','));
 			app.unmount();
-		})
+		});
 });
 
 
