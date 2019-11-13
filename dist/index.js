@@ -3,12 +3,6 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-Object.defineProperty(exports, "createStore", {
-  enumerable: true,
-  get: function get() {
-    return _createStore["default"];
-  }
-});
 Object.defineProperty(exports, "inject", {
   enumerable: true,
   get: function get() {
@@ -21,15 +15,21 @@ Object.defineProperty(exports, "useInject", {
     return _hooks.useInject;
   }
 });
-exports.resetMapDepParser = exports.setMapDepParser = void 0;
+Object.defineProperty(exports, "createStore", {
+  enumerable: true,
+  get: function get() {
+    return _createStore["default"];
+  }
+});
+exports.setInjectStoreGetter = exports.resetMapDepParser = exports.setMapDepParser = void 0;
 
 var _MapCache = _interopRequireDefault(require("./MapCache"));
-
-var _createStore = _interopRequireDefault(require("./createStore"));
 
 var _inject = _interopRequireDefault(require("./inject"));
 
 var _hooks = require("./hooks");
+
+var _createStore = _interopRequireDefault(require("./createStore"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -44,3 +44,11 @@ var setMapDepParser = _MapCache["default"].setMapDepParser;
 exports.setMapDepParser = setMapDepParser;
 var resetMapDepParser = _MapCache["default"].resetMapDepParser;
 exports.resetMapDepParser = resetMapDepParser;
+
+var setInjectStoreGetter = function setInjectStoreGetter(sg) {
+  _hooks.useInject.setStoreGetter(sg);
+
+  _inject["default"].setStoreGetter(sg);
+};
+
+exports.setInjectStoreGetter = setInjectStoreGetter;

@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import { createStore, useInject } from "../../src";
+import { createStore, useInject, setInjectStoreGetter } from "../../src";
 
 const name = {
 	state: {
@@ -42,6 +42,7 @@ const App = () => {
 		</>
 	);
 };
+
 const initStore = () => createStore(
 	{
 		name,

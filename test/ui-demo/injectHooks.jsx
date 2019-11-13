@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import { inject, createStore, useInject } from "../../src";
+import { inject, createStore, useInject, setInjectStoreGetter } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -81,20 +81,23 @@ const AppWithNoModule = () => {
 		</>
 	);
 };
-const initStore = () => createStore(
-	{
-		name,
-		name1: name,
-		name2: name,
-		name3: name,
-	},
-	{
-		lazyName: () => Promise.resolve(lazyName),
-		lazyLoadError: () => Promise.reject(lazyName),
-	},
-	{},
-	[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
-)
+const initStore = () => {
+	return createStore(
+		{
+			name,
+			name1: name,
+			name2: name,
+			name3: name,
+		},
+		{
+			lazyName: () => Promise.resolve(lazyName),
+			lazyLoadError: () => Promise.reject(lazyName),
+		},
+		{},
+		[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+	);
+	// setInjectStoreGetter(() => store);
+}
 
 export {
 	App,

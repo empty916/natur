@@ -25,6 +25,8 @@ var createLoadModulesPromise = function createLoadModulesPromise(moduleNames, st
   });
 };
 
+var _getStoreInstance = _createStore.getStoreInstance;
+
 function useInject() {
   for (var _len = arguments.length, moduleNames = new Array(_len), _key = 0; _key < _len; _key++) {
     moduleNames[_key] = arguments[_key];
@@ -45,7 +47,8 @@ function useInject() {
     setModuleNames(moduleNames);
   }
 
-  var store = (0, _createStore.getStoreInstance)();
+  var store = _getStoreInstance();
+
   var allModuleNames = store.getAllModuleName(); // 获取store中不存在的模块
 
   var invalidModulesNames = $moduleNames.filter(function (mn) {
@@ -108,3 +111,7 @@ function useInject() {
     return res;
   }, []);
 }
+
+useInject.setStoreGetter = function (storeGetter) {
+  _getStoreInstance = storeGetter;
+};

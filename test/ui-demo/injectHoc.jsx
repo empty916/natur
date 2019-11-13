@@ -1,5 +1,5 @@
 import React from "react";
-import { inject, createStore } from "../../src";
+import { inject, createStore, setInjectStoreGetter } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -56,12 +56,18 @@ const AppWithLoadErrorModule = inject('lazyLoadError')(({lazyLoadError}) => {
 	);
 });
 
-const initStore = () => createStore({name}, {
-	lazyName: () => Promise.resolve(lazyName),
-	lazyLoadError: () => Promise.reject(lazyName),
-}, {},
-[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
-);
+const initStore = () => {
+	return createStore(
+		{name},
+			{
+			lazyName: () => Promise.resolve(lazyName),
+			lazyLoadError: () => Promise.reject(lazyName),
+		},
+		{},
+		[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+	);
+	// setInjectStoreGetter(() => store);
+};
 
 inject.setLoadingComponent(() => <>loading</>)
 
