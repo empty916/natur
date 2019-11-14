@@ -15,11 +15,14 @@ import {
 	initStore as initStore1,
 } from './ui-demo/injectHooksChange';
 
+import { setInjectStoreGetter } from '../src'
+
 configure({ adapter: new Adapter() });
 
 
 test('Inject hooks', () => {
-	initStore();
+	const s = initStore();
+	setInjectStoreGetter(() => s);
 	let app = mount(<App />);
 	let appWithLoadErrorModule = mount(<AppWithLoadErrorModule />)
 	expect(() => mount(<AppWithErrorModuleName />)).toThrow();
@@ -42,7 +45,8 @@ test('Inject hooks', () => {
 
 
 test('Inject hooks base', () => {
-	initStore1();
+	const s = initStore1();
+	setInjectStoreGetter(() => s);
 	let app = mount(<AppChangeModule />);
 	const count = () => app.find('#count').text();
 	const name = () => app.find('#name').text();
@@ -74,7 +78,8 @@ test('Inject hooks base', () => {
 
 
 test('Inject hooks change module', () => {
-	initStore1();
+	const s = initStore1();
+	setInjectStoreGetter(() => s);
 	let app = mount(<AppChangeModule />);
 	const count = () => app.find('#count').text();
 	const name = () => app.find('#name').text();

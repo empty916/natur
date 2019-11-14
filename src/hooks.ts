@@ -13,6 +13,7 @@ import {
 import { arrayIsEqual } from './utils';
 
 const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
+let _getStoreInstance = getStoreInstance;
 
 export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
 	if (moduleNames.length === 0) {
@@ -24,7 +25,7 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
 	if (!arrayIsEqual(moduleNames, $moduleNames)) {
 		setModuleNames(moduleNames);
 	}
-    const store = getStoreInstance();
+    const store = _getStoreInstance();
     const allModuleNames = store.getAllModuleName();
     // 获取store中不存在的模块
     const invalidModulesNames = $moduleNames.filter(mn => !allModuleNames.includes(mn));
@@ -72,4 +73,8 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
         res.push(store.getModule(mn));
         return res;
 	}, [] as InjectStoreModule[]);
+}
+
+useInject.setStoreGetter = (storeGetter: () => Store) => {
+	_getStoreInstance = storeGetter;
 }

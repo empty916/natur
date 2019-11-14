@@ -1,6 +1,6 @@
 {
 	"name": "react-natural-store",
-	"version": "1.6.7",
+	"version": "1.6.8",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -74,7 +74,6 @@
 		"hoist-non-react-statics": "^3.3.0"
 	},
 	"peerDependencies": {
-		"react": "^15.0.0",
-		"react-dom": "^15.0.0"
+		"react": "^15.0.0"
 	}
 }
