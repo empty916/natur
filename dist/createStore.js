@@ -245,8 +245,9 @@ var createStore = function createStore() {
     checkModuleIsValid(moduleName);
 
     var setStateProxy = function setStateProxy(_ref) {
-      var state = _ref.state;
-      return setState(moduleName, state);
+      var state = _ref.state,
+          _moduleName = _ref.moduleName;
+      return setState(_moduleName, state);
     };
 
     var middlewareParams = {
