@@ -259,7 +259,7 @@ const createStore: CreateStore = (
 	};
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
-		const setStateProxy: Next = ({state}: Record) => setState(moduleName, state);
+		const setStateProxy: Next = ({state, moduleName: _moduleName}: Record) => setState(_moduleName, state);
 		const middlewareParams = {
 			setState: setStateProxy,
 			getState: () => currentModules[moduleName].state,
