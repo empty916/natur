@@ -221,7 +221,14 @@ var createStore = function createStore() {
       state: currentModules[moduleName].state,
       actions: createActionsProxy(moduleName),
       maps: createMapsProxy(moduleName)
-    };
+    }; // if (!!Object.defineProperty) {
+    // 	Object.defineProperty(proxyModule, 'state', {
+    // 		get() {
+    // 			return currentModules[moduleName].state;
+    // 		}
+    // 	});
+    // }
+
     return proxyModule;
   }; // 获取原本的module
 
@@ -273,7 +280,7 @@ var createStore = function createStore() {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data);
+      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data.concat([currentModules[moduleName]]));
       return setStateProxyWithMiddleware({
         moduleName: moduleName,
         actionName: type,

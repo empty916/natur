@@ -241,8 +241,15 @@ const createStore: CreateStore = (
 			actions: createActionsProxy(moduleName),
 			maps: createMapsProxy(moduleName),
 		};
+		// if (!!Object.defineProperty) {
+		// 	Object.defineProperty(proxyModule, 'state', {
+		// 		get() {
+		// 			return currentModules[moduleName].state;
+		// 		}
+		// 	});
+		// }
 		return proxyModule;
-	}
+	};
 
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
@@ -271,7 +278,7 @@ const createStore: CreateStore = (
 			checkModuleIsValid(moduleName);
 			let newState: ReturnType<Action>;
 			const targetModule = currentModules[moduleName];
-			newState = targetModule.actions[type](...data);
+			newState = targetModule.actions[type](...data, currentModules[moduleName]);
 			return setStateProxyWithMiddleware({
 				moduleName,
 				actionName: type,
