@@ -278,7 +278,7 @@ const createStore: CreateStore = (
 			checkModuleIsValid(moduleName);
 			let newState: ReturnType<Action>;
 			const targetModule = currentModules[moduleName];
-			newState = targetModule.actions[type](...data, currentModules[moduleName]);
+			newState = targetModule.actions[type](...data, currentModules[moduleName].state);
 			return setStateProxyWithMiddleware({
 				moduleName,
 				actionName: type,

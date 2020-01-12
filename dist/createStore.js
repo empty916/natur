@@ -280,7 +280,7 @@ var createStore = function createStore() {
         data[_key2 - 1] = arguments[_key2];
       }
 
-      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data.concat([currentModules[moduleName]]));
+      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data.concat([currentModules[moduleName].state]));
       return setStateProxyWithMiddleware({
         moduleName: moduleName,
         actionName: type,
