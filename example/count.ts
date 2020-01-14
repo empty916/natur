@@ -13,38 +13,40 @@ export const state = {
 	}
 };
 export const maps = {
-	isOdd: ['count', count => count % 2 !== 0],
-	deepCountIsOdd: ['deeep.deep.count2', count => {
+	isOdd: ['count', (count: number) => count % 2 !== 0],
+	deepCountIsOdd: ['deeep.deep.count2', (count: number) => {
 		// console.log('run deep map');
 		return count % 2 !== 0;
 	}],
-	deeepCountIsOdd: ['deeep.deep.count', (count) => {
+	deeepCountIsOdd: ['deeep.deep.count', (count: number) => {
 		// console.log('run deeep map');
 		return count % 2 !== 0;
 	}],
-	splitName: ['name', name => {
+	splitName: ['name', (name: string) => {
 		return name.split("");
 	}],
-	returnNameWhenCountIsOdd: ['count', 'name', (count, name) => {
+	returnNameWhenCountIsOdd: ['count', 'name', (count: number, name: string) => {
 		if (count % 2 !== 0) {
 			return name;
 		}
 		return count;
 	}],
-	count: state => ({count: state.count}),
-	combine: state => ({ ...state }),
-	showNewKey: state => !!state.newKey && state.newKey,
+	count: [(s: any) => s, (state: any) => ({count: state.count})],
+	combine: [(s: any) => s, (state: any) => ({ ...state })],
+	showNewKey: [(s: any) => s, (state: any) => !!state.newKey && state.newKey],
 };
 export const actions = {
-	inc: state => {
+	inc: (state: any) => {
 		return Promise.resolve({
 			...state,
 			count: state.count + 1
 		});
 	},
 	// inc: state => null,
-	incDeep: state => {
-		return {
+	incDeep: () => (getState: () => any, next: (s: any) => any) => {
+		console.log('inc deep');
+		const state = getState();
+		return next({
 			...state,
 			// deep: {
 			// 	count: state.deep.count + 1,
@@ -55,9 +57,21 @@ export const actions = {
 					count2: state.deeep.deep.count2 + 1,
 				}
 			}
-		};
+		})
+		// return {
+		// 	...state,
+		// 	// deep: {
+		// 	// 	count: state.deep.count + 1,
+		// 	// }
+		// 	deeep: {
+		// 		deep: {
+		// 			...state.deeep.deep,
+		// 			count2: state.deeep.deep.count2 + 1,
+		// 		}
+		// 	}
+		// };
 	},
-	incDeeep: state => {
+	incDeeep: (state: any) => {
 		return {
 			...state,
 			deeep: {
@@ -68,7 +82,7 @@ export const actions = {
 			}
 		};
 	},
-	decDeeep: state => {
+	decDeeep: (state: any) => {
 		return {
 			...state,
 			deeep: {
@@ -79,19 +93,19 @@ export const actions = {
 			}
 		};
 	},
-	addKey: state => ({...state, newKey: 1}),
-	deleteKey: state => {
+	addKey: (state: any) => ({...state, newKey: 1}),
+	deleteKey: (state: any) => {
 		const res = {...state};
 		delete res.newKey;
 		return res;
 	},
-	doNothing: state => state,
-	asyncDoNothing: state => Promise.resolve(state),
-	asInc: ({ count, ...rest }) => Promise.resolve({ count: count + 1, ...rest }),
-	dec: ({ count, ...rest }) => {
+	doNothing: (state: any) => state,
+	asyncDoNothing: (state: any) => Promise.resolve(state),
+	asInc: ({ count, ...rest }: any) => Promise.resolve({ count: count + 1, ...rest }),
+	dec: ({ count, ...rest }: any) => {
 		return { count: count - 1, ...rest };
 	},
-	changeName: (newName, state) => ({
+	changeName: (newName: string, state: any) => ({
 		...state,
 		name: newName,
 	})

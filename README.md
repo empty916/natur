@@ -15,7 +15,6 @@
 - rns-pure不会自动收集依赖，所以不限制actions对state的修改，但是必须遵守immutable规范
 - 因为rns-pure没有使用Object.defineProperty API所以可以支持IE低版本浏览器
 - 因为没有了Object.defineProperty拦截，所以会出现以下情况
-- 因为运行时闭包问题，拿不到最新state，**所以在action函数的最后一个参数可以拿到最新state**
 
 ```ts
 /*
@@ -38,6 +37,22 @@ const App = () => {
   // newState.name === 'jerry'
   // ...
 }
+
+
+```
+
+- 因为运行时闭包问题，拿不到最新state，新增thunkMiddleware
+
+```typescript
+
+import { thunkMiddleware } from 'rns-pure/dist/middlewares'
+
+const actionExample = (myParams: any) => (getState, next: (s: State) => any) => {
+    const currentState = getState(); // 最新的state
+}
+
+
+
 
 
 ```

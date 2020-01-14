@@ -2,7 +2,7 @@ export const state = {
     name: 'tom',
 }
 export const maps = {
-    splitName: state => state.name.split(''),
+    splitName: [s => s, state => state.name.split('')],
 }
 export const actions = {
     changeName: (name) => (name),
