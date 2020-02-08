@@ -67,7 +67,11 @@ export interface Modules {
 
 type Next = (record: Record) => ReturnType<Action>;
 type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
-type MiddlewareParams = {setState: Next, getState: () => State};
+type MiddlewareParams = {
+	setState: Next,
+	getState: () => State,
+	getMaps: () => InjectMaps | undefined,
+};
 
 export type ModuleName = keyof Modules | keyof LazyStoreModules;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
@@ -270,8 +274,9 @@ const createStore: CreateStore = (
 		const middlewareParams = {
 			setState: setStateProxy,
 			getState: () => currentModules[moduleName].state,
-		}
-		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams))
+			getMaps: () => createMapsProxy(moduleName),
+		};
+		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setStateProxy);
 
 		return (type: string, ...data: any[]) => {

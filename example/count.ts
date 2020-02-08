@@ -37,6 +37,7 @@ export const maps = {
 };
 export const actions = {
 	inc: (state: any) => {
+		console.log(state);
 		return Promise.resolve({
 			...state,
 			count: state.count + 1

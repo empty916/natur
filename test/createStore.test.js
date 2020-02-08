@@ -4,7 +4,7 @@ import { getStoreInstance } from '../src/createStore';
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
-	shallowEqualMiddleware
+	shallowEqualMiddleware, thunkMiddleware
 } from '../src/middlewares'
 
 let countMapCallTimes = 0;
@@ -25,6 +25,7 @@ const count = {
 	},
 	actions: {
 		inc: state => ({ ...state, count: state.count + 1 }),
+		_inc: () => getState => ({ ...getState(), count: getState().count + 1 }),
 		updateName: state => ({ ...state, name: state.name + 1 }),
 		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
 		dec: state => ({ ...state, count: state.count - 1 }),
@@ -551,6 +552,7 @@ describe('actions', () => {
 				count: 1,
 			}
 		}, [
+			thunkMiddleware,
 			({getState}) => next => record => {
 				expect(getState()).toBe(store.getModule('count').state);
 				recordCache = {...record};
@@ -563,12 +565,40 @@ describe('actions', () => {
 			},
 			promiseMiddleware,
 			filterNonObjectMiddleware,
-			shallowEqualMiddleware
+			shallowEqualMiddleware,
 		]);
 		// store.removeModule('count');
 		// store.setModule('count', count);
 	});
-
+	test('return no change state', () => {
+		let recordCache = null;
+		store = createStore({ name, count }, {}, {
+			count: {
+				...count.state,
+				count: 1,
+			}
+		}, [
+			thunkMiddleware,
+			({getState}) => next => record => {
+				expect(getState()).toBe(store.getModule('count').state);
+				recordCache = {...record};
+				return next(recordCache)
+			},
+			() => next => record => {
+				expect(record).toBe(recordCache);
+				// if (!isObj(record.state)) return record.state;
+				return next(record)
+			},
+			promiseMiddleware,
+			filterNonObjectMiddleware,
+		]);
+		let countModule = store.getModule('count');
+		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
+	});
+	test('return function', () => {
+		let countModule = store.getModule('count');
+		expect(countModule.actions._inc()).toBe(countModule.state.count + 1);
+	});
 	test('return invalid type', () => {
 		const countModule = store.getModule('count');
 

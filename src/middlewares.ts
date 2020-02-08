@@ -1,7 +1,7 @@
 import {Middleware, Action, State} from './createStore';
 import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
 
-export const thunkMiddleware: Middleware = ({getState}) => next => record => {
+export const thunkMiddleware: Middleware = ({getState, getMaps}) => next => record => {
 	if (typeof record.state === 'function') {
 		const defaultNext = (s: State) => next({
 			...record,
@@ -9,7 +9,7 @@ export const thunkMiddleware: Middleware = ({getState}) => next => record => {
 		});
 		return next({
 			...record,
-			state: record.state(getState, defaultNext),
+			state: record.state(getState, defaultNext, getMaps),
 		});
 	}
 	return next(record);

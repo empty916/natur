@@ -1,6 +1,6 @@
 import {createStore, Middleware} from '../src';
 // import { createStore, Middleware } from '../dist/rns';
-import { thunkMiddleware } from '../src/middlewares'
+import {promiseMiddleware, thunkMiddleware} from '../src/middlewares'
 import * as nameModule from './name';
 import countModule from './count';
 import longItem from './longItem';
@@ -26,7 +26,8 @@ export default () => createStore(
 		name: {name: 'wxg'},
 	},
 	[
-		thunkMiddleware
+		thunkMiddleware,
+		promiseMiddleware,
 		// LogMiddleware,
 		// LogMiddleware2
 	],
