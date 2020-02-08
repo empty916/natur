@@ -14,18 +14,19 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var thunkMiddleware = function thunkMiddleware(_ref) {
-  var getState = _ref.getState;
+  var getState = _ref.getState,
+      getMaps = _ref.getMaps;
   return function (next) {
     return function (record) {
       if (typeof record.state === 'function') {
-        var defaultNext = function defaultNext(s) {
+        var setState = function setState(s) {
           return next(_objectSpread({}, record, {
             state: s
           }));
         };
 
         return next(_objectSpread({}, record, {
-          state: record.state(getState, defaultNext)
+          state: record.state(getState, setState, getMaps)
         }));
       }
 

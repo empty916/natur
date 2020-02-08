@@ -248,6 +248,13 @@ var createStore = function createStore() {
     throw new Error(errMsg);
   };
 
+  var loadModule = function loadModule(moduleName) {
+    return getLazyModule(moduleName)().then(function (loadedModule) {
+      setModule(moduleName, loadedModule);
+      return getModule(moduleName);
+    });
+  };
+
   var createDispatch = function createDispatch(moduleName) {
     checkModuleIsValid(moduleName);
 
@@ -261,6 +268,9 @@ var createStore = function createStore() {
       setState: setStateProxy,
       getState: function getState() {
         return currentModules[moduleName].state;
+      },
+      getMaps: function getMaps() {
+        return createMapsProxy(moduleName);
       }
     };
     var chain = currentMiddlewares.map(function (middleware) {
@@ -329,6 +339,7 @@ var createStore = function createStore() {
     removeModule: removeModule,
     getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
+    loadModule: loadModule,
     setModule: setModule,
     hasModule: hasModule,
     subscribe: subscribe,

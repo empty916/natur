@@ -12,7 +12,6 @@ import {
 } from './createStore';
 import { arrayIsEqual } from './utils';
 
-const createLoadModulesPromise = (moduleNames: ModuleName[], store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 let _getStoreInstance = getStoreInstance;
 
 export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
@@ -49,17 +48,11 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
         () => {
             // 动态加载moduleName中还未加载的模块
             if (hasUnloadModules) {
-                const loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
-                Promise.all(loadModulesPromise)
-                    .then((modules: StoreModule[]) => {
-                        modules.forEach((storeModule, index) =>
-                            store.setModule(unLoadedModules[index], storeModule)
-                        );
-                        setStateChanged({});
-                    })
-                    .catch((e: Error) => {
-                        setStateChanged({});
-                    });
+				Promise.all(
+					unLoadedModules.map(mn => store.loadModule(mn))
+				)
+				.then(() => setStateChanged({}))
+				.catch(() => setStateChanged({}));
             }
         },
         [hasUnloadModules]

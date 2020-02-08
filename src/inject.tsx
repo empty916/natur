@@ -22,7 +22,6 @@ type ModuleNames = ModuleName[];
 
 let Loading: TReactComponent<{}, {}> = () => null;
 let _getStoreInstance = getStoreInstance;
-const createLoadModulesPromise = (moduleNames: ModuleNames, store: Store) => moduleNames.map((mn: ModuleName) => store.getLazyModule(mn)());
 
 type Tstate = {
 	storeStateChange: {},
@@ -79,21 +78,19 @@ const connect = <P, S, SP>(
 			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 
 			if (!modulesHasLoaded) {
-				const loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
-				Promise.all(loadModulesPromise)
-					.then((modules: StoreModule[]) => {
-						modules.forEach((storeModule, index) =>
-							store.setModule(unLoadedModules[index], storeModule)
-						);
-						this.setState({
-							modulesHasLoaded: true,
-						})
+				Promise.all(
+					unLoadedModules.map(mn => store.loadModule(mn))
+				)
+				.then(() => {
+					this.setState({
+						modulesHasLoaded: true,
 					})
-					.catch((e: Error) => {
-						this.setState({
-							modulesHasLoaded: false,
-						})
-					});
+				})
+				.catch((e: Error) => {
+					this.setState({
+						modulesHasLoaded: false,
+					})
+				});
 			}
 		}
 		componentWillUnmount() {

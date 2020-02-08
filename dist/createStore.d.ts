@@ -47,6 +47,7 @@ declare type Record = {
 declare type MiddlewareParams = {
     setState: Next;
     getState: () => State;
+    getMaps: () => InjectMaps | undefined;
 };
 export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
 export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
@@ -55,6 +56,7 @@ export interface Store {
     setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     removeModule: (moduleName: ModuleName) => Store;
     hasModule: (moduleName: ModuleName) => boolean;
+    loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
     getOriginModule: (moduleName: ModuleName) => StoreModule | {};
     getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;

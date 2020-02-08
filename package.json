@@ -8,7 +8,7 @@
 		"build": "npm run build:ts && npm run build:js",
 		"build:ts": "rimraf dist && tsc",
 		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
-		"build:min": "rollup -c && npm run gzip",
+		"build:min": "npm run build:ts && rollup -c && npm run gzip",
 		"dev": "webpack-dev-server --config ./example/webpack.config.js",
 		"test": "jest",
 		"test:report": "jest --coverage",

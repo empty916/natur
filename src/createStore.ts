@@ -81,6 +81,7 @@ export interface Store {
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	removeModule: (moduleName: ModuleName) => Store;
 	hasModule: (moduleName: ModuleName) => boolean;
+	loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
@@ -259,7 +260,7 @@ const createStore: CreateStore = (
 	const getOriginModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
 		return currentModules[moduleName];
-	}
+	};
 	const getLazyModule = (moduleName: ModuleName) => {
 		if (!!currentLazyModules[moduleName]) {
 			return currentLazyModules[moduleName];
@@ -267,6 +268,13 @@ const createStore: CreateStore = (
 		const errMsg = `getLazyModule: ${moduleName} is not exist`;
 		console.error(errMsg);
 		throw new Error(errMsg);
+	};
+	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule> => {
+		return getLazyModule(moduleName)()
+			.then((loadedModule: StoreModule) => {
+				setModule(moduleName, loadedModule);
+				return getModule(moduleName);
+			});
 	};
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
@@ -323,6 +331,7 @@ const createStore: CreateStore = (
 		removeModule,
 		getOriginModule,
 		getLazyModule,
+		loadModule,
 		setModule,
 		hasModule,
 		subscribe,

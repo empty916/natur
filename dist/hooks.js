@@ -19,12 +19,6 @@ function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = 
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
-var createLoadModulesPromise = function createLoadModulesPromise(moduleNames, store) {
-  return moduleNames.map(function (mn) {
-    return store.getLazyModule(mn)();
-  });
-};
-
 var _getStoreInstance = _createStore.getStoreInstance;
 
 function useInject() {
@@ -89,14 +83,12 @@ function useInject() {
   (0, _react.useEffect)(function () {
     // 动态加载moduleName中还未加载的模块
     if (hasUnloadModules) {
-      var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
-      Promise.all(loadModulesPromise).then(function (modules) {
-        modules.forEach(function (storeModule, index) {
-          return store.setModule(unLoadedModules[index], storeModule);
-        });
-        setStateChanged({});
-      })["catch"](function (e) {
-        setStateChanged({});
+      Promise.all(unLoadedModules.map(function (mn) {
+        return store.loadModule(mn);
+      })).then(function () {
+        return setStateChanged({});
+      })["catch"](function () {
+        return setStateChanged({});
       });
     }
   }, [hasUnloadModules]); // 计算moduleName对应的store、action,放入props中

@@ -45,12 +45,6 @@ var Loading = function Loading() {
 
 var _getStoreInstance = _createStore.getStoreInstance;
 
-var createLoadModulesPromise = function createLoadModulesPromise(moduleNames, store) {
-  return moduleNames.map(function (mn) {
-    return store.getLazyModule(mn)();
-  });
-};
-
 var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) {
   var Connect =
   /*#__PURE__*/
@@ -118,12 +112,9 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
         };
 
         if (!modulesHasLoaded) {
-          var loadModulesPromise = createLoadModulesPromise(unLoadedModules, store);
-          Promise.all(loadModulesPromise).then(function (modules) {
-            modules.forEach(function (storeModule, index) {
-              return store.setModule(unLoadedModules[index], storeModule);
-            });
-
+          Promise.all(unLoadedModules.map(function (mn) {
+            return store.loadModule(mn);
+          })).then(function () {
             _this2.setState({
               modulesHasLoaded: true
             });
