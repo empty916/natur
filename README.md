@@ -47,8 +47,10 @@ const App = () => {
 
 import { thunkMiddleware } from 'rns-pure/dist/middlewares'
 
-const actionExample = (myParams: any) => (getState, next: (s: State) => any) => {
+const actionExample = (myParams: any) => (getState, setState: (s: State) => State, getMaps: () => InjectMaps) => {
     const currentState = getState(); // 最新的state
+    const currentMaps = getMaps(); // 最新的maps
+    setState(currentState); // 更新state
 }
 
 
