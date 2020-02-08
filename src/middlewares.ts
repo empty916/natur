@@ -3,13 +3,13 @@ import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
 
 export const thunkMiddleware: Middleware = ({getState, getMaps}) => next => record => {
 	if (typeof record.state === 'function') {
-		const defaultNext = (s: State) => next({
+		const setState = (s: State) => next({
 			...record,
 			state: s,
 		});
 		return next({
 			...record,
-			state: record.state(getState, defaultNext, getMaps),
+			state: record.state(getState, setState, getMaps),
 		});
 	}
 	return next(record);
