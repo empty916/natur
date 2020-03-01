@@ -1,5 +1,6 @@
 # react-natural-store cook book
 
+#### <font color=red >This package has been migrated to [natur](https://www.npmjs.com/package/natur)</font>
 
 #### This is a pure version of the [react-natural-store](https://www.npmjs.com/package/react-natural-store).
 
