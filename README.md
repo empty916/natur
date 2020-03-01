@@ -6,9 +6,8 @@
 
 ### [此包已经迁移到natur](https://www.npmjs.com/package/natur)
 
-- **如果您的项目想从react-natural-store迁移到natur，那么可以看此[迁移导航](https://github.com/empty916/natur/releases/tag/0.0.3)，主要是maps必须要手动声明，其他的还好**
-
-如果您的项目想从react-natural-store迁移到natur，那么可以看此迁移导航，主要是maps必须要手动声明，其他的还好
+- **如果您的项目想从react-natural-store迁移到natur，那么可以看此[迁移导航](https://github.com/empty916/natur/releases/tag/0.0.3)，主要是maps必须要手动声明依赖，其他的还好**
+- **natur是较为稳定，推荐的版本。她的兼容性，便捷性，性能都相对优异**
 
 ### [设计概念](./doc/design.md)
 

@@ -6,7 +6,8 @@
 
 ### [This package has been migrated to natur](https://www.npmjs.com/package/natur)
 
-- **If your project wants to migrate from react-natural-store to natur, then you can see this [migration navigation](https://github.com/empty916/natur/releases/tag/0.0.3). The main thing is that maps must be manually declared. Others are fine.**
+- **If your project wants to migrate from react-natural-store to natur, you can see this [migration navigation](https://github.com/empty916/natur/releases/tag/0.0.3). The main thing is that maps must manually declare dependencies, others are fine.**
+- **natur is a more stable and recommended version. Her compatibility, convenience and performance are relatively excellent**
 
 #### basic introduction
 - This is a simple and efficient react state manager
