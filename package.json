@@ -1,6 +1,6 @@
 {
 	"name": "react-natural-store",
-	"version": "1.7.0",
+	"version": "1.7.1",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/empty916/react-natural-store.git"
+		"url": "git+https://github.com/empty916/natur.git"
 	},
 	"keywords": [
 		"react",
@@ -29,7 +29,7 @@
 	],
 	"author": "empty916",
 	"license": "Apache-2.0",
-	"homepage": "https://github.com/empty916/react-natural-store",
+	"homepage": "https://github.com/empty916/natur/tree/1.x",
 	"devDependencies": {
 		"@babel/cli": "^7.5.5",
 		"@babel/core": "^7.4.4",

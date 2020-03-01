@@ -4,7 +4,7 @@
 - [concept of design](./design.en.md)
 
 
-#### <font color=red >This package has been migrated to [natur](https://www.npmjs.com/package/natur)</font>
+### [This package has been migrated to natur](https://www.npmjs.com/package/natur)
 
 #### basic introduction
 - This is a simple and efficient react state manager

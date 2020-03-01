@@ -4,7 +4,7 @@
 
 
 
-#### <font color=red >此包已经迁移到 [natur](https://www.npmjs.com/package/natur)</font>
+### [此包已经迁移到natur](https://www.npmjs.com/package/natur)
 
 - [设计概念](./doc/design.md)
 
