@@ -1,111 +1,608 @@
-# rns-pure 使用手册
+# natur 使用手册
 
 [English doc](./doc/README.en.md)
 
 
-#### 这是[react-natural-store](https://www.npmjs.com/package/react-natural-store)的纯净版。
+- [设计概念](./doc/design.md)
 
-#### rns-pure与react-natural-store的区别如下：
 
-- state本身不限制数据类型
-- maps必须是手动声明依赖
-- actions返回任意值都可以作为state的值，不做任何拦截
-- 不自动附带异步支持，不自动附带浅比较state更新优化
-- middlewares.js中附带了常用的中间件，包括异步中间件，浅层对比state优化中间件等
-- rns-pure不会自动收集依赖，所以不限制actions对state的修改，但是必须遵守immutable规范
-- 因为rns-pure没有使用Object.defineProperty API所以可以支持IE低版本浏览器
-- 因为没有了Object.defineProperty拦截，所以会出现以下情况
 
-```ts
+## 基本介绍
+
+1. 这是一个简洁、高效的react状态管理器
+1. 浏览器兼容：IE9+
+1. 支持react 15.x, 16.x, 以及anujs
+1. 单元测试覆盖率99％，放心使用
+1. 包体积，minizip 5k(uglify+gzip压缩后5k)
+
+## 使用步骤（只需两步）
+
+### 第一步 创建 store 实例
+**这一步需要在渲染组件之前完成，因为 inject方法包裹的组件，在渲染时依赖store的实例**
+
+```js
+import { createStore } from 'natur';
+import { 
+  thunkMiddleware,
+  promiseMiddleware, 
+  shallowEqualMiddleware, 
+  fillObjectRestDataMiddleware
+  filterUndefinedMiddleware,
+} from 'natur/dist/middlewares';
+
 /*
-  app: {
+此处app视为一个模块
+一个模块的数据结构就是如此
+*/
+const app = {
+  // state，用来存储数据，数据类型不限
+  state: {
+    name: 'tom',
+    todos: [{
+      text: 'play game ',
+    }],
+    games: new Map(['favorite', 'lol'])
+  },
+  /*
+  可选的参数，它是state数据的映射，必须是Object对象，子元素必须是Array<String | Function>，数组最后一个元素必须是函数。
+  在页面获取的maps，会是最后一个函数运行后的函数返回值
+  maps方法需要手动声明对state的依赖，其结果只有在依赖发生变化时，才会重新计算。
+  ps: 其实这个应该叫mapState，我嫌名字太长，就改成了maps
+  */
+  maps: { 
+    // 获取todoList中的第一个元素的text数据
+    firstTodoText: ['todos[0].text', firstTodoText => firstTodoText],
+    /** 
+     * 这个示例只有在 todos[0].text 或者 s.info.get('favorite')数据发生变化时，才会重新计算结果
+    */
+    deepDep: [
+      /*
+      对于常见数据类型，你可以使用字符串路径声明依赖
+      如果获取的时候发生错误，则会自动返回undefined
+      */
+      'todos[0].text',
+      (s: State) => s.info.get('favorite'), // 对于复杂类型，可以使用函数声明依赖
+      (firstTodo, favorite) => firstTodo + favorite; // 'play game lol'
+    ]
+  },
+  // actions: 用来更新state，必须是Object对象，子元素必须是function
+  actions: {
+    /*
+    返回值会作为新的state，并触发视图更新
+    需要遵照immutable规范！！！
+    */
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+    thunkChangeName: newName => (getState, setState, getMaps) => {
+      getState(); // 获取当前最新的state
+      setState({name: newName}); // 设置state的name
+      getMaps(); // 获取当前最新的maps
+      return {name: newName} // 更新state的name
+    }
+  },
+};
+
+// 其他的模块
+const otherModules = { 
+  //... 
+};
+
+// 创建store实例
+const store = createStore(
+  { app, ...otherModules },
+  {},
+  undefined,
+  [ // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+    thunkMiddleware,
+    promiseMiddleware,
+    fillObjectRestDataMiddleware,
+    shallowEqualMiddleware,
+    filterUndefinedMiddleware,
+  ],
+); 
+
+export default store;
+
+```
+
+---
+
+### 第二步 使用 inject 将模块注入组件当中
+
+```jsx
+import { inject } from 'natur';
+const App = ({app, otherModuleName}) => {
+  // 获取注入的app模块
+  const {state, actions, maps} = app;
+  /*
+    获取到的 app模块
     state: {
-      name: 'tom'
+      name: 'tom',
+      todos: [{
+        text: 'play game ',
+      }],
+      games: new Map(['favorite', 'lol'])
     },
     actions: {
-      updateName: () => ({name: 'jerry'}),
+      changeName,
+      asyncChangeName,
+      thunkChangeName,
+    },
+    maps: {
+      firstTodoText: 'play game',
+      deepDep: 'play game lol',
     }
-  }
-*/
+  */
+  return (
+    <input
+      value={state.name} // app中的数据
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+
+// 注入store中的app模块；
+export default inject('app', 'otherModuleName')(App);   
+
+```  
+
+---
+
+
+### 好了，你已经掌握了。以下是一些附加功能。
+
+
+- [hooks方式](#hooks)
+- [配置懒加载模块](#config-lazy-module)
+- [初始化store时，使用其他的state](#init-with-state)
+- [中间件](#middleware)
+- [懒加载模块，加载中，占位组件配置](#loading-component)
+- [在react外使用natur](#use-store-without-react)
+- [手动导入模块](#manual-import-module)
+- [在typescript中使用](#typescript)
+- [其他版本](#other-version)
+- [<font color="#faad14">使用注意事项</font>](#caution)
+
+
+
+
+### <a id='hooks' style="color: black;">第二步可以换成hooks使用方式 使用 useInject 将 app 模块注入组件当中</a>
+
+```jsx
+
+import { useInject } from 'natur';
 
 const App = () => {
-  const [{state, actions}] = useInject('app');
-  // 调用action
-  const newState = actions.updateName();
-  // 旧的state无法直接获取到最新的state值
-  // state.name === 'tom'
-  // newState.name === 'jerry'
+  /*
+  注意，如果useInject参数中，存在懒加载模块，则会先返回空的数组，
+  等到懒加载模块加载完成才会返回你需要的模块，
+  所以useInject不建议使用于懒加载模块
+
+  但是你可以使用手动添加模块的的方式
+  store.setModule('otherModuleName', otherModule);
+  详情见手动导入模块说明
+  */
+  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
+  const {state, actions, maps} = app;
+  return (
+    <input
+      value={state.name}
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+export default App; 
+
+```
+
+---
+
+### <a id='config-lazy-module' style="color: black;">懒加载模块配置</a>
+
+```js
+/*
+  module1.js
+  export {
+    state: {
+      count: 1,
+    }
+    actions: {
+      inc: state => ({count: state.count + 1}),
+    }
+  }
+  
+*/
+const otherLazyModules = {
+  // module2: () => import('module2');
   // ...
 }
+const module1 = () => import('module1'); // 懒加载模块
+
+// 创建store实例
+// 第二参数就是懒加载的模块；
+const store = createStore(
+  { app }, 
+  { module1, ...otherLazyModules }
+);
+
+// 然后用法等同于第二步
+```
+
+
+
+### <a id="init-with-state" style="color: black;">createStore初始化state</a>
+
+```jsx
+
+
+import { createStore } from 'natur';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+  createStore第三个参数
+  {
+    [moduleName: ModuleName]: Require<State>,
+  }
+*/
+const store = createStore(
+  { app }, 
+  {},
+  { 
+    app: {name: 'jerry'} // 初始化app 模块的state
+  }
+);
+
+export default store;
 
 
 ```
 
-- 因为运行时闭包问题，拿不到最新state，新增thunkMiddleware
+---
+
+
+
+### <a id='middleware' style="color: black;">中间件</a>
+
+```jsx
+
+
+import { createStore, MiddleWare, Next, Record } from 'natur';
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+/*
+
+type Record = {
+  moduleName: String,
+  actionName: String,
+  state: ReturnType<Action>,
+}
+
+type Next = (record: Record) => ReturnType<Action>;
+
+middlewareParams: {
+  setState: Next, 
+  getState: () => State,
+  getMaps: () => InjectMaps
+};
+
+*/
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
+  console.log(`${record.moduleName}: ${record.actionName}`, record.state);
+  return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
+  // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
+};
+const store = createStore(
+  { app }, 
+  {},
+  {},
+  [LogMiddleware, /* ...moreMiddleware */]
+);
+
+export default store;
+
+
+```
+
+#### 内置中间件说明
+
+- thunkMiddleware: 因为组件内运行时闭包问题，拿不到最新state, 所有有此中间件存在
 
 ```typescript
 
-import { thunkMiddleware } from 'rns-pure/dist/middlewares'
+import { thunkMiddleware } from 'natur/dist/middlewares'
 
 const actionExample = (myParams: any) => (getState, setState: (s: State) => State, getMaps: () => InjectMaps) => {
-    const currentState = getState(); // 最新的state
-    const currentMaps = getMaps(); // 最新的maps
-    setState(currentState); // 更新state
+  const currentState = getState(); // 最新的state
+  const currentMaps = getMaps(); // 最新的maps
+  setState(currentState); // 更新state
 }
 ```
-- devtool
+
+- promiseMiddleware: action支持异步操作
+```typescript
+
+// promiseMiddleware
+const action1 = () => Promise.resolve(2333);
+const action2 = async () => await new Promise(res => res(2333));
+```
+
+- fillObjectRestDataMiddleware: 自动填充对象state其他action未返回的子元素，state是对象时才有效
+```typescript
+
+const state = {a: 1, b:2};
+const action = () => ({a: 11})// 调用此action，最后的state是{a: 11, b:2}， 此中间件要求，state和action返回的数据必须都是普通对象
+```
+
+
+- shallowEqualMiddleware：浅层比较优化中间件，仅限于普通对象的state
+```typescript
+
+const state = {a: 1, b:2};
+const action = () => ({a: 1, b:2}) // 与旧的state相同，不做更新视图
+```
+
+- filterUndefinedMiddleware: 过滤返回undefined的action操作
+```typescript
+const action = () => undefined; // 这种action的返回不会作为新的state
+```
+
+
+- devtool：开发调试工具
 
 ```typescript
 
 // redux.devtool.middleware.ts
-import { Middleware } from 'rns-pure';
+import { Middleware } from 'natur';
 import { createStore } from 'redux';
 
 const root = (state: Object = {}, actions: any):Object => ({
-	...state,
-	...actions.state,
+  ...state,
+  ...actions.state,
 });
 
 const createMiddleware = ():Middleware => {
-	if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
-		const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
-		const store = createStore(root, devMiddleware);
-		return () => next => record => {
-			store.dispatch({
-				type: `${record.moduleName}/${record.actionName}`,
-				state: {
-					[record.moduleName]: record.state,
-				},
-			});
-			next(record);
-		}
-	}
-	return () => next => record => next(record);
+  if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
+    const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
+    const store = createStore(root, devMiddleware);
+    return () => next => record => {
+      store.dispatch({
+        type: `${record.moduleName}/${record.actionName}`,
+        state: {
+          [record.moduleName]: record.state,
+        },
+      });
+      next(record);
+    }
+  }
+  return () => next => record => next(record);
 }
 
 export default createMiddleware();
-
-
 ```
 
 - 推荐的中间件配置
 
+**注意：中间件配置的先后顺序很重要**
+
 ```typescript
 
-import {createStore} from 'rns-pure';
-import { promiseMiddleware, shallowEqualMiddleware, thunkMiddleware } from 'rns-pure/dist/middlewares';
+import {createStore} from 'natur';
+import { 
+  thunkMiddleware,
+  promiseMiddleware, 
+  fillObjectRestDataMiddleware,
+  shallowEqualMiddleware, 
+  filterUndefinedMiddleware,
+} from 'natur/dist/middlewares';
 import devTool from 'redux.devtool.middleware';
 
 const store = createStore(
-	modules,
-    {},
-	undefined,
-	[
-		thunkMiddleware,
-		promiseMiddleware,
-		shallowEqualMiddleware,
-		devTool,
-	],
+  modules,
+  {},
+  undefined,
+  [
+    thunkMiddleware, // action支持返回函数，并获取最新数据
+    promiseMiddleware, // action支持异步操作
+    fillObjectRestDataMiddleware, // 默认填充未返回的子元素
+    shallowEqualMiddleware, // 新旧state浅层对比优化
+    filterUndefinedMiddleware, // 过滤无返回值的action
+    devTool, // 开发工具
+  ],
 );
 ```
 
+
+---
+
+
+### <a id='loading-component' style="color: black;">加载时候的占位组件配置</a>
+
+```jsx
+import { inject } from 'natur';
+// 全局配置
+inject.setLoadingComponent(() => <div>loading...</div>);
+
+// 局部使用
+inject('app')(App, () => <div>loading</div>);
+```
+
+
+### <a id='use-store-without-react' style="color: black;">在react之外使用natur</a>
+
+```js
+// 引入之前创建的store实例
+import store from 'my-store-instance';
+
+/*
+  获取注册的app模块, 等同于在react组件中获取的app模块
+  如果你想要获取懒加载的模块，
+  那么你必须确定，这个时候该模块已经加载好了
+*/
+const app = store.getModule('app');
+/*
+  如果你确定，懒加载模块，还没有加载好
+  你可以监听懒加载模块，然后获取
+*/
+store.subscribe('lazyModuleName', () => {
+  const lazyModule = store.getModule('lazyModuleName');
+});
+
+/*
+state: {
+  name: 'tom'
+},
+actions: {
+  changeName,
+  asyncChangeName,
+},
+maps: {
+  splitName: ['t', 'o', 'm'],
+  addName: lastName => state.name + lastName,
+}
+*/
+
+
+
+/*
+  当你在这里使用action方法更新state时，
+  所有注入过app模块的组件都会更新，
+  并获取到最新的app模块中的数据，
+  建议不要滥用
+*/
+app.actions.changeName('jerry');
+
+
+// 监听模块变动
+const unsubscribe = store.subscribe('app', () => {
+  // 这里可以拿到最新的app数据
+  store.getModule('app');
+});
+
+
+// 取消监听
+unsubscribe();
+
+```
+
+
+### <a id='manual-import-module' style="color: black;">手动导入模块</a>
+
+```ts
+
+// initStore.ts
+import { createStore } from 'natur';
+
+// 在实例化store的时候，没有导入懒加载模块
+export default createStore({/*...modules*/});
+
+// ================================================
+// lazyloadPage.ts 这是一个懒加载的页面
+import { useInject } from 'natur';
+import store from 'initStore.ts'
+
+const lazyLoadModule = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+  },
+  maps: {
+    nameSplit: state => state.name.split(''),
+    addName: state => lastName => state.name + lastName,
+  },
+};
+/*
+手动添加模块，在此模块被添加之前，其他地方无法使用此模块
+要想其他地方也使用，则必须在store实例化的时候就导入
+*/
+store.setModule('lazyModuleName', lazyLoadModule);
+
+const lazyLoadView = () => {
+  // 现在你可以获取手动添加的模块了
+  const [{state, maps, actions}] = useInject('lazyModuleName');
+  return (
+    <div>{state.name}</div>
+  )
+}
+
+
+```
+
+### <a id='typescript' style="color: black;">typescript支持</a>
+```ts
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {inject, InjectStoreModule} from 'natur'
+
+type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
+type otherProps = {
+  className: string,
+  style: Object,
+}
+
+const App: React.FC<storeProps & otherProps> = (props) => {
+  const {state, actions, maps} = props.count;
+  return (
+    <>
+      <button onClick={() => actions.inc(state)}>+</button>
+      <span>{state.count}</span>
+      <button onClick={() => actions.dec(state)}>-</button>
+    </>
+  )
+}
+
+const IApp = inject<storeProps>('count', 'name')(App);
+
+const app = (
+  <IApp className='1' style={{}} />
+);
+ReactDOM.render(
+  app,
+  document.querySelector('#app')
+);
+
+
+```
+
+
+### <a id='caution' style="color: black;">使用注意事项</a>
+
+ - 由于低版本不支持react.forwardRef方法，所以不能直接使用ref获取包裹的组件实例，需要使用forwardedRef属性获取（用法同ref）
+
+ - 在TypeScript中的提示可能不那么友好，比如
+ ```ts
+
+@inject<storeProps>('count', 'name')
+class App extends React.Component {
+  // ...
+}
+
+// 此使用方法会报错，提示App组件中无forwardedRef属性声明
+<App forwardedRef={console.log} />
+
+// 以下使用方式则不会报错
+class _App extends React.Component {
+  // ...
+}
+const App = @inject<storeProps>('count', 'name')(_App);
+// 正确
+<App forwardedRef={console.log} />
+
+ ```
+- **在actions中修改state，需要遵循immutable规范**

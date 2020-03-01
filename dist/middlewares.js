@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shallowEqualMiddleware = exports.filterNonObjectMiddleware = exports.promiseMiddleware = exports.thunkMiddleware = void 0;
+exports.filterUndefinedMiddleware = exports.fillObjectRestDataMiddleware = exports.shallowEqualMiddleware = exports.filterNonObjectMiddleware = exports.promiseMiddleware = exports.thunkMiddleware = void 0;
 
 var _utils = require("./utils");
 
@@ -85,3 +85,36 @@ var shallowEqualMiddleware = function shallowEqualMiddleware(_ref2) {
 };
 
 exports.shallowEqualMiddleware = shallowEqualMiddleware;
+
+var fillObjectRestDataMiddleware = function fillObjectRestDataMiddleware(_ref3) {
+  var getState = _ref3.getState;
+  return function (next) {
+    return function (record) {
+      var currentState = getState();
+
+      if ((0, _utils.isObj)(record.state) && (0, _utils.isObj)(currentState)) {
+        record = _objectSpread({}, record, {
+          state: _objectSpread({}, currentState, {}, record.state)
+        });
+      }
+
+      return next(record);
+    };
+  };
+};
+
+exports.fillObjectRestDataMiddleware = fillObjectRestDataMiddleware;
+
+var filterUndefinedMiddleware = function filterUndefinedMiddleware() {
+  return function (next) {
+    return function (record) {
+      if (record.state === undefined) {
+        return undefined;
+      }
+
+      return next(record);
+    };
+  };
+};
+
+exports.filterUndefinedMiddleware = filterUndefinedMiddleware;
