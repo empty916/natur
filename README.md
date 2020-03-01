@@ -6,7 +6,11 @@
 
 ### [此包已经迁移到natur](https://www.npmjs.com/package/natur)
 
-- [设计概念](./doc/design.md)
+- **如果您的项目想从react-natural-store迁移到natur，那么可以看此[迁移导航](https://github.com/empty916/natur/releases/tag/0.0.3)，主要是maps必须要手动声明，其他的还好**
+
+如果您的项目想从react-natural-store迁移到natur，那么可以看此迁移导航，主要是maps必须要手动声明，其他的还好
+
+### [设计概念](./doc/design.md)
 
 
 #### 基本介绍
