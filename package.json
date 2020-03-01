@@ -1,6 +1,6 @@
 {
-	"name": "rns-pure",
-	"version": "2.4.0",
+	"name": "natur",
+	"version": "0.0.2",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -20,8 +20,8 @@
 	},
 	"keywords": [
 		"react",
-		"redux",
-		"mobx",
+		"replace-redux",
+		"replace-mobx",
 		"state",
 		"store",
 		"data",
@@ -59,7 +59,7 @@
 		"react-dom": "^16.9.0",
 		"rimraf": "^2.6.3",
 		"rollup": "^1.10.1",
-    	"rollup-plugin-babel": "^4.3.3",
+		"rollup-plugin-babel": "^4.3.3",
 		"rollup-plugin-cleanup": "^3.1.1",
 		"rollup-plugin-license": "^0.8.1",
 		"rollup-plugin-node-resolve": "^5.2.0",
@@ -75,5 +75,14 @@
 	},
 	"peerDependencies": {
 		"react": "^15.0.0"
-	}
+	},
+	"npmName": "natur",
+	"npmFileMap": [
+		{
+			"basePath": "/dist/",
+			"files": [
+				"*.js"
+			]
+		}
+	]
 }
