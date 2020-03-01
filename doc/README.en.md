@@ -4,6 +4,8 @@
 - [concept of design](./design.en.md)
 
 
+#### <font color=red >This package has been migrated to [natur](https://www.npmjs.com/package/natur)</font>
+
 #### basic introduction
 - This is a simple and efficient react state manager
 - Browser compatible: IE9+
