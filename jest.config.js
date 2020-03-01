@@ -1,13 +1,13 @@
 module.exports = {
 	verbose: true,
 	coveragePathIgnorePatterns: [
-		"react-natural-store/example",
-		"react-natural-store/test/ui-demo"
+		"natur/example",
+		"natur/test/ui-demo"
 	],
 	testPathIgnorePatterns: [
-		// "react-natural-store/test/hooks.test.js",
-		// "react-natural-store/test/inject.test.js",
-		// "react-natural-store/test/utils.test.js",
-		// "react-natural-store/test/createStore.test.js",
+		// "natur/test/hooks.test.js",
+		// "natur/test/inject.test.js",
+		// "natur/test/utils.test.js",
+		// "natur/test/createStore.test.js",
 	]
 };

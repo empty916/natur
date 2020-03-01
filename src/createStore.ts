@@ -11,11 +11,6 @@ import {
 	isStoreModule,
 } from './utils';
 
-// import {
-// 	promiseMiddleware,
-// 	filterNonObjectMiddleware,
-// 	shallowEqualMiddleware
-// } from './middlewares'
 import MapCache from './MapCache'
 
 export interface Listener {

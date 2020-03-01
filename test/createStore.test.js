@@ -4,7 +4,10 @@ import { getStoreInstance } from '../src/createStore';
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
-	shallowEqualMiddleware, thunkMiddleware
+	fillObjectRestDataMiddleware,
+	filterUndefinedMiddleware,
+	shallowEqualMiddleware, 
+	thunkMiddleware,
 } from '../src/middlewares'
 
 let countMapCallTimes = 0;
@@ -573,8 +576,9 @@ describe('actions', () => {
 				return next(record)
 			},
 			promiseMiddleware,
-			filterNonObjectMiddleware,
 			shallowEqualMiddleware,
+			filterNonObjectMiddleware,
+			filterUndefinedMiddleware
 		]);
 		// store.removeModule('count');
 		// store.setModule('count', count);
