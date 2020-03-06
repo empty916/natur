@@ -1,6 +1,6 @@
 # rns-pure 使用手册
 
-[English doc](./doc/README.en.md)
+[English doc](https://github.com/empty916/natur/blob/2.x/doc/README.en.md)
 
 ### [此包已经迁移到natur](https://www.npmjs.com/package/natur)
 

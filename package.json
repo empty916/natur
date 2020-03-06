@@ -1,6 +1,6 @@
 {
 	"name": "rns-pure",
-	"version": "2.4.2",
+	"version": "2.4.3",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
