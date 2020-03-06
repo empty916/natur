@@ -1,16 +1,9 @@
 # natur concept of design
 
 
-#### 1.module
-- **The smallest unit in natur is the module**
+#### Overall process
 
-![module](./images/module-en.png)
-
-
-
-#### 2.inject
-
-![store](./images/inject-en.png)
+![模块](./images/process.png)
 
 
 
@@ -18,5 +11,5 @@
 #### 3.natur itself is a module manager, plus a little dispach function
 
 
-![store](./images/store-en.png)
+![store](./images/natur.png)
 

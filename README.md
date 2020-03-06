@@ -2,7 +2,7 @@
 
 [English doc](./doc/README.en.md)
 
-- [设计概念](./doc/design.md)
+- [设计图](./doc/design.md)
 
 
 ## 基本介绍
@@ -22,7 +22,7 @@
 - [复杂的例子](#complex-demo)
 - [hooks方式](#hooks)
 - [配置懒加载模块](#config-lazy-module)
-- [初始化store时，使用其他的state](#init-with-state)
+- [初始化state](#init-with-state)
 - [中间件](#middleware)
 - [懒加载模块，加载中，占位组件配置](#loading-component)
 - [在react外使用natur](#use-store-without-react)
@@ -44,8 +44,11 @@
 ## <p id='simple-demo'>简单的示例<p>
 
 ````tsx
+
 // index.tsx
-import { createStore, inject } from 'natur';
+import { createStore, inject, InjectStoreModule } from '../src';
+import React, { useEffect } from "react";
+import ReactDOM from "react-dom";
 
 const count = {
   state: { // 存放数据
@@ -67,20 +70,19 @@ createStore({count});
 const App = ({count}) => {
   return (
     <>
-      <button onClick={() => count.action.dec(count.state.number)}>-</button>
+      <button onClick={() => count.actions.dec(count.state.number)}>-</button>
       <span>{count.state.number}</span>
-      <button onClick={() => count.action.inc(count.state.number)>+</button>
+      <button onClick={() => count.actions.inc(count.state.number)}>+</button>
     </>
   )
 };
-// 注入app模块
-// 注入app模块
-// 注入app模块
-const IApp = inject('app')(App);
+// 注入count模块
+// 注入count模块
+// 注入count模块
+const IApp = inject<{count: InjectStoreModule}>('count')(App);
 
-// 渲染注入后的模块
-ReactDom.render(<IApp/>, document.querySelector('#app'));
-
+// 渲染注入后的组件
+ReactDOM.render(<IApp />, document.querySelector('#app'));
 
 ````
 
@@ -156,7 +158,7 @@ const demo = {
 
 ## <p id='complex-demo'>复杂的例子</p>
 
-### 第一步 创建 store 实例
+### 创建 store 实例
 
 ```js
 import { createStore, State } from 'natur';
@@ -223,7 +225,7 @@ export default store;
 
 ---
 
-### 第二步 使用 inject 将模块注入组件当中
+### 使用 inject 将模块注入组件当中
 
 ```jsx
 import { inject } from 'natur';
@@ -329,7 +331,7 @@ const store = createStore(
 
 
 
-## <p id="init-with-state">createStore初始化state</p>
+## <p id="init-with-state">初始化state</p>
 
 ```jsx
 

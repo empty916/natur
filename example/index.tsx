@@ -7,3 +7,4 @@ import content from './injectHoc'
 // import content from './longItem1'
 
 ReactDOM.render(content, document.querySelector("#app"));
+

@@ -12,11 +12,155 @@
 1. minizipped size 5k
 
 
-## Use steps (only two steps)
+
+## 目录
+
+- [start](#start)
+- [simple demo](#simple-demo)
+- [detailed module](#module)
+- [complex demo](#complex-demo)
+- [hooks](#hooks)
+- [config lazy module](#config-lazy-module)
+- [init state](#init-with-state)
+- [middleware](#middleware)
+- [set loading component](#loading-component)
+- [use natur without react](#use-store-without-react)
+- [manual import module](#manual-import-module)
+- [typescript](#typescript)
+- [caution](#caution)
+
+
+## <p id='start'>start<p>
+
+1. Open your react project
+1. install**natur**
+  ````node
+  yarn add natur
+  // npm install natur -S
+  ````
+
+
+## <p id='simple-demo'>simple demo<p>
+
+````tsx
+
+// index.tsx
+import { createStore, inject, InjectStoreModule } from '../src';
+import React, { useEffect } from "react";
+import ReactDOM from "react-dom";
+
+const count = {
+  state: { // Store data
+    number: 0,
+  },
+  maps: { // State mapping. For example, I need to know if the number in the state is even
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // Used to modify state. The returned data will be used as the new state (this part is done internally by natur)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// The step of creating the store needs to be completed before rendering the component, because in the component, you need to use the store you created
+createStore({count});
+
+
+const App = ({count}) => {
+  return (
+    <>
+      <button onClick={() => count.actions.dec(count.state.number)}>-</button>
+      <span>{count.state.number}</span>
+      <button onClick={() => count.actions.inc(count.state.number)}>+</button>
+    </>
+  )
+};
+// Inject the count module
+// Inject the count module
+// Inject the count module
+const IApp = inject<{count: InjectStoreModule}>('count')(App);
+
+// Render the injected component
+ReactDOM.render(<IApp />, document.querySelector('#app'));
+
+````
+
+
+## <p id='module'>Detailed module</p>
+
+**A module consists of state, maps, actions**
+
+### state
+
+
+````typescript
+type State = any;
+````
+
+1. Required parameters
+2. state is used to store data
+3. state itself does not limit the data type, you can use a three-party library such as**immutablejs**
+
+### maps
+
+
+````typescript
+
+type StoreMaps = Array<string|Function>;
+
+const demo = {
+  state: {
+    number: 1,
+  },
+  maps: {
+    // The elements in front of the array are all declaring the dependency of this map on state. The last function can get the previously declared dependencies. You can implement what you want in it.
+    isEven: ['number', number => number % 2 === 0],
+    // You can also declare dependencies as functions, which is useful for complex types of state
+    isEven2: [state => state.number, number => number % 2 === 0],
+  },
+  // ...actions
+}
+````
+1. maps is an optional parameter, and maps itself must be an ordinary object
+2. maps is a map of state data, and its child elements must be an array. Let's call it map for now.
+3. In the map, the previous elements are declaring the map's state dependency. The last function can get the previously declared dependencies, and you can implement what you want in it. In the page, you can get the result of the last function of the array.
+4. The results of maps are cached. If the value of the dependencies you declare does not change, the last function will not be re-executed.
+5. In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
+
+
+
+
+### actions
+
+
+````typescript
+
+type Actions = {
+  [action: string]: (...arg: any[]) => any;
+}
+
+const demo = {
+  state: {
+    number: 1,
+  },
+  // Actions are used to modify the state. The data it returns will be used as the new state (this part is done internally by natur)
+  actions: { 
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+````
+
+1. actions is a parameter that must be passed in, it must be a common object itself
+2. The child elements of actions must be functions. If no middleware is set, any data it returns will be used as the new state, and the react components using this module will be notified to update, which is done inside natur.
+3. actions must follow the immutable specification!
+
+
+
+## <p id='complex-demo'>complex demo</p>
 
 
 ### The first step is to create a store instance
-**This step needs to be completed before rendering the component, because the component wrapped by the inject method depends on the store instance when rendering**
 
 ```js
 import { createStore } from 'natur';
@@ -28,12 +172,8 @@ import {
   filterUndefinedMiddleware,
 } from 'natur/dist/middlewares';
 
-/*
-Here the app is considered a module
-This is the data structure of a module
-*/
+
 const app = {
-  // state, used to store data, unlimited data types
   state: {
     name: 'tom',
     todos: [{
@@ -41,41 +181,22 @@ const app = {
     }],
     games: new Map(['favorite', 'lol'])
   },
-  /*
-  Optional parameter, which is a mapping of state data, must be an Object, the child elements must be Array <String | Function>, and the last element of the array must be a function.
-  The maps obtained on the page will be the function return value after the last function is run
-  The maps method needs to manually declare a dependency on state, and the result will only be recalculated when the dependency changes.
-  ps: In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
-  */
+  
   maps: { 
-    // Get the text data of the first element in todoList
-    firstTodoText: ['todos[0].text', firstTodoText => firstTodoText],
-    /** 
-     * This example will only recalculate the results when the todos [0] .text or s.info.get ('favorite') data changes
-    */
     deepDep: [
-      /*
-      For common data types, you can declare dependencies using string paths
-      If an error occurs during retrieval, it will automatically return undefined
-      */
       'todos[0].text',
-      (s: State) => s.info.get('favorite'), // For complex types, you can use functions to declare dependencies
-      (firstTodo, favorite) => firstTodo + favorite; // 'play game lol'
+      (s: State) => s.info.get('favorite'),
+      (firstTodo, favorite) => firstTodo + favorite;
     ]
   },
-  // actions: used to update state, must be Object, and child elements must be functions
   actions: {
-    /*
-    The return value will be used as the new state and trigger the view update
-    Need to follow the immutable specification! !! !!
-    */
     changeName: newName => ({ name: newName }),
     asyncChangeName: newName => Promise.resolve({ name: newName }),
     thunkChangeName: newName => (getState, setState, getMaps) => {
       getState(); // Get the latest state
       setState({name: newName}); // Set state name
       getMaps(); // Get the latest maps
-      return {name: newName} // Update state name
+      return {name: newName + newName} // Update state name
     }
   },
 };
@@ -126,7 +247,6 @@ const App = ({app, otherModuleName}) => {
       thunkChangeName,
     },
     maps: {
-      firstTodoText: 'play game',
       deepDep: 'play game lol',
     }
   */
@@ -143,26 +263,13 @@ export default inject('app', 'otherModuleName')(App);
 
 ```  
 
+**Alright, you already have it. Here are some additional features.**
+
 ---
 
 
-### Alright, you already have it. Here are some additional features.
 
-
-- [hooks way](#hooks)
-- [Configure lazy loading module](#config-lazy-module)
-- [When initializing the store, use another state](#init-with-state)
-- [Middleware](#middleware)
-- [Placement component configuration when lazy loading module is loading](#loading-component)
-- [Using natur outside react](#use-store-without-react)
-- [Importing modules manually](#manual-import-module)
-- [Use in typescript](#typescript)
-- [<font color="#faad14">Precautions for use</font>](#caution)
-
-
-
-
-### <a id='hooks' style="color: black;">The second step can be replaced with hooks. UseInject is used to inject the app module into the component.</a>
+## <p id='hooks'>hooks</p>
 
 ```jsx
 
@@ -193,7 +300,7 @@ export default App;
 
 ---
 
-### <a id='config-lazy-module' style="color: black;">Lazy loading module configuration</a>
+### <p id='config-lazy-module'>Lazy loading module configuration</p>
 
 ```js
 /*
@@ -226,7 +333,7 @@ const store = createStore(
 
 
 
-### <a id="init-with-state" style="color: black;">createStore initialization state</a>
+### <p id="init-with-state">initialization state</p>
 
 ```jsx
 
@@ -264,7 +371,7 @@ export default store;
 
 
 
-### <a id='middleware' style="color: black;">MiddleWare</a>
+### <p id='middleware'>MiddleWare</p>
 
 ```jsx
 
@@ -333,7 +440,7 @@ const action1 = () => Promise.resolve(2333);
 const action2 = async () => await new Promise(res => res(2333));
 ```
 
-- fillObjectRestDataMiddleware: Automatically fill the child state of the child elements that are not returned by other actions, only valid when the state is an object
+- fillObjectRestDataMiddleware: Incremental state update / overwrite update, only valid when state is an object
 ```typescript
 
 const state = {a: 1, b:2};
@@ -410,7 +517,7 @@ const store = createStore(
   [
     thunkMiddleware, // Action supports returning functions and getting the latest data
     promiseMiddleware, // action supports asynchronous operations
-    fillObjectRestDataMiddleware, // Fill unreturned child elements by default
+    fillObjectRestDataMiddleware, // Incremental state update / overwrite update
     shallowEqualMiddleware, // Shallow contrast optimization between old and new state
     filterUndefinedMiddleware, // Filter actions with no return value
     devTool,
@@ -422,7 +529,7 @@ const store = createStore(
 ---
 
 
-### <a id='loading-component' style="color: black;">Placeholder component configuration when loading</a>
+### <p id='loading-component'>Placeholder component configuration when loading</p>
 
 ```jsx
 import { inject } from 'natur';
@@ -434,7 +541,7 @@ inject('app')(App, () => <div>loading</div>);
 ```
 
 
-### <a id='use-store-without-react' style="color: black;">Use natur outside react</a>
+### <p id='use-store-without-react'>Use natur outside react</p>
 
 ```js
 // Store instance created before
@@ -489,7 +596,7 @@ unsubscribe();
 ```
 
 
-### <a id='manual-import-module' style="color: black;">Importing modules manually</a>
+### <p id='manual-import-module'>Importing modules manually</p>
 
 ```ts
 
@@ -533,7 +640,7 @@ const lazyLoadView = () => {
 
 ```
 
-### <a id='typescript' style="color: black;">typescript support</a>
+### <p id='typescript'>typescript support</p>
 ```ts
 
 import React from 'react';
@@ -571,7 +678,7 @@ ReactDOM.render(
 ```
 
 
-### <a id='caution' style="color: black;">Precautions for use</a>
+### <p id='caution'>Precautions for use</p>
 
  - Because the lower version does not support the react.forwardRef method, you cannot directly use the ref to obtain the wrapped component instance. You need to use the forwardedRef property to obtain it (the usage is the same as ref).
 
