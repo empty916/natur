@@ -1,6 +1,6 @@
 # react-natural-store 使用手册
 
-[English doc](./doc/README.en.md)
+[English doc](https://github.com/empty916/natur/blob/1.x/doc/README.en.md)
 
 
 
