@@ -105,7 +105,7 @@ type State = any;
 
 ````typescript
 
-type StoreMaps = [...Array<string|Function>, Function];
+type StoreMaps = Array<string|Function>;
 
 const demo = {
   state: {
