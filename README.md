@@ -2,9 +2,7 @@
 
 [English doc](./doc/README.en.md)
 
-
 - [设计概念](./doc/design.md)
-
 
 
 ## 基本介绍
@@ -15,13 +13,155 @@
 1. 单元测试覆盖率99％，放心使用
 1. 包体积，minizip 5k(uglify+gzip压缩后5k)
 
-## 使用步骤（只需两步）
+
+## 目录
+
+- [起步](#start)
+- [简单示例](#simple-demo)
+- [module详解](#module)
+- [复杂的例子](#complex-demo)
+- [hooks方式](#hooks)
+- [配置懒加载模块](#config-lazy-module)
+- [初始化store时，使用其他的state](#init-with-state)
+- [中间件](#middleware)
+- [懒加载模块，加载中，占位组件配置](#loading-component)
+- [在react外使用natur](#use-store-without-react)
+- [手动导入模块](#manual-import-module)
+- [在typescript中使用](#typescript)
+- [使用注意事项](#caution)
+
+
+## <p id='start'>起步<p>
+
+1. 打开你的react项目
+1. 安装**natur**
+  ````node
+  yarn add natur
+  // npm install natur -S
+  ````
+
+
+## <p id='simple-demo'>简单的示例<p>
+
+````tsx
+// index.tsx
+import { createStore, inject } from 'natur';
+
+const count = {
+  state: { // 存放数据
+    number: 0,
+  },
+  maps: { // state的映射。比如，我需要知道state中的number是否是偶数
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // 用来修改state。返回的数据会作为新的state(这部分由natur内部完成)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
+createStore({count});
+
+
+const App = ({count}) => {
+  return (
+    <>
+      <button onClick={() => count.action.dec(count.state.number)}>-</button>
+      <span>{count.state.number}</span>
+      <button onClick={() => count.action.inc(count.state.number)>+</button>
+    </>
+  )
+};
+// 注入app模块
+// 注入app模块
+// 注入app模块
+const IApp = inject('app')(App);
+
+// 渲染注入后的模块
+ReactDom.render(<IApp/>, document.querySelector('#app'));
+
+
+````
+
+
+## <p id='module'>module详解</p>
+
+**一个模块由state, maps, actions构成**
+
+### state
+
+
+````typescript
+type State = any;
+````
+
+1. 必须传入的参数
+2. state用来存储数据
+3. state本身不限制数据类型，你可以使用三方库比如**immutablejs**
+
+### maps
+
+
+````typescript
+
+type StoreMaps = [...Array<string|Function>, Function];
+
+const demo = {
+  state: {
+    number: 1,
+  },
+  maps: {
+    // 数组前面的元素，都是在声明此map对state的依赖项，最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西
+    isEven: ['number', number => number % 2 === 0],
+    // 你也可以通过函数的方式声明依赖项，这对于复杂类型的state很有用
+    isEven2: [state => state.number, number => number % 2 === 0],
+  },
+  // ...actions
+}
+````
+1. maps是可选的参数，maps本身必须是一个普通对象
+2. maps是state数据的映射，它的子元素必须是一个数组，我们暂且称其为map
+3. 在map中，前面的元素都是在声明此map对state的依赖项。最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西。在页面中，你可以获取数组最后一个函数运行的结果。
+4. maps的结果是有缓存的，如果你声明的依赖项的值没有变化，那么最后一个函数便不会重新执行
+5. 其实这个应该叫mapState，我嫌名字太长，就改成了maps
+
+
+
+
+### actions
+
+
+````typescript
+
+type Actions = {
+  [action: string]: (...arg: any[]) => any;
+}
+
+const demo = {
+  state: {
+    number: 1,
+  },
+  // actions用来修改state。它返回的数据会作为新的state(这部分由natur内部完成)
+  actions: { 
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+````
+
+1. actions是必须传入的参数，它本身必须是个普通对象
+2. actions的子元素必须是函数，如果不设置中间件，那么它返回的任何数据都会作为新的state，并通知使用此模块的react组件更新，这是在natur内部完成的。
+3. actions必须遵照immutable规范！
+
+## <p id='complex-demo'>复杂的例子</p>
 
 ### 第一步 创建 store 实例
-**这一步需要在渲染组件之前完成，因为 inject方法包裹的组件，在渲染时依赖store的实例**
 
 ```js
-import { createStore } from 'natur';
+import { createStore, State } from 'natur';
+
+// 这是natur内置常用的中间件, 推荐使用
 import { 
   thunkMiddleware,
   promiseMiddleware, 
@@ -30,12 +170,7 @@ import {
   filterUndefinedMiddleware,
 } from 'natur/dist/middlewares';
 
-/*
-此处app视为一个模块
-一个模块的数据结构就是如此
-*/
 const app = {
-  // state，用来存储数据，数据类型不限
   state: {
     name: 'tom',
     todos: [{
@@ -43,41 +178,22 @@ const app = {
     }],
     games: new Map(['favorite', 'lol'])
   },
-  /*
-  可选的参数，它是state数据的映射，必须是Object对象，子元素必须是Array<String | Function>，数组最后一个元素必须是函数。
-  在页面获取的maps，会是最后一个函数运行后的函数返回值
-  maps方法需要手动声明对state的依赖，其结果只有在依赖发生变化时，才会重新计算。
-  ps: 其实这个应该叫mapState，我嫌名字太长，就改成了maps
-  */
   maps: { 
-    // 获取todoList中的第一个元素的text数据
     firstTodoText: ['todos[0].text', firstTodoText => firstTodoText],
-    /** 
-     * 这个示例只有在 todos[0].text 或者 s.info.get('favorite')数据发生变化时，才会重新计算结果
-    */
     deepDep: [
-      /*
-      对于常见数据类型，你可以使用字符串路径声明依赖
-      如果获取的时候发生错误，则会自动返回undefined
-      */
       'todos[0].text',
-      (s: State) => s.info.get('favorite'), // 对于复杂类型，可以使用函数声明依赖
-      (firstTodo, favorite) => firstTodo + favorite; // 'play game lol'
+      (s: State) => s.info.get('favorite'),
+      (firstTodo, favorite) => firstTodo + favorite;
     ]
   },
-  // actions: 用来更新state，必须是Object对象，子元素必须是function
   actions: {
-    /*
-    返回值会作为新的state，并触发视图更新
-    需要遵照immutable规范！！！
-    */
     changeName: newName => ({ name: newName }),
     asyncChangeName: newName => Promise.resolve({ name: newName }),
     thunkChangeName: newName => (getState, setState, getMaps) => {
       getState(); // 获取当前最新的state
       setState({name: newName}); // 设置state的name
       getMaps(); // 获取当前最新的maps
-      return {name: newName} // 更新state的name
+      return {name: newName + newName} // 更新state的name
     }
   },
 };
@@ -129,7 +245,6 @@ const App = ({app, otherModuleName}) => {
       thunkChangeName,
     },
     maps: {
-      firstTodoText: 'play game',
       deepDep: 'play game lol',
     }
   */
@@ -149,24 +264,8 @@ export default inject('app', 'otherModuleName')(App);
 ---
 
 
-### 好了，你已经掌握了。以下是一些附加功能。
 
-
-- [hooks方式](#hooks)
-- [配置懒加载模块](#config-lazy-module)
-- [初始化store时，使用其他的state](#init-with-state)
-- [中间件](#middleware)
-- [懒加载模块，加载中，占位组件配置](#loading-component)
-- [在react外使用natur](#use-store-without-react)
-- [手动导入模块](#manual-import-module)
-- [在typescript中使用](#typescript)
-- [其他版本](#other-version)
-- [<font color="#faad14">使用注意事项</font>](#caution)
-
-
-
-
-### <a id='hooks' style="color: black;">第二步可以换成hooks使用方式 使用 useInject 将 app 模块注入组件当中</a>
+## <p id='hooks'>hooks方式</p>
 
 ```jsx
 
@@ -197,7 +296,7 @@ export default App;
 
 ---
 
-### <a id='config-lazy-module' style="color: black;">懒加载模块配置</a>
+## <p id='config-lazy-module'>懒加载模块配置</p>
 
 ```js
 /*
@@ -230,7 +329,7 @@ const store = createStore(
 
 
 
-### <a id="init-with-state" style="color: black;">createStore初始化state</a>
+## <p id="init-with-state">createStore初始化state</p>
 
 ```jsx
 
@@ -268,7 +367,7 @@ export default store;
 
 
 
-### <a id='middleware' style="color: black;">中间件</a>
+## <p id='middleware'>中间件</p>
 
 ```jsx
 
@@ -317,7 +416,7 @@ export default store;
 
 ```
 
-#### 内置中间件说明
+### 内置中间件说明
 
 - thunkMiddleware: 因为组件内运行时闭包问题，拿不到最新state, 所有有此中间件存在
 
@@ -340,7 +439,7 @@ const action1 = () => Promise.resolve(2333);
 const action2 = async () => await new Promise(res => res(2333));
 ```
 
-- fillObjectRestDataMiddleware: 自动填充对象state其他action未返回的子元素，state是对象时才有效
+- fillObjectRestDataMiddleware: state增量更新/覆盖更新，state是对象时才有效
 ```typescript
 
 const state = {a: 1, b:2};
@@ -417,7 +516,7 @@ const store = createStore(
   [
     thunkMiddleware, // action支持返回函数，并获取最新数据
     promiseMiddleware, // action支持异步操作
-    fillObjectRestDataMiddleware, // 默认填充未返回的子元素
+    fillObjectRestDataMiddleware, // 增量更新/覆盖更新
     shallowEqualMiddleware, // 新旧state浅层对比优化
     filterUndefinedMiddleware, // 过滤无返回值的action
     devTool, // 开发工具
@@ -429,7 +528,7 @@ const store = createStore(
 ---
 
 
-### <a id='loading-component' style="color: black;">加载时候的占位组件配置</a>
+## <p id='loading-component'>加载时候的占位组件配置</p>
 
 ```jsx
 import { inject } from 'natur';
@@ -441,7 +540,7 @@ inject('app')(App, () => <div>loading</div>);
 ```
 
 
-### <a id='use-store-without-react' style="color: black;">在react之外使用natur</a>
+## <p id='use-store-without-react'>在react之外使用natur</p>
 
 ```js
 // 引入之前创建的store实例
@@ -499,7 +598,7 @@ unsubscribe();
 ```
 
 
-### <a id='manual-import-module' style="color: black;">手动导入模块</a>
+## <p id='manual-import-module'>手动导入模块</p>
 
 ```ts
 
@@ -543,7 +642,7 @@ const lazyLoadView = () => {
 
 ```
 
-### <a id='typescript' style="color: black;">typescript支持</a>
+## <p id='typescript'>typescript支持</p>
 ```ts
 
 import React from 'react';
@@ -581,7 +680,7 @@ ReactDOM.render(
 ```
 
 
-### <a id='caution' style="color: black;">使用注意事项</a>
+## <p id='caution'>使用注意事项</p>
 
  - 由于低版本不支持react.forwardRef方法，所以不能直接使用ref获取包裹的组件实例，需要使用forwardedRef属性获取（用法同ref）
 
