@@ -13,7 +13,7 @@
 
 
 
-## 目录
+## directory
 
 - [start](#start)
 - [simple demo](#simple-demo)
@@ -33,7 +33,7 @@
 ## <p id='start'>start<p>
 
 1. Open your react project
-1. install**natur**
+1. install **natur**
   ````node
   yarn add natur
   // npm install natur -S
@@ -45,7 +45,7 @@
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from '../src';
+import { createStore, inject, InjectStoreModule } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 

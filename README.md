@@ -46,7 +46,7 @@
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from '../src';
+import { createStore, inject, InjectStoreModule } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
