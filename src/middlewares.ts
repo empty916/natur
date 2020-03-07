@@ -44,13 +44,9 @@ export const shallowEqualMiddleware: Middleware = ({getState}) => next => record
 export const fillObjectRestDataMiddleware: Middleware = ({getState}) => next => record => {
 	const currentState = getState();
 	if (isObj(record.state) && isObj(currentState)) {
-		record = {
-			...record,
-			state: {
-				...currentState,
-				...record.state,
-			},
-		};
+		record = Object.assign({}, record, {
+			state: Object.assign({}, currentState, record.state)
+		});
 	}
 	return next(record);
 };

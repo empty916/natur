@@ -73,8 +73,8 @@ export var fillObjectRestDataMiddleware = function fillObjectRestDataMiddleware(
       var currentState = getState();
 
       if (isObj(record.state) && isObj(currentState)) {
-        record = _objectSpread({}, record, {
-          state: _objectSpread({}, currentState, {}, record.state)
+        record = Object.assign({}, record, {
+          state: Object.assign({}, currentState, record.state)
         });
       }
 
