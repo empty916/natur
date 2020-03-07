@@ -6,7 +6,7 @@
 
 ## basic introduction
 1. This is a simple and efficient react state manager
-1. Browser compatible: IE9+
+1. Browser compatible: IE8+
 1. support react 15.x, 16.x and anujs
 1. Unit test coverage rate of 99%, rest assured to use
 1. minizipped size 5k
