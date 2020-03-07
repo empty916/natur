@@ -43,7 +43,7 @@
 
 ## <p id='simple-demo'>简单的示例<p>
 
-[在线体验](https://codesandbox.io/s/focused-pond-t12n7)
+[在线体验](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 ````tsx
 
 // index.tsx
@@ -108,7 +108,9 @@ type State = any;
 
 ````typescript
 
-type StoreMaps = Array<string|Function>;
+type Maps = {
+  [map: string]: Array<string|Function>;
+}
 
 const demo = {
   state: {

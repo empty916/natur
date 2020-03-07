@@ -42,7 +42,7 @@
 
 ## <p id='simple-demo'>simple demo<p>
 
-[online experience](https://codesandbox.io/s/focused-pond-t12n7)
+[online experience](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 
 ````tsx
 
