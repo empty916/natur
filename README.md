@@ -31,7 +31,7 @@
 - [使用注意事项](#caution)
 
 
-## <p id='start'>起步<p>
+## <p id='start'>起步</p>
 
 1. 打开你的react项目
 1. 安装**natur**
@@ -41,7 +41,7 @@
   ````
 
 
-## <p id='simple-demo'>简单的示例<p>
+## <p id='simple-demo'>简单的示例</p>
 
 [在线体验](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 ````tsx

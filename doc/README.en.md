@@ -30,7 +30,7 @@
 - [caution](#caution)
 
 
-## <p id='start'>start<p>
+## <p id='start'>start</p>
 
 1. Open your react project
 1. install **natur**
@@ -40,7 +40,7 @@
   ````
 
 
-## <p id='simple-demo'>simple demo<p>
+## <p id='simple-demo'>simple demo</p>
 
 [online experience](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 
