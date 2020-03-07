@@ -30,7 +30,7 @@
 - [caution](#caution)
 
 
-## <p id='start'>start</p>
+## <a id='start'>start</a>
 
 1. Open your react project
 1. install **natur**
@@ -40,7 +40,7 @@
   ````
 
 
-## <p id='simple-demo'>simple demo</p>
+## <a id='simple-demo'>simple demo</a>
 
 [online experience](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 
@@ -88,7 +88,7 @@ ReactDOM.render(<IApp />, document.querySelector('#app'));
 ````
 
 
-## <p id='module'>Detailed module</p>
+## <a id='module'>Detailed module</a>
 
 **A module consists of state, maps, actions**
 
@@ -159,7 +159,7 @@ const demo = {
 
 
 
-## <p id='complex-demo'>complex demo</p>
+## <a id='complex-demo'>complex demo</a>
 
 
 ### The first step is to create a store instance
@@ -271,7 +271,7 @@ export default inject('app', 'otherModuleName')(App);
 
 
 
-## <p id='hooks'>hooks</p>
+## <a id='hooks'>hooks</a>
 
 ```jsx
 
@@ -302,7 +302,7 @@ export default App;
 
 ---
 
-### <p id='config-lazy-module'>Lazy loading module configuration</p>
+### <a id='config-lazy-module'>Lazy loading module configuration</a>
 
 ```js
 /*
@@ -335,7 +335,7 @@ const store = createStore(
 
 
 
-### <p id="init-with-state">initialization state</p>
+### <a id="init-with-state">initialization state</a>
 
 ```jsx
 
@@ -373,7 +373,7 @@ export default store;
 
 
 
-### <p id='middleware'>MiddleWare</p>
+### <a id='middleware'>MiddleWare</a>
 
 ```jsx
 
@@ -531,7 +531,7 @@ const store = createStore(
 ---
 
 
-### <p id='loading-component'>Placeholder component configuration when loading</p>
+### <a id='loading-component'>Placeholder component configuration when loading</a>
 
 ```jsx
 import { inject } from 'natur';
@@ -543,7 +543,7 @@ inject('app')(App, () => <div>loading</div>);
 ```
 
 
-### <p id='use-store-without-react'>Use natur outside react</p>
+### <a id='use-store-without-react'>Use natur outside react</a>
 
 ```js
 // Store instance created before
@@ -598,7 +598,7 @@ unsubscribe();
 ```
 
 
-### <p id='manual-import-module'>Importing modules manually</p>
+### <a id='manual-import-module'>Importing modules manually</a>
 
 ```ts
 
@@ -642,7 +642,7 @@ const lazyLoadView = () => {
 
 ```
 
-### <p id='typescript'>typescript support</p>
+### <a id='typescript'>typescript support</a>
 ```ts
 
 import React from 'react';
@@ -680,7 +680,7 @@ ReactDOM.render(
 ```
 
 
-### <p id='caution'>Precautions for use</p>
+### <a id='caution'>Precautions for use</a>
 
  - Because the lower version does not support the react.forwardRef method, you cannot directly use the ref to obtain the wrapped component instance. You need to use the forwardedRef property to obtain it (the usage is the same as ref).
 

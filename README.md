@@ -31,7 +31,7 @@
 - [使用注意事项](#caution)
 
 
-## <p id='start'>起步</p>
+## <a id='start'>起步</a>
 
 1. 打开你的react项目
 1. 安装**natur**
@@ -41,7 +41,7 @@
   ````
 
 
-## <p id='simple-demo'>简单的示例</p>
+## <a id='simple-demo'>简单的示例</a>
 
 [在线体验](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
 ````tsx
@@ -88,7 +88,7 @@ ReactDOM.render(<IApp />, document.querySelector('#app'));
 ````
 
 
-## <p id='module'>module详解</p>
+## <a id='module'>module详解</a>
 
 **一个模块由state, maps, actions构成**
 
@@ -159,7 +159,7 @@ const demo = {
 2. actions的子元素必须是函数，如果不设置中间件，那么它返回的任何数据都会作为新的state，并通知使用此模块的react组件更新，这是在natur内部完成的。
 3. actions必须遵照immutable规范！
 
-## <p id='complex-demo'>复杂的例子</p>
+## <a id='complex-demo'>复杂的例子</a>
 
 ### 创建 store 实例
 
@@ -270,7 +270,7 @@ export default inject('app', 'otherModuleName')(App);
 
 
 
-## <p id='hooks'>hooks方式</p>
+## <a id='hooks'>hooks方式</a>
 
 ```jsx
 
@@ -301,7 +301,7 @@ export default App;
 
 ---
 
-## <p id='config-lazy-module'>懒加载模块配置</p>
+## <a id='config-lazy-module'>懒加载模块配置</a>
 
 ```js
 /*
@@ -334,7 +334,7 @@ const store = createStore(
 
 
 
-## <p id="init-with-state">初始化state</p>
+## <a id="init-with-state">初始化state</a>
 
 ```jsx
 
@@ -372,7 +372,7 @@ export default store;
 
 
 
-## <p id='middleware'>中间件</p>
+## <a id='middleware'>中间件</a>
 
 ```jsx
 
@@ -533,7 +533,7 @@ const store = createStore(
 ---
 
 
-## <p id='loading-component'>加载时候的占位组件配置</p>
+## <a id='loading-component'>加载时候的占位组件配置</a>
 
 ```jsx
 import { inject } from 'natur';
@@ -545,7 +545,7 @@ inject('app')(App, () => <div>loading</div>);
 ```
 
 
-## <p id='use-store-without-react'>在react之外使用natur</p>
+## <a id='use-store-without-react'>在react之外使用natur</a>
 
 ```js
 // 引入之前创建的store实例
@@ -603,7 +603,7 @@ unsubscribe();
 ```
 
 
-## <p id='manual-import-module'>手动导入模块</p>
+## <a id='manual-import-module'>手动导入模块</a>
 
 ```ts
 
@@ -647,7 +647,7 @@ const lazyLoadView = () => {
 
 ```
 
-## <p id='typescript'>typescript支持</p>
+## <a id='typescript'>typescript支持</a>
 ```ts
 
 import React from 'react';
@@ -685,7 +685,7 @@ ReactDOM.render(
 ```
 
 
-## <p id='caution'>使用注意事项</p>
+## <a id='caution'>使用注意事项</a>
 
  - 由于低版本不支持react.forwardRef方法，所以不能直接使用ref获取包裹的组件实例，需要使用forwardedRef属性获取（用法同ref）
 
