@@ -1,33 +1,10 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports["default"] = void 0;
-
-var _utils = require("./utils");
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+import { getValueFromObjByKeyPath, arrayIsEqual } from './utils';
 
 var MapCache =
 /*#__PURE__*/
 function () {
   function MapCache(getState, map) {
     var _this = this;
-
-    _classCallCheck(this, MapCache);
 
     this.type = 'function';
     this.mapDepends = [];
@@ -42,85 +19,77 @@ function () {
     });
   }
 
-  _createClass(MapCache, [{
-    key: "createGetDepByKeyPath",
-    value: function createGetDepByKeyPath(keyPath) {
-      if (typeof keyPath !== 'function') {
-        return function (s) {
-          return MapCache.getValueFromState(s, keyPath);
-        };
-      }
+  MapCache.resetMapDepParser = function resetMapDepParser() {
+    MapCache.getValueFromState = getValueFromObjByKeyPath;
+  };
 
-      return keyPath;
-    }
-  }, {
-    key: "shouldCheckCache",
-    value: function shouldCheckCache() {
-      this.shouldCheckDependsCache = true;
-    }
-  }, {
-    key: "getDepsValue",
-    value: function getDepsValue() {
-      var _this2 = this;
+  MapCache.setMapDepParser = function setMapDepParser(parser) {
+    MapCache.getValueFromState = parser;
+  };
 
-      return this.mapDepends.map(function (dep) {
-        return dep(_this2.getState());
-      });
-    }
-  }, {
-    key: "hasDepChanged",
-    value: function hasDepChanged() {
-      if (this.shouldCheckDependsCache) {
-        var newDepCache = this.getDepsValue();
-        var depHasChanged = !(0, _utils.arrayIsEqual)(this.depCache, newDepCache);
+  var _proto = MapCache.prototype;
 
-        if (depHasChanged) {
-          this.depCache = newDepCache;
-        }
-
-        this.shouldCheckDependsCache = false;
-        return depHasChanged;
-      }
-
-      return false;
-    }
-  }, {
-    key: "getValue",
-    value: function getValue() {
-      if (this.hasDepChanged()) {
-        this.value = this.map.apply(this, _toConsumableArray(this.depCache));
-      }
-
-      return this.value;
-    }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.map = function () {};
-
-      this.mapDepends = [];
-      this.depCache = [];
-
-      this.getState = function () {
-        return {};
+  _proto.createGetDepByKeyPath = function createGetDepByKeyPath(keyPath) {
+    if (typeof keyPath !== 'function') {
+      return function (s) {
+        return MapCache.getValueFromState(s, keyPath);
       };
+    }
 
-      this.dependKeys = {};
+    return keyPath;
+  };
+
+  _proto.shouldCheckCache = function shouldCheckCache() {
+    this.shouldCheckDependsCache = true;
+  };
+
+  _proto.getDepsValue = function getDepsValue() {
+    var _this2 = this;
+
+    return this.mapDepends.map(function (dep) {
+      return dep(_this2.getState());
+    });
+  };
+
+  _proto.hasDepChanged = function hasDepChanged() {
+    if (this.shouldCheckDependsCache) {
+      var newDepCache = this.getDepsValue();
+      var depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
+
+      if (depHasChanged) {
+        this.depCache = newDepCache;
+      }
+
+      this.shouldCheckDependsCache = false;
+      return depHasChanged;
     }
-  }], [{
-    key: "resetMapDepParser",
-    value: function resetMapDepParser() {
-      MapCache.getValueFromState = _utils.getValueFromObjByKeyPath;
+
+    return false;
+  };
+
+  _proto.getValue = function getValue() {
+    if (this.hasDepChanged()) {
+      this.value = this.map.apply(this, this.depCache);
     }
-  }, {
-    key: "setMapDepParser",
-    value: function setMapDepParser(parser) {
-      MapCache.getValueFromState = parser;
-    }
-  }]);
+
+    return this.value;
+  };
+
+  _proto.destroy = function destroy() {
+    this.map = function () {};
+
+    this.mapDepends = [];
+    this.depCache = [];
+
+    this.getState = function () {
+      return {};
+    };
+
+    this.dependKeys = {};
+  };
 
   return MapCache;
 }();
 
-exports["default"] = MapCache;
-MapCache.getValueFromState = _utils.getValueFromObjByKeyPath;
+export { MapCache as default };
+MapCache.getValueFromState = getValueFromObjByKeyPath;

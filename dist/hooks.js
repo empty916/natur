@@ -1,27 +1,8 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.useInject = useInject;
-
-var _react = require("react");
-
-var _createStore = require("./createStore");
-
-var _utils = require("./utils");
-
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-var _getStoreInstance = _createStore.getStoreInstance;
-
-function useInject() {
+import { useState, useCallback, useEffect } from 'react';
+import { getStoreInstance } from './createStore';
+import { arrayIsEqual } from './utils';
+var _getStoreInstance = getStoreInstance;
+export function useInject() {
   for (var _len = arguments.length, moduleNames = new Array(_len), _key = 0; _key < _len; _key++) {
     moduleNames[_key] = arguments[_key];
   }
@@ -32,12 +13,11 @@ function useInject() {
     throw new Error(errMsg);
   }
 
-  var _useState = (0, _react.useState)(moduleNames),
-      _useState2 = _slicedToArray(_useState, 2),
-      $moduleNames = _useState2[0],
-      setModuleNames = _useState2[1];
+  var _useState = useState(moduleNames),
+      $moduleNames = _useState[0],
+      setModuleNames = _useState[1];
 
-  if (!(0, _utils.arrayIsEqual)(moduleNames, $moduleNames)) {
+  if (!arrayIsEqual(moduleNames, $moduleNames)) {
     setModuleNames(moduleNames);
   }
 
@@ -50,27 +30,26 @@ function useInject() {
   });
 
   if (!!invalidModulesNames.length) {
-    var _errMsg = "useInject: ".concat(invalidModulesNames.join(), " module is not exits!");
+    var _errMsg = "useInject: " + invalidModulesNames.join() + " module is not exits!";
 
     console.error(_errMsg);
     throw new Error(_errMsg);
   }
 
-  var _useState3 = (0, _react.useState)({}),
-      _useState4 = _slicedToArray(_useState3, 2),
-      stateChanged = _useState4[0],
-      setStateChanged = _useState4[1]; // 获取moduleNames中是否存在未加载的模块
+  var _useState2 = useState({}),
+      stateChanged = _useState2[0],
+      setStateChanged = _useState2[1]; // 获取moduleNames中是否存在未加载的模块
 
 
   var unLoadedModules = $moduleNames.filter(function (mn) {
     return !store.hasModule(mn);
   });
   var hasUnloadModules = !!unLoadedModules.length;
-  var $setStateChanged = (0, _react.useCallback)(function () {
+  var $setStateChanged = useCallback(function () {
     return setStateChanged({});
   }, [setStateChanged]); // 初始化store监听
 
-  (0, _react.useEffect)(function () {
+  useEffect(function () {
     var unsubscribes = $moduleNames.map(function (mn) {
       return store.subscribe(mn, $setStateChanged);
     });
@@ -80,7 +59,7 @@ function useInject() {
       });
     };
   }, [$moduleNames]);
-  (0, _react.useEffect)(function () {
+  useEffect(function () {
     // 动态加载moduleName中还未加载的模块
     if (hasUnloadModules) {
       Promise.all(unLoadedModules.map(function (mn) {

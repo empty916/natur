@@ -150,7 +150,8 @@ const createStore: CreateStore = (
 	}
 	const getAllModuleName = () => {
 		if(!allModuleNames) {
-			allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
+			// allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
+			allModuleNames = [...Object.keys({...currentModules, ...currentLazyModules})]
 		}
 		return allModuleNames;
 	}

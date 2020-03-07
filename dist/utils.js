@@ -1,14 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.compose = compose;
-exports.isEqualWithDepthLimit = isEqualWithDepthLimit;
-exports.arrayIsEqual = exports.getValueFromObjByKeyPath = exports.isStoreModule = exports.isPromise = exports.isFnObj = exports.isFn = exports.isObj = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -17,20 +6,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
  * @desc [description]
  */
 var hasOwn = Object.prototype.hasOwnProperty;
-
-var isObj = function isObj(obj) {
-  return _typeof(obj) === 'object' && obj !== null && obj.constructor === Object;
+export var isObj = function isObj(obj) {
+  return typeof obj === 'object' && obj !== null && obj.constructor === Object;
 };
-
-exports.isObj = isObj;
-
-var isFn = function isFn(arg) {
+export var isFn = function isFn(arg) {
   return typeof arg === 'function';
 };
-
-exports.isFn = isFn;
-
-var isFnObj = function isFnObj(obj) {
+export var isFnObj = function isFnObj(obj) {
   if (isObj(obj)) {
     return Object.keys(obj).every(function (key) {
       return isFn(obj[key]);
@@ -39,8 +21,6 @@ var isFnObj = function isFnObj(obj) {
 
   return false;
 };
-
-exports.isFnObj = isFnObj;
 
 var isMapsObj = function isMapsObj(obj) {
   if (isObj(obj)) {
@@ -52,14 +32,11 @@ var isMapsObj = function isMapsObj(obj) {
   return false;
 };
 
-var isPromise = function isPromise(obj) {
+export var isPromise = function isPromise(obj) {
   return obj && typeof obj.then === 'function';
 }; // export const isVoid = <T>(ar: T | void): ar is void => !ar;
 
-
-exports.isPromise = isPromise;
-
-var isStoreModule = function isStoreModule(obj) {
+export var isStoreModule = function isStoreModule(obj) {
   if (!isObj(obj) || !isFnObj(obj.actions)) {
     return false;
   }
@@ -81,10 +58,7 @@ var isStoreModule = function isStoreModule(obj) {
  * (...args) => f(g(h(...args))).
  */
 
-
-exports.isStoreModule = isStoreModule;
-
-function compose() {
+export function compose() {
   for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
     funcs[_key] = arguments[_key];
   }
@@ -114,12 +88,18 @@ function is(x, y) {
   }
 }
 
-function isEqualWithDepthLimit(objA, objB) {
-  var depthLimit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 3;
-  var depth = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1;
+export function isEqualWithDepthLimit(objA, objB, depthLimit, depth) {
+  if (depthLimit === void 0) {
+    depthLimit = 3;
+  }
+
+  if (depth === void 0) {
+    depth = 1;
+  }
+
   if (is(objA, objB)) return true;
 
-  if (_typeof(objA) !== 'object' || objA === null || _typeof(objB) !== 'object' || objB === null) {
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
     return false;
   }
 
@@ -129,7 +109,7 @@ function isEqualWithDepthLimit(objA, objB) {
 
   for (var i = 0; i < keysA.length; i++) {
     if (!hasOwn.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
-      if (_typeof(objA[keysA[i]]) === 'object' && _typeof(objB[keysB[i]]) === 'object' && depth < depthLimit) {
+      if (typeof objA[keysA[i]] === 'object' && typeof objB[keysB[i]] === 'object' && depth < depthLimit) {
         return isEqualWithDepthLimit(objA[keysA[i]], objB[keysB[i]], depthLimit, depth + 1);
       }
 
@@ -144,8 +124,7 @@ function isEqualWithDepthLimit(objA, objB) {
  * @param keyPath 'a.b[0].c'
  */
 
-
-var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, keyPath) {
+export var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, keyPath) {
   var formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
   var value = obj;
 
@@ -159,10 +138,7 @@ var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, keyPath) {
 
   return value;
 };
-
-exports.getValueFromObjByKeyPath = getValueFromObjByKeyPath;
-
-var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
+export var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
   }
@@ -175,5 +151,3 @@ var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
 
   return true;
 };
-
-exports.arrayIsEqual = arrayIsEqual;

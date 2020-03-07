@@ -1,41 +1,41 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports["default"] = exports.getStoreInstance = void 0;
-
-var _utils = require("./utils");
-
-var _MapCache = _interopRequireDefault(require("./MapCache"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+/**
+ * @author empty916
+ * @email [empty916@qq.com]
+ * @create date 2019-08-09 17:12:36
+ * @modify date 2019-08-09 17:12:36
+ * @desc [description]
+ */
+import { // ObjChangedKeys,
+compose, isStoreModule } from './utils';
+import MapCache from './MapCache';
 ;
 ;
 ;
 ;
 var currentStoreInstance;
 
-var createStore = function createStore() {
-  var modules = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var lazyModules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var initStates = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var middlewares = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+var createStore = function createStore(modules, lazyModules, initStates, middlewares) {
+  if (modules === void 0) {
+    modules = {};
+  }
+
+  if (lazyModules === void 0) {
+    lazyModules = {};
+  }
+
+  if (initStates === void 0) {
+    initStates = {};
+  }
+
+  if (middlewares === void 0) {
+    middlewares = [];
+  }
 
   var currentInitStates = _objectSpread({}, initStates);
 
@@ -43,9 +43,7 @@ var createStore = function createStore() {
   var currentLazyModules = lazyModules;
   var listeners = {};
   var allModuleNames;
-
-  var currentMiddlewares = _toConsumableArray(middlewares);
-
+  var currentMiddlewares = [].concat(middlewares);
   var actionsProxyCache = {};
   var mapsCache = {};
   var mapsCacheList = {};
@@ -72,7 +70,7 @@ var createStore = function createStore() {
 
   var checkModuleIsValid = function checkModuleIsValid(moduleName) {
     if (!hasModule(moduleName)) {
-      var errMsg = "module: ".concat(moduleName, " is not valid!");
+      var errMsg = "module: " + moduleName + " is not valid!";
       console.error(errMsg);
       throw new Error(errMsg);
     }
@@ -103,7 +101,8 @@ var createStore = function createStore() {
 
   var getAllModuleName = function getAllModuleName() {
     if (!allModuleNames) {
-      allModuleNames = _toConsumableArray(new Set([].concat(_toConsumableArray(Object.keys(currentModules)), _toConsumableArray(Object.keys(currentLazyModules)))));
+      // allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
+      allModuleNames = [].concat(Object.keys(_objectSpread({}, currentModules, {}, currentLazyModules)));
     }
 
     return allModuleNames;
@@ -130,14 +129,16 @@ var createStore = function createStore() {
 
 
   var setModule = function setModule(moduleName, storeModule) {
-    if (!(0, _utils.isStoreModule)(storeModule)) {
-      var errMsg = "setModule: storeModule ".concat(moduleName, " is illegal!");
+    var _objectSpread2;
+
+    if (!isStoreModule(storeModule)) {
+      var errMsg = "setModule: storeModule " + moduleName + " is illegal!";
       console.error(errMsg);
       throw new Error(errMsg);
     }
 
     var isModuleExist = hasModule(moduleName);
-    currentModules = _objectSpread({}, currentModules, _defineProperty({}, moduleName, replaceModule(moduleName, storeModule)));
+    currentModules = _objectSpread({}, currentModules, (_objectSpread2 = {}, _objectSpread2[moduleName] = replaceModule(moduleName, storeModule), _objectSpread2));
 
     if (isModuleExist) {
       clearAllCache(moduleName);
@@ -179,7 +180,7 @@ var createStore = function createStore() {
     for (var key in maps) {
       if (maps.hasOwnProperty(key)) {
         if (mapsCache[moduleName][key] === undefined) {
-          mapsCache[moduleName][key] = new _MapCache["default"](function () {
+          mapsCache[moduleName][key] = new MapCache(function () {
             return currentModules[moduleName].state;
           }, maps[key]);
           mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
@@ -243,7 +244,7 @@ var createStore = function createStore() {
       return currentLazyModules[moduleName];
     }
 
-    var errMsg = "getLazyModule: ".concat(moduleName, " is not exist");
+    var errMsg = "getLazyModule: " + moduleName + " is not exist";
     console.error(errMsg);
     throw new Error(errMsg);
   };
@@ -276,9 +277,7 @@ var createStore = function createStore() {
     var chain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);
     });
-
-    var setStateProxyWithMiddleware = _utils.compose.apply(void 0, _toConsumableArray(chain))(setStateProxy);
-
+    var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setStateProxy);
     return function (type) {
       var _targetModule$actions;
 
@@ -348,10 +347,7 @@ var createStore = function createStore() {
   return currentStoreInstance;
 };
 
-var getStoreInstance = function getStoreInstance() {
+export var getStoreInstance = function getStoreInstance() {
   return currentStoreInstance;
 };
-
-exports.getStoreInstance = getStoreInstance;
-var _default = createStore;
-exports["default"] = _default;
+export default createStore;
