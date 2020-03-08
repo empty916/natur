@@ -150,8 +150,7 @@ const createStore: CreateStore = (
 	}
 	const getAllModuleName = () => {
 		if(!allModuleNames) {
-			// allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
-			allModuleNames = [...Object.keys({...currentModules, ...currentLazyModules})]
+			allModuleNames = Object.keys({...currentModules, ...currentLazyModules});
 		}
 		return allModuleNames;
 	}
@@ -242,13 +241,6 @@ const createStore: CreateStore = (
 			actions: createActionsProxy(moduleName),
 			maps: createMapsProxy(moduleName),
 		};
-		// if (!!Object.defineProperty) {
-		// 	Object.defineProperty(proxyModule, 'state', {
-		// 		get() {
-		// 			return currentModules[moduleName].state;
-		// 		}
-		// 	});
-		// }
 		return proxyModule;
 	};
 
