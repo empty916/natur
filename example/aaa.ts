@@ -20,7 +20,6 @@ type Diff = {
     [m: string]: {
         state: MapCache,
         maps: MapCache,
-        hasChanged: boolean,
     }
 };
 
@@ -37,7 +36,6 @@ function initDiff(a, store: Store): Diff {
                     () => store.getModule(moduleName).maps,
                     [...a.maps, () => {}],
                 ),
-                hasChanged: false,
             }
         }
     }
