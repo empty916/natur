@@ -1,3 +1,5 @@
+import MapCache from '../src/MapCache';
+
 export const state = {
     name: 'tom',
 }

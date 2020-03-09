@@ -16,6 +16,7 @@ import {
 	Modules
 } from './createStore';
 import {isEqualWithDepthLimit} from './utils';
+import MapCache from './MapCache';
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 type ModuleNames = ModuleName[];
@@ -27,9 +28,25 @@ type Tstate = {
 	storeStateChange: {},
 	modulesHasLoaded: boolean,
 }
+
+
+type Diff = {
+    [m: string]: {
+        state?: MapCache,
+        maps?: MapCache,
+    }
+};
+type InjectStoreModuleDepDec = {
+	[m: string]: true | {
+		state?: Array<string|Function>,
+		maps?: Array<string>,
+	};
+};
+
+
 type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }, S>
 const connect = <P, S, SP>(
-	moduleNames: ModuleNames,
+	moduleNames: Array<InjectStoreModuleDepDec|ModuleName>,
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent?: TReactComponent<any, any>
 ): connectReturn<P, S, SP> => {
@@ -64,6 +81,24 @@ const connect = <P, S, SP>(
 			this.setState({
 				storeStateChange: {},
 			});
+		}
+		initDiff(moduleDepDec: InjectStoreModuleDepDec, store: Store): Diff {
+			const moduleDiff: Diff = {};
+			for(let moduleName in moduleDepDec) {
+				if(moduleDepDec.hasOwnProperty(moduleName) && moduleDepDec[moduleName] !== true) {
+					moduleDiff[moduleName] = {
+						state: moduleDepDec[moduleName].state ? new MapCache(
+							() => store.getModule(moduleName).state,
+							[...moduleDepDec[moduleName].state as Array<string|Function>, () => {}],
+						) : undefined,
+						maps: moduleDepDec[moduleName].maps ? new MapCache(
+							() => store.getModule(moduleName).maps,
+							[...moduleDepDec[moduleName].maps as Array<string>, () => {}],
+						) : undefined,
+					}
+				}
+			}
+			return moduleDiff;
 		}
 		componentDidMount() {
 			const {
@@ -167,9 +202,20 @@ const connect = <P, S, SP>(
 	return hoistStatics(FinalConnect as any, WrappedComponent) as React.ComponentClass<Omit<P, keyof SP>, S>;
 }
 
-const Inject = <StoreProp,>(...moduleNames: ModuleName[]) => {
-	return <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
-		connect<P, C, SP>(moduleNames, WrappedComponent, LoadingComponent);
+
+// type Inject = <StoreProp,>(...moduleNames: ModuleName[]) 
+// 	=> <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) 
+// 	=> connectReturn<P, C, SP>;
+// interface InjectReturn<> {
+
+// }
+type InjectReturn<StoreProp> = <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
+	connectReturn<P, C, SP>;
+
+function Inject<StoreProp>(m: InjectStoreModuleDepDec):InjectReturn<StoreProp>;
+function Inject<StoreProp>(m: InjectStoreModuleDepDec | string, ...moduleNames: ModuleName[]):InjectReturn<StoreProp> {
+	return <P, S, SP extends StoreProp>(WrappedComponent: TReactComponent<P, S>, LoadingComponent?: TReactComponent<{}, {}>) =>
+		connect<P, S, SP>([m, ...moduleNames], WrappedComponent, LoadingComponent);
 }
 
 Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}, {}>) => Loading = LoadingComponent;
