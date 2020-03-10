@@ -59,6 +59,7 @@ const connect = <P, S, SP>(
 		private unsubStore: () => void = () => { };
 		private LoadingComponent: TReactComponent<{}, {}>;
 		private storeModuleDiff: Diff | undefined;
+		private destoryCache: Function = () => {};
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -102,7 +103,7 @@ const connect = <P, S, SP>(
 		initDiff(moduleDepDec: DepDecs = depDecs, store: Store = this.store):void {
 			const moduleDiff: Diff = {};
 			for(let moduleName in moduleDepDec) {
-				if(moduleDepDec.hasOwnProperty(moduleName) && moduleDepDec[moduleName] !== true) {
+				if(moduleDepDec.hasOwnProperty(moduleName)) {
 					moduleDiff[moduleName] = [];
 					if (moduleDepDec[moduleName].state) {
 						const stateCache = new MapCache(
@@ -123,6 +124,11 @@ const connect = <P, S, SP>(
 				}
 			}
 			this.storeModuleDiff = moduleDiff;
+			this.destoryCache = () => {
+				for(let moduleName in this.storeModuleDiff) {
+					moduleDiff[moduleName].forEach(cache => cache.destroy());
+				}
+			}
 		}
 		initStoreListner() {
 			const {
@@ -164,7 +170,9 @@ const connect = <P, S, SP>(
 		}
 		componentWillUnmount() {
 			this.unsubStore();
-			this.unsubStore = () => { };
+			this.destoryCache();
+			this.unsubStore = () => {};
+			this.destoryCache = () => {};
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
 			/**
