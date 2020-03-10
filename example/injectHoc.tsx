@@ -12,61 +12,29 @@ type otherProps = {
 
 let renderStart = 0;
 
-const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
+const _App: React.FC<otherProps & storeProps> = ({count}) => {
 	const {state, actions, maps} = count as InjectStoreModule;
-	const incProxy = () => {
-		renderStart = performance.now();
-		actions.inc(state)
-	};
-	const decProxy = () => {
-		renderStart = performance.now();
-		actions.dec(state)
-	};
-	useEffect(() => {
-		console.log(performance.now() - renderStart);
-		renderStart = 0;
-	})
 	return (
 		<div>
 			count:
-			<button onClick={incProxy}>+</button>
+			<button onClick={actions.inc}>+</button>
 			<span>{state.count}</span>
-			<button onClick={decProxy}>-</button>
+			<button onClick={actions.dec}>-</button>
 			<br/>
 			<br/>
-
-			deep count:
-			<button onClick={() => {
-				const start = performance.now();
-				renderStart = start;
-				actions.incDeep(state);
-				// console.log(performance.now() - start);
-			}}>+</button>
-			<span>{state.deeep.deep.count2}</span>
-			<br/>
-			<br/>
-
 			deeep count:
-			<button onClick={() => {
-				const start = performance.now();
-				renderStart = start;
-				actions.incDeeep(state)
-				// actions.decDeeep(state)
-				// console.log(performance.now() - start);
-			}}>+</button>
+			<button onClick={actions.incDeeep}>+</button>
 			<span>{state.deeep.deep.count}</span>
+			<button onClick={actions.decDeeep}>+</button>
 			<br/>
 			<br/>
 
-			name:<input type="text" value={state.name} onChange={e => {
-			renderStart = performance.now();
-			actions.changeName(e.target.value, state);
-		}}/>
+			name:<input type="text" value={state.name} onChange={e => actions.changeName(e.target.value)}/>
 			<br/>
 			<br/>
 			<div>maps.isOdd: {maps.isOdd + ''}</div>
-			<div>maps.deepCountIsOdd: {maps.deepCountIsOdd + ''}</div>
 			<div>maps.deeepCountIsOdd: {maps.deeepCountIsOdd + ''}</div>
+			<div>maps.splitName: {maps.splitName.join(',')}</div>
 			<br/>
 		</div>
 	);
@@ -75,7 +43,7 @@ const _App: React.FC<otherProps & storeProps> = ({count, name}) => {
 const createLoading = (bgcolor: string) => () => <div
 	style={{width: '100vw', height: '100vh', backgroundColor: bgcolor}}>loading...</div>;
 
-const App = inject<storeProps>('count', 'name')(
+const App = inject<storeProps>(['count', {state: ['count', s => s.deeep.deep.count]}])(
 	_App,
 	createLoading('green')
 );

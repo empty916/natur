@@ -164,3 +164,26 @@ export const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
 	}
 	return true;
 }
+
+
+export type ModuleDepDec = [string, {
+	state?: Array<string|Function>;
+	maps?: Array<string>;
+}]
+
+export type DepDecs = {
+	[m: string]: ModuleDepDec[1];
+}
+
+export const isModuleDepDec = (obj: any): obj is ModuleDepDec => {
+	if (Array.isArray(obj)) {
+		if (obj[1].state && !Array.isArray(obj[1].state)) {
+			return false;
+		}
+		if (obj[1].maps && !Array.isArray(obj[1].maps)) {
+			return false;
+		}
+		return true;
+	}
+	return false;
+}

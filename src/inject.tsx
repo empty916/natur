@@ -15,7 +15,7 @@ import {
 	getStoreInstance,
 	Modules
 } from './createStore';
-import {isEqualWithDepthLimit} from './utils';
+import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs} from './utils';
 import MapCache from './MapCache';
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
@@ -31,13 +31,10 @@ type Tstate = {
 
 
 type Diff = {
-    [m: string]: {
-        state?: MapCache,
-        maps?: MapCache,
-    }
+    [m: string]: MapCache[];
 };
 type InjectStoreModuleDepDec = {
-	[m: string]: true | {
+	[m: number]: true | {
 		state?: Array<string|Function>,
 		maps?: Array<string>,
 	};
@@ -46,7 +43,8 @@ type InjectStoreModuleDepDec = {
 
 type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }, S>
 const connect = <P, S, SP>(
-	moduleNames: Array<InjectStoreModuleDepDec|ModuleName>,
+	moduleNames: Array<ModuleName>,
+	depDecs: DepDecs,
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent?: TReactComponent<any, any>
 ): connectReturn<P, S, SP> => {
@@ -60,6 +58,7 @@ const connect = <P, S, SP>(
 		private injectModules: Modules = {};
 		private unsubStore: () => void = () => { };
 		private LoadingComponent: TReactComponent<{}, {}>;
+		private storeModuleDiff: Diff | undefined;
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -77,46 +76,77 @@ const connect = <P, S, SP>(
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 			this.LoadingComponent = LoadingComponent || Loading;
 		}
-		setStoreStateChanged() {
-			this.setState({
-				storeStateChange: {},
-			});
+		setStoreStateChanged(moduleName: ModuleName) {
+			if (!depDecs[moduleName]) {
+				this.setState({
+					storeStateChange: {},
+				});
+			} else if(this.storeModuleDiff) {
+				const start = performance.now();
+				const hasDepChanged = this.storeModuleDiff[moduleName].some(diff => {
+					diff.shouldCheckCache();
+					return diff.hasDepChanged();
+				});
+				console.log(performance.now() - start);
+				if (hasDepChanged) {
+					this.setState({
+						storeStateChange: {},
+					});
+				}
+			} else {
+				this.setState({
+					storeStateChange: {},
+				});
+			}
 		}
-		initDiff(moduleDepDec: InjectStoreModuleDepDec, store: Store): Diff {
+		initDiff(moduleDepDec: DepDecs = depDecs, store: Store = this.store):void {
 			const moduleDiff: Diff = {};
 			for(let moduleName in moduleDepDec) {
 				if(moduleDepDec.hasOwnProperty(moduleName) && moduleDepDec[moduleName] !== true) {
-					moduleDiff[moduleName] = {
-						state: moduleDepDec[moduleName].state ? new MapCache(
+					moduleDiff[moduleName] = [];
+					if (moduleDepDec[moduleName].state) {
+						const stateCache = new MapCache(
 							() => store.getModule(moduleName).state,
 							[...moduleDepDec[moduleName].state as Array<string|Function>, () => {}],
-						) : undefined,
-						maps: moduleDepDec[moduleName].maps ? new MapCache(
+						);
+						stateCache.hasDepChanged();
+						moduleDiff[moduleName].push(stateCache);
+					}
+					if (moduleDepDec[moduleName].maps) {
+						const mapsCache = new MapCache(
 							() => store.getModule(moduleName).maps,
 							[...moduleDepDec[moduleName].maps as Array<string>, () => {}],
-						) : undefined,
+						);
+						mapsCache.hasDepChanged();
+						moduleDiff[moduleName].push(mapsCache);
 					}
 				}
 			}
-			return moduleDiff;
+			this.storeModuleDiff = moduleDiff;
+		}
+		initStoreListner() {
+			const {
+				store,
+				integralModulesName,
+				setStoreStateChanged
+			} = this;
+			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, () => setStoreStateChanged(mn)));
+			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 		}
 		componentDidMount() {
 			const {
 				store,
-				integralModulesName,
 				unLoadedModules,
-				setStoreStateChanged
 			} = this;
 			const { modulesHasLoaded } = this.state;
-			// 初始化store监听
-			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, setStoreStateChanged));
-			this.unsubStore = () => unsubscribes.forEach(fn => fn());
-
+			
 			if (!modulesHasLoaded) {
 				Promise.all(
 					unLoadedModules.map(mn => store.loadModule(mn))
 				)
 				.then(() => {
+					this.initStoreListner();
+					this.initDiff();
 					this.setState({
 						modulesHasLoaded: true,
 					})
@@ -126,6 +156,10 @@ const connect = <P, S, SP>(
 						modulesHasLoaded: false,
 					})
 				});
+			} else {
+				// 初始化store监听
+				this.initStoreListner();
+				this.initDiff();
 			}
 		}
 		componentWillUnmount() {
@@ -202,20 +236,25 @@ const connect = <P, S, SP>(
 	return hoistStatics(FinalConnect as any, WrappedComponent) as React.ComponentClass<Omit<P, keyof SP>, S>;
 }
 
-
-// type Inject = <StoreProp,>(...moduleNames: ModuleName[]) 
-// 	=> <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) 
-// 	=> connectReturn<P, C, SP>;
-// interface InjectReturn<> {
-
-// }
 type InjectReturn<StoreProp> = <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
 	connectReturn<P, C, SP>;
 
-function Inject<StoreProp>(m: InjectStoreModuleDepDec):InjectReturn<StoreProp>;
-function Inject<StoreProp>(m: InjectStoreModuleDepDec | string, ...moduleNames: ModuleName[]):InjectReturn<StoreProp> {
-	return <P, S, SP extends StoreProp>(WrappedComponent: TReactComponent<P, S>, LoadingComponent?: TReactComponent<{}, {}>) =>
-		connect<P, S, SP>([m, ...moduleNames], WrappedComponent, LoadingComponent);
+type InjectParams = Array<string|ModuleDepDec>;
+
+
+function Inject<StoreProp>(...moduleDec: InjectParams):InjectReturn<StoreProp> {
+	const depDecs: DepDecs = {};
+	const moduleNames = moduleDec.map(m => {
+		if (isModuleDepDec(m)) {
+			depDecs[m[0]] = m[1];
+			return m[0];
+		}
+		return m;
+	});
+	return <P, S, SP extends StoreProp>(
+		WrappedComponent: TReactComponent<P, S>, 
+		LoadingComponent?: TReactComponent<{}, {}>
+	) => connect<P, S, SP>(moduleNames, depDecs, WrappedComponent, LoadingComponent);
 }
 
 Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}, {}>) => Loading = LoadingComponent;

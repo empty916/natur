@@ -15,6 +15,7 @@ const name = {
 	},
 	maps: {
 		textSplit: ['text', text => text.split('').join(',')],
+		firstChar: ['text', text => text[0]],
 	}
 }
 const lazyName = {
