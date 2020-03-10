@@ -15,7 +15,8 @@ export const maps = {
 	}],
 	splitName: ['name', (name: string) => {
 		return name.split("");
-	}]
+	}],
+	firstChar: ['name', (name: string) => name[0]],
 };
 export const actions = {
 	inc: () => (getState) => ({count: getState().count + 1}),

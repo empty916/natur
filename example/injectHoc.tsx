@@ -43,7 +43,7 @@ const _App: React.FC<otherProps & storeProps> = ({count}) => {
 const createLoading = (bgcolor: string) => () => <div
 	style={{width: '100vw', height: '100vh', backgroundColor: bgcolor}}>loading...</div>;
 
-const App = inject<storeProps>(['count', {state: ['count', s => s.deeep.deep.count]}])(
+const App = inject<storeProps>(['count', {maps: ['firstChar']}])(
 	_App,
 	createLoading('green')
 );
