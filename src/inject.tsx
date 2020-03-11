@@ -15,7 +15,7 @@ import {
 	getStoreInstance,
 	Modules
 } from './createStore';
-import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs} from './utils';
+import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './utils';
 import MapCache from './MapCache';
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
@@ -28,18 +28,6 @@ type Tstate = {
 	storeStateChange: {},
 	modulesHasLoaded: boolean,
 }
-
-
-type Diff = {
-    [m: string]: MapCache[];
-};
-type InjectStoreModuleDepDec = {
-	[m: number]: true | {
-		state?: Array<string|Function>,
-		maps?: Array<string>,
-	};
-};
-
 
 type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }, S>
 const connect = <P, S, SP>(
@@ -101,34 +89,9 @@ const connect = <P, S, SP>(
 			}
 		}
 		initDiff(moduleDepDec: DepDecs = depDecs, store: Store = this.store):void {
-			const moduleDiff: Diff = {};
-			for(let moduleName in moduleDepDec) {
-				if(moduleDepDec.hasOwnProperty(moduleName)) {
-					moduleDiff[moduleName] = [];
-					if (moduleDepDec[moduleName].state) {
-						const stateCache = new MapCache(
-							() => store.getModule(moduleName).state,
-							[...moduleDepDec[moduleName].state as Array<string|Function>, () => {}],
-						);
-						stateCache.hasDepChanged();
-						moduleDiff[moduleName].push(stateCache);
-					}
-					if (moduleDepDec[moduleName].maps) {
-						const mapsCache = new MapCache(
-							() => store.getModule(moduleName).maps,
-							[...moduleDepDec[moduleName].maps as Array<string>, () => {}],
-						);
-						mapsCache.hasDepChanged();
-						moduleDiff[moduleName].push(mapsCache);
-					}
-				}
-			}
-			this.storeModuleDiff = moduleDiff;
-			this.destoryCache = () => {
-				for(let moduleName in this.storeModuleDiff) {
-					moduleDiff[moduleName].forEach(cache => cache.destroy());
-				}
-			}
+			const {diff, destroy} = initDiff(moduleDepDec, store);
+			this.storeModuleDiff = diff;
+			this.destoryCache = destroy;
 		}
 		initStoreListner() {
 			const {
