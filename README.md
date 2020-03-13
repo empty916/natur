@@ -28,6 +28,7 @@
 - [懒加载模块，加载中，占位组件配置](#loading-component)
 - [在react外使用natur](#use-store-without-react)
 - [手动导入模块](#manual-import-module)
+- [dispatch](#dispatch)
 - [在typescript中使用](#typescript)
 - [使用注意事项](#caution)
 
@@ -691,6 +692,34 @@ const lazyLoadView = () => {
 
 
 ```
+## <a id='dispatch'>dispatch</a>
+
+````typescript
+import { createStore, inject, InjectStoreModule } from 'natur';
+
+const count = {
+  state: { // 存放数据
+    number: 0,
+  },
+  maps: { // state的映射。比如，我需要知道state中的number是否是偶数
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // 用来修改state。返回的数据会作为新的state(这部分由natur内部完成)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
+const store = createStore({count});
+
+const {actions, state} = store.getModule('count')
+
+actions.inc(state.number);
+// 等于
+store.dispatch('count/inc', state.number);
+
+````
 
 ## <a id='typescript'>typescript支持</a>
 ```ts

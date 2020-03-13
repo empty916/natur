@@ -26,6 +26,7 @@
 - [middleware](#middleware)
 - [set loading component](#loading-component)
 - [use natur without react](#use-store-without-react)
+- [dispatch](#dispatch)
 - [manual import module](#manual-import-module)
 - [typescript](#typescript)
 - [caution](#caution)
@@ -640,6 +641,35 @@ unsubscribe();
 
 ```
 
+
+
+## <a id='dispatch'>dispatch</a>
+
+````typescript
+import { createStore, inject, InjectStoreModule } from 'natur';
+
+const count = {
+  state: {
+    number: 0,
+  },
+  maps: {
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: {
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+const store = createStore({count});
+
+const {actions, state} = store.getModule('count')
+
+actions.inc(state.number);
+// Equivalent to
+store.dispatch('count/inc', state.number);
+
+````
 
 ### <a id='manual-import-module'>Importing modules manually</a>
 
