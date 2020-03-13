@@ -4,14 +4,17 @@ import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
 	shallowEqualMiddleware,
+	fillObjectRestDataMiddleware,
 } from '../../src/middlewares'
 
 const name = {
 	state: {
 		text: 'name',
+		count: 0,
 	},
 	actions: {
-		updateText: text => ({text}),
+		updateText: (text) => ({text,}),
+		inc: count => ({count: count + 1}),
 	},
 	maps: {
 		textSplit: ['text', text => text.split('').join(',')],
@@ -29,8 +32,7 @@ const lazyName = {
 	}
 }
 const App = () => {
-	const [moduleNames, setModuleNames] = useState(['name', 'lazyName'])
-	const [name, lazyName] = useInject(...moduleNames);
+	const [name, lazyName] = useInject(['name', {state: [s => s.text], maps: ['textSplit']}], 'lazyName');
 	if (!name) {
 		return null;
 	}
@@ -39,7 +41,9 @@ const App = () => {
 		<>
 			<input value={state.text} onChange={e => actions.updateText(e.target.value)} />
 			<br/>
-			{maps.textSplit}
+			<button onClick={() => actions.inc(state.count)}>+</button>
+			<span id='count'>{state.count + ''}</span>
+			<span id='textSplit'>{maps.textSplit}</span>
 		</>
 	);
 };
@@ -94,7 +98,12 @@ const initStore = () => {
 			lazyLoadError: () => Promise.reject(lazyName),
 		},
 		{},
-		[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		[
+			promiseMiddleware, 
+			filterNonObjectMiddleware, 
+			fillObjectRestDataMiddleware,
+			shallowEqualMiddleware
+		]
 	);
 	// setInjectStoreGetter(() => store);
 }

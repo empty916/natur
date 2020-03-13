@@ -16,7 +16,7 @@ function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.crea
 import React from 'react';
 import hoistStatics from 'hoist-non-react-statics';
 import { getStoreInstance } from './createStore';
-import { isEqualWithDepthLimit } from './utils';
+import { isEqualWithDepthLimit, isModuleDepDec, initDiff as _initDiff } from './utils';
 
 var Loading = function Loading() {
   return null;
@@ -24,7 +24,7 @@ var Loading = function Loading() {
 
 var _getStoreInstance = getStoreInstance;
 
-var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) {
+var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingComponent) {
   var Connect =
   /*#__PURE__*/
   function (_React$Component) {
@@ -37,6 +37,8 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
       _this.injectModules = {};
 
       _this.unsubStore = function () {};
+
+      _this.destoryCache = function () {};
 
       _this.state = {
         storeStateChange: {},
@@ -62,23 +64,56 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
 
     var _proto = Connect.prototype;
 
-    _proto.setStoreStateChanged = function setStoreStateChanged() {
-      this.setState({
-        storeStateChange: {}
-      });
+    _proto.setStoreStateChanged = function setStoreStateChanged(moduleName) {
+      if (!depDecs[moduleName]) {
+        this.setState({
+          storeStateChange: {}
+        });
+      } else if (this.storeModuleDiff) {
+        var start = performance.now();
+        var hasDepChanged = this.storeModuleDiff[moduleName].some(function (diff) {
+          diff.shouldCheckCache();
+          return diff.hasDepChanged();
+        });
+        console.log(performance.now() - start);
+
+        if (hasDepChanged) {
+          this.setState({
+            storeStateChange: {}
+          });
+        }
+      } else {
+        this.setState({
+          storeStateChange: {}
+        });
+      }
     };
 
-    _proto.componentDidMount = function componentDidMount() {
-      var _this2 = this;
+    _proto.initDiff = function initDiff(moduleDepDec, store) {
+      if (moduleDepDec === void 0) {
+        moduleDepDec = depDecs;
+      }
 
+      if (store === void 0) {
+        store = this.store;
+      }
+
+      var _initDiff2 = _initDiff(moduleDepDec, store),
+          diff = _initDiff2.diff,
+          destroy = _initDiff2.destroy;
+
+      this.storeModuleDiff = diff;
+      this.destoryCache = destroy;
+    };
+
+    _proto.initStoreListner = function initStoreListner() {
       var store = this.store,
           integralModulesName = this.integralModulesName,
-          unLoadedModules = this.unLoadedModules,
           setStoreStateChanged = this.setStoreStateChanged;
-      var modulesHasLoaded = this.state.modulesHasLoaded; // 初始化store监听
-
       var unsubscribes = integralModulesName.map(function (mn) {
-        return store.subscribe(mn, setStoreStateChanged);
+        return store.subscribe(mn, function () {
+          return setStoreStateChanged(mn);
+        });
       });
 
       this.unsubStore = function () {
@@ -86,11 +121,23 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
           return fn();
         });
       };
+    };
+
+    _proto.componentDidMount = function componentDidMount() {
+      var _this2 = this;
+
+      var store = this.store,
+          unLoadedModules = this.unLoadedModules;
+      var modulesHasLoaded = this.state.modulesHasLoaded;
 
       if (!modulesHasLoaded) {
         Promise.all(unLoadedModules.map(function (mn) {
           return store.loadModule(mn);
         })).then(function () {
+          _this2.initStoreListner();
+
+          _this2.initDiff();
+
           _this2.setState({
             modulesHasLoaded: true
           });
@@ -99,13 +146,20 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
             modulesHasLoaded: false
           });
         });
+      } else {
+        // 初始化store监听
+        this.initStoreListner();
+        this.initDiff();
       }
     };
 
     _proto.componentWillUnmount = function componentWillUnmount() {
       this.unsubStore();
+      this.destoryCache();
 
       this.unsubStore = function () {};
+
+      this.destoryCache = function () {};
     };
 
     _proto.shouldComponentUpdate = function shouldComponentUpdate(nextProps, nextState) {
@@ -200,15 +254,25 @@ var connect = function connect(moduleNames, WrappedComponent, LoadingComponent) 
   return hoistStatics(FinalConnect, WrappedComponent);
 };
 
-var Inject = function Inject() {
-  for (var _len = arguments.length, moduleNames = new Array(_len), _key = 0; _key < _len; _key++) {
-    moduleNames[_key] = arguments[_key];
+function Inject() {
+  var depDecs = {};
+
+  for (var _len = arguments.length, moduleDec = new Array(_len), _key = 0; _key < _len; _key++) {
+    moduleDec[_key] = arguments[_key];
   }
 
+  var moduleNames = moduleDec.map(function (m) {
+    if (isModuleDepDec(m)) {
+      depDecs[m[0]] = m[1];
+      return m[0];
+    }
+
+    return m;
+  });
   return function (WrappedComponent, LoadingComponent) {
-    return connect(moduleNames, WrappedComponent, LoadingComponent);
+    return connect(moduleNames, depDecs, WrappedComponent, LoadingComponent);
   };
-};
+}
 
 Inject.setLoadingComponent = function (LoadingComponent) {
   return Loading = LoadingComponent;

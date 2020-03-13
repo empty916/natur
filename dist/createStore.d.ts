@@ -30,7 +30,9 @@ export interface StoreModule {
 export interface InjectStoreModule {
     state: State;
     actions: Actions;
-    maps?: any;
+    maps?: {
+        [m: string]: any;
+    };
 }
 export interface LazyStoreModules {
     [p: string]: () => Promise<StoreModule>;
@@ -62,6 +64,7 @@ export interface Store {
     subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
     getAllModuleName: () => ModuleName[];
     destory: () => void;
+    dispatch: (action: string, ...arg: any) => ReturnType<Action>;
 }
 declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: PartialStates, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;

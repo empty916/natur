@@ -82,6 +82,7 @@ export interface Store {
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
 	destory: () => void;
+	dispatch: (action: string, ...arg: any) => ReturnType<Action>
 }
 
 type CreateStore = (
@@ -235,7 +236,6 @@ const createStore: CreateStore = (
 	// 获取module
 	const getModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);
-
 		const proxyModule: InjectStoreModule = {
 			state: currentModules[moduleName].state,
 			actions: createActionsProxy(moduleName),
@@ -243,6 +243,19 @@ const createStore: CreateStore = (
 		};
 		return proxyModule;
 	};
+	/**
+	 * 
+	 * @param action count/inc
+	 */
+	const dispatch = (action: string, ...arg: any[]): ReturnType<Action> => {
+		if(!(/\//.test(action))) {
+			console.warn(`dispatch: ${action} is invalid!`);
+			throw new Error(`dispatch: ${action} is invalid!`);
+		}
+		const [moduleName, actionName] = action.split('/');
+		checkModuleIsValid(moduleName);
+		return createActionsProxy(moduleName)[actionName](...arg);
+	}
 
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
@@ -258,6 +271,9 @@ const createStore: CreateStore = (
 		throw new Error(errMsg);
 	};
 	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule> => {
+		if (hasModule(moduleName)) {
+			return Promise.resolve(getModule(moduleName));
+		}
 		return getLazyModule(moduleName)()
 			.then((loadedModule: StoreModule) => {
 				setModule(moduleName, loadedModule);
@@ -324,6 +340,7 @@ const createStore: CreateStore = (
 		hasModule,
 		subscribe,
 		destory,
+		dispatch,
 	};
 	return currentStoreInstance;
 };

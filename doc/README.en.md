@@ -19,6 +19,7 @@
 - [simple demo](#simple-demo)
 - [detailed module](#module)
 - [complex demo](#complex-demo)
+- [The component only listens to changes in some data](#partial-listener)
 - [hooks](#hooks)
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
@@ -269,6 +270,47 @@ export default inject('app', 'otherModuleName')(App);
 
 ---
 
+
+
+## <a id='partial-listener'>The component only listens to changes in some data</a>
+
+```jsx
+import { inject } from 'natur';
+const App = ({app}) => {
+  // get app module
+  const {state, actions, maps} = app;
+  return (
+    <input
+      value={state.name} // state in app
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+
+// Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
+export default inject(
+  ['app', {
+    state: ['name'], // You can also use function declarations state: [s => s.name]
+  }]
+)(App); 
+
+
+// Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
+inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+)(App); 
+
+// Here the App component will not be updated regardless of any changes in the app module
+inject(
+  ['app', {}]
+)(App); 
+
+// Because actions stay the same after they are created, you don't have to listen for changes
+
+// Partial listening also works for hooks
+```  
 
 
 ## <a id='hooks'>hooks</a>
@@ -583,7 +625,8 @@ maps: {
   Advised not to abuse
 */
 app.actions.changeName('jerry');
-
+// Equivalent to
+store.dispatch('app/changeName', 'jerry');
 
 // Monitoring module changes
 const unsubscribe = store.subscribe('app', () => {

@@ -38,10 +38,34 @@ test('Inject hooks', () => {
 			app.find('input').simulate('change', {target: {value: 'name1'}});
 
 			expect(app.find('input').props().value).toBe('name1');
-			expect(app.text()).toBe('name1'.split('').join(','));
+			expect(app.find('#textSplit').text()).toBe('name1'.split('').join(','));
+
+
 			app.unmount();
 		})
 });
+
+
+test('Inject hooks update only depends text', () => {
+	const s = initStore();
+	setInjectStoreGetter(() => s);
+	let app = mount(<App />);
+	return new Promise(res => setTimeout(res))
+		.then(() => {
+			app.update();
+			expect(app.find('#count').text()).toBe('0');
+			app.find('button').simulate('click');
+			expect(app.find('#count').text()).toBe('0');
+			expect(s.getModule('name').state.count).toBe(1);
+
+			app.find('input').simulate('change', {target: {value: 'name1'}});
+			expect(app.find('#count').text()).toBe('1');
+			expect(s.getModule('name').state.count).toBe(1);
+			app.unmount();
+		})
+});
+
+
 
 
 test('Inject hooks base', () => {
@@ -76,79 +100,3 @@ test('Inject hooks base', () => {
 
 });
 
-
-test('Inject hooks change module', () => {
-	const s = initStore1();
-	setInjectStoreGetter(() => s);
-	let app = mount(<AppChangeModule />);
-	const count = () => app.find('#count').text();
-	const name = () => app.find('#name').text();
-	const inc = () => app.find('#inc').simulate('click');
-	const dec = () => app.find('#dec').simulate('click');
-	const changeName = newName => app.find('input').simulate('change', {target: {value: newName}});
-
-	const changeModuleToCountName = () => app.find('#btn00').simulate('click');
-	const changeModuleToCount1Name = () => app.find('#btn10').simulate('click');
-	const changeModuleToCountName1 = () => app.find('#btn01').simulate('click');
-	const changeModuleToCount1Name1 = () => app.find('#btn11').simulate('click');
-
-	expect(count()).toBe('0')
-	expect(name()).toBe('name')
-
-	/**
-	 * count: 1
-	 * name: name0
-	 */
-	inc()
-	changeName('name0')
-	expect(count()).toBe('1')
-	expect(name()).toBe('name0')
-
-	changeModuleToCount1Name();
-	return new Promise(res => setTimeout(res))
-		.then(() => {
-			app.update();
-			/**
-			 * count1: 2
-			 * name: name1
-			 */
-			inc();inc();
-			changeName('name1')
-			expect(count()).toBe('2')
-			expect(name()).toBe('name1')
-
-			/**
-			 * count: 0
-			 * name1: name11
-			 */
-			changeModuleToCountName1();
-			dec();
-			changeName('name11')
-
-			expect(count()).toBe('0')
-			expect(name()).toBe('name11');
-
-			/**
-			 * count1: 2
-			 * name1: name11
-			 */
-			changeModuleToCount1Name1();
-			expect(count()).toBe('2')
-			expect(name()).toBe('name11');
-
-
-			changeModuleToCountName();
-			expect(count()).toBe('0')
-			expect(name()).toBe('name1');
-
-
-			changeModuleToCount1Name();
-			expect(count()).toBe('2')
-			expect(name()).toBe('name1');
-
-			changeModuleToCountName1();
-			expect(count()).toBe('0')
-			expect(name()).toBe('name11');
-		})
-
-});

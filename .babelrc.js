@@ -4,7 +4,7 @@ module.exports = {
 		'@babel/plugin-syntax-dynamic-import',
 		'@babel/plugin-proposal-export-default-from',
 		'@babel/plugin-proposal-object-rest-spread',
-		'@babel/plugin-transform-modules-commonjs',
+		// '@babel/plugin-transform-modules-commonjs',
 		// ['@babel/plugin-transform-runtime'],
 		'@babel/plugin-proposal-function-bind',
 		['@babel/plugin-proposal-decorators', { legacy: true }],

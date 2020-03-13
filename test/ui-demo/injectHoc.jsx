@@ -3,15 +3,18 @@ import { inject, createStore, setInjectStoreGetter } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
+	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware
 } from '../../src/middlewares'
 
 const name = {
 	state: {
 		text: 'name',
+		count: 0,
 	},
 	actions: {
 		updateText: text => ({text}),
+		inc: count => ({count: count + 1}),
 	},
 	maps: {
 		textSplit: ['text', text => text.split('').join(',')],
@@ -29,13 +32,20 @@ const lazyName = {
 		textSplit: ['text', text => text.split('').join(',')],
 	}
 }
-const App = inject('name', 'lazyName', 'name1')(({name}) => {
+const App = inject(
+	['name', {state: ['text'], maps: [m => m.textSplit]}], 
+	'lazyName', 
+	'name1'
+)(({name, lazyName}) => {
 	const { state, actions, maps } = name;
 	return (
 		<>
-			<input value={state.text} onChange={e => actions.updateText(e.target.value)} />
+			<input id='name-input' value={state.text} onChange={e => actions.updateText(e.target.value)} />
+			<input id='lazy-name-input' value={lazyName.state.text} onChange={e => lazyName.actions.updateText(e.target.value)} />
 			<br/>
-			{maps.textSplit}
+			<button onClick={() => actions.inc(state.count)}>+</button>
+			<span id='count'>{state.count + ''}</span>
+			<span id='textSplit'>{maps.textSplit}</span>
 		</>
 	);
 });
@@ -60,12 +70,17 @@ const AppWithLoadErrorModule = inject('lazyLoadError')(({lazyLoadError}) => {
 const initStore = () => {
 	return createStore(
 		{name},
-			{
+		{
 			lazyName: () => Promise.resolve(lazyName),
 			lazyLoadError: () => Promise.reject(lazyName),
 		},
 		{},
-		[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		[
+			promiseMiddleware, 
+			filterNonObjectMiddleware, 
+			fillObjectRestDataMiddleware,
+			shallowEqualMiddleware,
+		]
 	);
 	// setInjectStoreGetter(() => store);
 };

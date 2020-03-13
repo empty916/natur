@@ -50,6 +50,8 @@ const App = inject<storeProps>(['count', {maps: ['firstChar']}])(
 inject.setLoadingComponent(createLoading('red'));
 
 const store = initStore();
+
+console.log(store.getModule('count'));
 const {actions} = store.getModule('count');
 (window as any).countActions = actions;
 

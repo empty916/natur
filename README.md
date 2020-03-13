@@ -20,6 +20,7 @@
 - [简单示例](#simple-demo)
 - [module详解](#module)
 - [复杂的例子](#complex-demo)
+- [组件只监听部分数据的变更](#partial-listener)
 - [hooks方式](#hooks)
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
@@ -268,6 +269,48 @@ export default inject('app', 'otherModuleName')(App);
 
 ---
 
+
+
+## <a id='partial-listener'>组件只监听部分数据的变更</a>
+
+```jsx
+import { inject } from 'natur';
+const App = ({app}) => {
+  // 获取注入的app模块
+  const {state, actions, maps} = app;
+  return (
+    <input
+      value={state.name} // app中的数据
+      onChange={e => actions.changeName(e.target.value)}
+    />
+  )
+};
+
+// 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
+export default inject(
+  ['app', {
+    state: ['name'], // 也可以使用函数声明 state: [s => s.name]
+  }]
+)(App); 
+
+
+// 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
+inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+)(App); 
+
+// 这里App组件不论app模块发生什么变化，都不会更新
+inject(
+  ['app', {}]
+)(App); 
+
+// 因为actions在创建后会保持不变，所以你不必监听它的变化
+
+
+// 部分监听同样适用于hooks
+```  
 
 
 ## <a id='hooks'>hooks方式</a>
@@ -588,6 +631,8 @@ maps: {
   建议不要滥用
 */
 app.actions.changeName('jerry');
+// 等同于
+store.dispatch('app/changeName', 'jerry');
 
 
 // 监听模块变动
