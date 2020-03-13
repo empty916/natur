@@ -317,6 +317,7 @@ describe('init', () => {
 			'hasModule',
 			'subscribe',
 			'destory',
+			'dispatch',
 		]);
 		expect(getStoreInstance()).toBe(store);
 	});
@@ -572,7 +573,6 @@ describe('actions', () => {
 			},
 			() => next => record => {
 				expect(record).toBe(recordCache);
-				// if (!isObj(record.state)) return record.state;
 				return next(record)
 			},
 			promiseMiddleware,
@@ -580,8 +580,11 @@ describe('actions', () => {
 			filterNonObjectMiddleware,
 			filterUndefinedMiddleware
 		]);
-		// store.removeModule('count');
-		// store.setModule('count', count);
+	});
+	test('dispatch', () => {
+		const countModule = store.getModule('count');
+		expect(store.dispatch('count/inc', countModule.state).count).toBe(countModule.state.count+1);
+		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
 	});
 	test('return no change state', () => {
 		let recordCache = null;
@@ -607,6 +610,7 @@ describe('actions', () => {
 		]);
 		let countModule = store.getModule('count');
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
+		expect(store.dispatch('count/returnGet', countModule.state)).toBe(countModule.state);
 	});
 	test('return function', () => {
 		let countModule = store.getModule('count');

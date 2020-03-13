@@ -1,9 +1,14 @@
 import {createStore, Middleware} from '../src';
 // import { createStore, Middleware } from '../dist/rns';
-import {promiseMiddleware, thunkMiddleware} from '../src/middlewares'
-import * as nameModule from './name';
+import {
+  thunkMiddleware,
+  promiseMiddleware, 
+  fillObjectRestDataMiddleware,
+  shallowEqualMiddleware, 
+  filterUndefinedMiddleware,
+} from '../src/middlewares'
 import countModule from './count';
-import longItem from './longItem';
+import devTool from './redux.devtool';
 
 const LogMiddleware: Middleware = ({setState}) => next => record => {
 	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
@@ -12,22 +17,17 @@ const LogMiddleware: Middleware = ({setState}) => next => record => {
 
 export default () => createStore(
 	{
-		name: nameModule,
-		// name1: nameModule,
 		count: countModule,
-		// count1: countModule,
-		longItem,
 	},
-	{
-		// name: () => import('./name'),
-	},
-	{
-		// count: { count: 111 },
-		name: {name: 'wxg'},
-	},
+	{},
+	{},
 	[
 		thunkMiddleware,
-		promiseMiddleware,
+		promiseMiddleware, 
+		fillObjectRestDataMiddleware,
+		shallowEqualMiddleware, 
+		// filterUndefinedMiddleware,
+		devTool,
 		// LogMiddleware,
 		// LogMiddleware2
 	],

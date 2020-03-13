@@ -15,7 +15,8 @@ import {
 	getStoreInstance,
 	Modules
 } from './createStore';
-import {isEqualWithDepthLimit} from './utils';
+import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './utils';
+import MapCache from './MapCache';
 
 type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
 type ModuleNames = ModuleName[];
@@ -27,9 +28,11 @@ type Tstate = {
 	storeStateChange: {},
 	modulesHasLoaded: boolean,
 }
+
 type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }, S>
 const connect = <P, S, SP>(
-	moduleNames: ModuleNames,
+	moduleNames: Array<ModuleName>,
+	depDecs: DepDecs,
 	WrappedComponent: TReactComponent<P, S>,
 	LoadingComponent?: TReactComponent<any, any>
 ): connectReturn<P, S, SP> => {
@@ -43,6 +46,8 @@ const connect = <P, S, SP>(
 		private injectModules: Modules = {};
 		private unsubStore: () => void = () => { };
 		private LoadingComponent: TReactComponent<{}, {}>;
+		private storeModuleDiff: Diff | undefined;
+		private destoryCache: Function = () => {};
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -60,28 +65,57 @@ const connect = <P, S, SP>(
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 			this.LoadingComponent = LoadingComponent || Loading;
 		}
-		setStoreStateChanged() {
-			this.setState({
-				storeStateChange: {},
-			});
+		setStoreStateChanged(moduleName: ModuleName) {
+			if (!depDecs[moduleName]) {
+				this.setState({
+					storeStateChange: {},
+				});
+			} else if(this.storeModuleDiff) {
+				const start = performance.now();
+				const hasDepChanged = this.storeModuleDiff[moduleName].some(diff => {
+					diff.shouldCheckCache();
+					return diff.hasDepChanged();
+				});
+				console.log(performance.now() - start);
+				if (hasDepChanged) {
+					this.setState({
+						storeStateChange: {},
+					});
+				}
+			} else {
+				this.setState({
+					storeStateChange: {},
+				});
+			}
+		}
+		initDiff(moduleDepDec: DepDecs = depDecs, store: Store = this.store):void {
+			const {diff, destroy} = initDiff(moduleDepDec, store);
+			this.storeModuleDiff = diff;
+			this.destoryCache = destroy;
+		}
+		initStoreListner() {
+			const {
+				store,
+				integralModulesName,
+				setStoreStateChanged
+			} = this;
+			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, () => setStoreStateChanged(mn)));
+			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 		}
 		componentDidMount() {
 			const {
 				store,
-				integralModulesName,
 				unLoadedModules,
-				setStoreStateChanged
 			} = this;
 			const { modulesHasLoaded } = this.state;
-			// 初始化store监听
-			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, setStoreStateChanged));
-			this.unsubStore = () => unsubscribes.forEach(fn => fn());
-
+			
 			if (!modulesHasLoaded) {
 				Promise.all(
 					unLoadedModules.map(mn => store.loadModule(mn))
 				)
 				.then(() => {
+					this.initStoreListner();
+					this.initDiff();
 					this.setState({
 						modulesHasLoaded: true,
 					})
@@ -91,11 +125,17 @@ const connect = <P, S, SP>(
 						modulesHasLoaded: false,
 					})
 				});
+			} else {
+				// 初始化store监听
+				this.initStoreListner();
+				this.initDiff();
 			}
 		}
 		componentWillUnmount() {
 			this.unsubStore();
-			this.unsubStore = () => { };
+			this.destoryCache();
+			this.unsubStore = () => {};
+			this.destoryCache = () => {};
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
 			/**
@@ -167,9 +207,25 @@ const connect = <P, S, SP>(
 	return hoistStatics(FinalConnect as any, WrappedComponent) as React.ComponentClass<Omit<P, keyof SP>, S>;
 }
 
-const Inject = <StoreProp,>(...moduleNames: ModuleName[]) => {
-	return <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
-		connect<P, C, SP>(moduleNames, WrappedComponent, LoadingComponent);
+type InjectReturn<StoreProp> = <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
+	connectReturn<P, C, SP>;
+
+type InjectParams = Array<string|ModuleDepDec>;
+
+
+function Inject<StoreProp>(...moduleDec: InjectParams):InjectReturn<StoreProp> {
+	const depDecs: DepDecs = {};
+	const moduleNames = moduleDec.map(m => {
+		if (isModuleDepDec(m)) {
+			depDecs[m[0]] = m[1];
+			return m[0];
+		}
+		return m;
+	});
+	return <P, S, SP extends StoreProp>(
+		WrappedComponent: TReactComponent<P, S>, 
+		LoadingComponent?: TReactComponent<{}, {}>
+	) => connect<P, S, SP>(moduleNames, depDecs, WrappedComponent, LoadingComponent);
 }
 
 Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}, {}>) => Loading = LoadingComponent;

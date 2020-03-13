@@ -23,8 +23,8 @@ const count = {
 		thunkInc: () => (getState, setState, getMaps) => {
 			expect(getMaps()).toEqual({
 				isOdd: false,
-			});
-			return { ...getState(), count: getState().count + 1 };
+            });
+            return setState({ ...getState(), count: getState().count + 1 });
 		},
 		updateName: () => ({ name: 'tom' }),
 		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
@@ -55,6 +55,7 @@ describe('actions', () => {
 	test('thunkMiddleware', () => {
         store = createStore({ count }, {}, {}, [
             thunkMiddleware,
+            filterUndefinedMiddleware,
         ]);
         let countModule = store.getModule('count');
 		expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 1);

@@ -7,24 +7,45 @@ import {
     getStoreInstance,
     ModuleName,
     Store,
-	StoreModule,
 	InjectStoreModule,
 } from './createStore';
-import { arrayIsEqual } from './utils';
+import { 
+    ModuleDepDec, 
+    DepDecs, 
+    isModuleDepDec, 
+    initDiff
+} from './utils';
 
 let _getStoreInstance = getStoreInstance;
 
-export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
-	if (moduleNames.length === 0) {
-		const errMsg = 'useInject: moduleNames param is required!';
-		console.error(errMsg);
-		throw new Error(errMsg)
-	}
-	const [$moduleNames, setModuleNames] = useState(moduleNames);
-	if (!arrayIsEqual(moduleNames, $moduleNames)) {
-		setModuleNames(moduleNames);
-	}
+
+export function useInject(...moduleDec: (ModuleName|ModuleDepDec)[]): InjectStoreModule[] {
     const store = _getStoreInstance();
+    const [{$depDecs, $moduleNames, diff, destroy}] = useState(() => {
+        const depDecs: DepDecs = {};
+        const moduleNames = moduleDec.map(m => {
+            if (isModuleDepDec(m)) {
+                depDecs[m[0]] = m[1];
+                return m[0];
+            }
+            return m;
+        });
+        if (moduleNames.length === 0) {
+            const errMsg = 'useInject: moduleNames param is required!';
+            console.error(errMsg);
+            throw new Error(errMsg)
+        }
+        const {diff, destroy} = initDiff(depDecs, store);
+			// this.storeModuleDiff = diff;
+			// this.destoryCache = destroy;
+        return {
+            $depDecs: depDecs,
+            $moduleNames: moduleNames,
+            diff, 
+            destroy,
+        }
+    });
+    
     const allModuleNames = store.getAllModuleName();
     // 获取store中不存在的模块
     const invalidModulesNames = $moduleNames.filter(mn => !allModuleNames.includes(mn));
@@ -37,12 +58,29 @@ export function useInject(...moduleNames: ModuleName[]): InjectStoreModule[] {
     // 获取moduleNames中是否存在未加载的模块
 	const unLoadedModules = $moduleNames.filter(mn => !store.hasModule(mn));
 	const hasUnloadModules = !!unLoadedModules.length;
-    const $setStateChanged = useCallback(() => setStateChanged({}), [setStateChanged]);
+    const $setStateChanged = useCallback((moduleName: ModuleName) => {
+        if (!$depDecs[moduleName]) {
+            setStateChanged({});
+        } else if(diff) {
+            const hasDepChanged = diff[moduleName].some(diff => {
+                diff.shouldCheckCache();
+                return diff.hasDepChanged();
+            });
+            if (hasDepChanged) {
+                setStateChanged({});
+            }
+        } else {
+            setStateChanged({});
+        }
+    }, [setStateChanged]);
     // 初始化store监听
     useEffect(() => {
-        const unsubscribes = $moduleNames.map(mn => store.subscribe(mn, $setStateChanged));
-        return () => unsubscribes.forEach(fn => fn());
-    }, [$moduleNames]);
+        const unsubscribes = $moduleNames.map(mn => store.subscribe(mn, () => $setStateChanged(mn)));
+        return () => {
+            destroy();
+            unsubscribes.forEach(fn => fn());
+        };
+    }, []);
 
     useEffect(
         () => {

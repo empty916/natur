@@ -31,12 +31,34 @@ test('Inject Hoc', () => {
 			expect(appWithLoadErrorModule.text()).toBe('loading');
 
 			app.update();
-			expect(app.find('input').props().value).toBe('name');
-			app.find('input').simulate('change', {target: {value: 'name1'}});
-			expect(app.find('input').props().value).toBe('name1');
-			expect(app.text()).toBe('name1'.split('').join(','));
+			expect(app.find('#lazy-name-input').props().value).toBe('name');
+
+			app.find('#lazy-name-input').simulate('change', {target: {value: 'name1'}});
+			app.update();
+			expect(app.find('#lazy-name-input').props().value).toBe('name1');
+			expect(app.find('#textSplit').text()).toBe('name'.split('').join(','));
 			app.unmount();
 		});
+});
+
+
+test('Inject hoc update only depends text', () => {
+	const s = initStore();
+	setInjectStoreGetter(() => s);
+	let app = mount(<App />);
+	return new Promise(res => setTimeout(res))
+		.then(() => {
+			app.update();
+			expect(app.find('#count').text()).toBe('0');
+			app.find('button').simulate('click');
+			expect(app.find('#count').text()).toBe('0');
+			expect(s.getModule('name').state.count).toBe(1);
+
+			app.find('#name-input').simulate('change', {target: {value: 'name1'}});
+			expect(app.find('#count').text()).toBe('1');
+			expect(s.getModule('name').state.count).toBe(1);
+			app.unmount();
+		})
 });
 
 

@@ -34,7 +34,9 @@ export default class MapCache {
 	}
 	createGetDepByKeyPath(keyPath: string | Function) {
 		if (typeof keyPath !== 'function') {
-			return (s: State) => MapCache.getValueFromState(s, keyPath);
+			return (s: State) => {
+				return MapCache.getValueFromState(s, keyPath);
+			};
 		}
 		return keyPath;
 	}

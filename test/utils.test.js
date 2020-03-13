@@ -7,6 +7,7 @@ import {
 	isFnObj,
 	isObj,
 	getValueFromObjByKeyPath,
+	isModuleDepDec,
 } from '../src/utils'
 
 
@@ -71,19 +72,7 @@ describe('utils', () => {
 
 
 	})
-	// test('obj has same key', () => {
-	// 	expect(ObjHasSameKeys(a, a1)).toBe(true);
-	// 	expect(ObjHasSameKeys(a1, a2)).toBe(true);
-	// 	expect(ObjHasSameKeys(a3, a4)).toBe(true);
-	// 	expect(ObjHasSameKeys(a3, a1)).toBe(true);
-	// 	expect(ObjHasSameKeys(a4, a1)).toBe(true);
-	// 	expect(ObjHasSameKeys({1: 2}, {2: 1})).toBe(false);
-	// 	expect(ObjHasSameKeys({}, {2: 1})).toBe(false);
-	// 	expect(ObjHasSameKeys({1: 2}, {})).toBe(false);
-	// 	expect(ObjHasSameKeys([], {})).toBe(true);
-	// 	expect(ObjHasSameKeys(null, {})).toBe(false);
-	// 	expect(ObjHasSameKeys(null, undefined)).toBe(false);
-	// })
+	
 	test('is fn', () => {
 		expect(isFn(new Function())).toBe(true);
 		expect(isFn(() => {})).toBe(true);
@@ -174,6 +163,37 @@ describe('utils', () => {
 		expect(getValueFromObjByKeyPath(obj, 'd.d1[0].d11')).toBe(4);
 		expect(getValueFromObjByKeyPath(obj, 'd.d1[1].d11')).toBe(undefined);
 
+	})
+
+	test('isModuleDepDec', () => {
+		expect(isModuleDepDec([])).toBe(false);
+		expect(isModuleDepDec({})).toBe(false);
+		expect(isModuleDepDec(1)).toBe(false);
+		expect(isModuleDepDec('1')).toBe(false);
+		expect(isModuleDepDec(null)).toBe(false);
+		expect(isModuleDepDec(undefined)).toBe(false);
+
+
+
+		expect(isModuleDepDec([1, 2])).toBe(false);
+		expect(isModuleDepDec(['11', 2])).toBe(true);
+		expect(isModuleDepDec(['11', {
+			state: 1
+		}])).toBe(false);
+		expect(isModuleDepDec(['11', {
+			maps: 1
+		}])).toBe(false);
+
+		expect(isModuleDepDec(['11', {
+			state: [],
+		}])).toBe(true);
+		expect(isModuleDepDec(['11', {
+			maps: [],
+		}])).toBe(true);
+		expect(isModuleDepDec(['11', {
+			maps: [],
+			state: [],
+		}])).toBe(true);
 	})
 })
 

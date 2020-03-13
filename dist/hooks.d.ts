@@ -1,5 +1,6 @@
 import { ModuleName, Store, InjectStoreModule } from './createStore';
-export declare function useInject(...moduleNames: ModuleName[]): InjectStoreModule[];
+import { ModuleDepDec } from './utils';
+export declare function useInject(...moduleDec: (ModuleName | ModuleDepDec)[]): InjectStoreModule[];
 export declare namespace useInject {
     var setStoreGetter: (storeGetter: () => Store) => void;
 }

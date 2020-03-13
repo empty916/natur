@@ -4,6 +4,7 @@ import { createStore, useInject, setInjectStoreGetter } from "../../src";
 const name = {
 	state: {
 		text: 'name',
+		count: 1,
 	},
 	actions: {
 		updateText: text => ({text}),

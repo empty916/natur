@@ -101,8 +101,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
   var getAllModuleName = function getAllModuleName() {
     if (!allModuleNames) {
-      // allModuleNames = [...new Set([...Object.keys(currentModules), ...Object.keys(currentLazyModules)])]
-      allModuleNames = [].concat(Object.keys(_objectSpread({}, currentModules, {}, currentLazyModules)));
+      allModuleNames = Object.keys(_objectSpread({}, currentModules, {}, currentLazyModules));
     }
 
     return allModuleNames;
@@ -222,15 +221,34 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       state: currentModules[moduleName].state,
       actions: createActionsProxy(moduleName),
       maps: createMapsProxy(moduleName)
-    }; // if (!!Object.defineProperty) {
-    // 	Object.defineProperty(proxyModule, 'state', {
-    // 		get() {
-    // 			return currentModules[moduleName].state;
-    // 		}
-    // 	});
-    // }
-
+    };
     return proxyModule;
+  };
+  /**
+   *
+   * @param action count/inc
+   */
+
+
+  var dispatch = function dispatch(action) {
+    var _createActionsProxy;
+
+    if (!/\//.test(action)) {
+      console.warn("dispatch: " + action + " is invalid!");
+      throw new Error("dispatch: " + action + " is invalid!");
+    }
+
+    var _action$split = action.split('/'),
+        moduleName = _action$split[0],
+        actionName = _action$split[1];
+
+    checkModuleIsValid(moduleName);
+
+    for (var _len2 = arguments.length, arg = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      arg[_key2 - 1] = arguments[_key2];
+    }
+
+    return (_createActionsProxy = createActionsProxy(moduleName))[actionName].apply(_createActionsProxy, arg);
   }; // 获取原本的module
 
 
@@ -250,6 +268,10 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   };
 
   var loadModule = function loadModule(moduleName) {
+    if (hasModule(moduleName)) {
+      return Promise.resolve(getModule(moduleName));
+    }
+
     return getLazyModule(moduleName)().then(function (loadedModule) {
       setModule(moduleName, loadedModule);
       return getModule(moduleName);
@@ -285,8 +307,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       var newState;
       var targetModule = currentModules[moduleName];
 
-      for (var _len2 = arguments.length, data = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-        data[_key2 - 1] = arguments[_key2];
+      for (var _len3 = arguments.length, data = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        data[_key3 - 1] = arguments[_key3];
       }
 
       newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data);
@@ -342,7 +364,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     setModule: setModule,
     hasModule: hasModule,
     subscribe: subscribe,
-    destory: destory
+    destory: destory,
+    dispatch: dispatch
   };
   return currentStoreInstance;
 };
