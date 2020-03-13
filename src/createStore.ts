@@ -51,7 +51,7 @@ export interface StoreModule {
 export interface InjectStoreModule {
 	state: State;
 	actions: Actions;
-	maps?: {[m: string]: any};
+	maps?: any;
 }
 export interface LazyStoreModules {
 	[p: string]: () => Promise<StoreModule>;
