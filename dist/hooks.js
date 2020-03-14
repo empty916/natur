@@ -26,6 +26,19 @@ export function useInject() {
       throw new Error(errMsg);
     }
 
+    var allModuleNames = store.getAllModuleName(); // 获取store中不存在的模块
+
+    var invalidModulesNames = moduleNames.filter(function (mn) {
+      return !allModuleNames.includes(mn);
+    });
+
+    if (!!invalidModulesNames.length) {
+      var _errMsg = "useInject: " + invalidModulesNames.join() + " module is not exits!";
+
+      console.error(_errMsg);
+      throw new Error(_errMsg);
+    }
+
     var _initDiff = initDiff(depDecs, store),
         diff = _initDiff.diff,
         destroy = _initDiff.destroy; // this.storeModuleDiff = diff;
@@ -44,18 +57,6 @@ export function useInject() {
       $moduleNames = _useState$.$moduleNames,
       diff = _useState$.diff,
       destroy = _useState$.destroy;
-
-  var allModuleNames = store.getAllModuleName(); // 获取store中不存在的模块
-
-  var invalidModulesNames = $moduleNames.filter(function (mn) {
-    return !allModuleNames.includes(mn);
-  });
-
-  if (!!invalidModulesNames.length) {
-    var errMsg = "useInject: " + invalidModulesNames.join() + " module is not exits!";
-    console.error(errMsg);
-    throw new Error(errMsg);
-  }
 
   var _useState2 = useState({}),
       stateChanged = _useState2[0],

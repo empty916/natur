@@ -35,6 +35,16 @@ export function useInject(...moduleDec: (ModuleName|ModuleDepDec)[]): InjectStor
             console.error(errMsg);
             throw new Error(errMsg)
         }
+
+        const allModuleNames = store.getAllModuleName();
+        // 获取store中不存在的模块
+        const invalidModulesNames = moduleNames.filter(mn => !allModuleNames.includes(mn));
+        if (!!invalidModulesNames.length) {
+            const errMsg = `useInject: ${invalidModulesNames.join()} module is not exits!`;
+            console.error(errMsg);
+            throw new Error(errMsg);
+        }
+
         const {diff, destroy} = initDiff(depDecs, store);
 			// this.storeModuleDiff = diff;
 			// this.destoryCache = destroy;
@@ -46,14 +56,6 @@ export function useInject(...moduleDec: (ModuleName|ModuleDepDec)[]): InjectStor
         }
     });
     
-    const allModuleNames = store.getAllModuleName();
-    // 获取store中不存在的模块
-    const invalidModulesNames = $moduleNames.filter(mn => !allModuleNames.includes(mn));
-    if (!!invalidModulesNames.length) {
-		const errMsg = `useInject: ${invalidModulesNames.join()} module is not exits!`;
-		console.error(errMsg);
-		throw new Error(errMsg);
-    }
     const [stateChanged, setStateChanged] = useState({});
     // 获取moduleNames中是否存在未加载的模块
 	const unLoadedModules = $moduleNames.filter(mn => !store.hasModule(mn));
@@ -103,7 +105,7 @@ export function useInject(...moduleDec: (ModuleName|ModuleDepDec)[]): InjectStor
     return $moduleNames.reduce((res, mn: ModuleName) => {
         res.push(store.getModule(mn));
         return res;
-	}, [] as InjectStoreModule[]);
+    }, [] as InjectStoreModule[]);
 }
 
 useInject.setStoreGetter = (storeGetter: () => Store) => {

@@ -310,7 +310,7 @@ inject(
 // 因为actions在创建后会保持不变，所以你不必监听它的变化
 
 
-// 部分监听同样适用于hooks
+// 此功能不适用于hooks，因为hooks没有shouldComponentUpdate开关控制组件更新，
 ```  
 
 

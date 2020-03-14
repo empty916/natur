@@ -310,7 +310,7 @@ inject(
 
 // Because actions stay the same after they are created, you don't have to listen for changes
 
-// Partial listening also works for hooks
+// This feature is not available for hooks, because hooks do not have a shouldComponentUpdate switch to control component updates.
 ```  
 
 

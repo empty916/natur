@@ -11,7 +11,7 @@ type props = {
 let store: Store;
 const App: React.FC<props> = () => {
 	// const [count] = useInject(['count', {state: ['name']}]);
-	const [count, count2] = useInject(['count', {state: []}], 'count2');
+	const [count, count2] = useInject(['count', {state: []}], ['count2', {}]);
 
 	const {state,actions,maps} = count;
 	const incProxy = () => actions.inc(state)
