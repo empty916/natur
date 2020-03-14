@@ -25,9 +25,7 @@ var Loading = function Loading() {
 var _getStoreInstance = getStoreInstance;
 
 var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingComponent) {
-  var Connect =
-  /*#__PURE__*/
-  function (_React$Component) {
+  var Connect = /*#__PURE__*/function (_React$Component) {
     _inheritsLoose(Connect, _React$Component);
 
     function Connect(props, state) {
@@ -70,12 +68,10 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
           storeStateChange: {}
         });
       } else if (this.storeModuleDiff) {
-        var start = performance.now();
         var hasDepChanged = this.storeModuleDiff[moduleName].some(function (diff) {
           diff.shouldCheckCache();
           return diff.hasDepChanged();
         });
-        console.log(performance.now() - start);
 
         if (hasDepChanged) {
           this.setState({

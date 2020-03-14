@@ -1,8 +1,6 @@
 import { getValueFromObjByKeyPath, arrayIsEqual } from './utils';
 
-var MapCache =
-/*#__PURE__*/
-function () {
+var MapCache = /*#__PURE__*/function () {
   function MapCache(getState, map) {
     var _this = this;
 

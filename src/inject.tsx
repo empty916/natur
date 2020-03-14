@@ -71,12 +71,10 @@ const connect = <P, S, SP>(
 					storeStateChange: {},
 				});
 			} else if(this.storeModuleDiff) {
-				const start = performance.now();
 				const hasDepChanged = this.storeModuleDiff[moduleName].some(diff => {
 					diff.shouldCheckCache();
 					return diff.hasDepChanged();
 				});
-				console.log(performance.now() - start);
 				if (hasDepChanged) {
 					this.setState({
 						storeStateChange: {},

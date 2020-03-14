@@ -201,11 +201,12 @@ export var initDiff = function initDiff(moduleDepDec, store) {
   }
 
   var destroy = function destroy() {
-    for (var moduleName in diff) {
-      diff[moduleName].forEach(function (cache) {
+    for (var _moduleName in diff) {
+      diff[_moduleName].forEach(function (cache) {
         return cache.destroy();
       });
-      diff[moduleName] = [];
+
+      diff[_moduleName] = [];
     }
 
     diff = {};
