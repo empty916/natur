@@ -125,7 +125,7 @@ export function isEqualWithDepthLimit(objA, objB, depthLimit, depth) {
  * @param keyPath 'a.b[0].c'
  */
 
-export var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, keyPath) {
+export function getValueFromObjByKeyPath(obj, keyPath) {
   var formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
   var value = obj;
 
@@ -138,8 +138,8 @@ export var getValueFromObjByKeyPath = function getValueFromObjByKeyPath(obj, key
   }
 
   return value;
-};
-export var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
+}
+export function arrayIsEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
   }
@@ -151,7 +151,7 @@ export var arrayIsEqual = function arrayIsEqual(arr1, arr2) {
   }
 
   return true;
-};
+}
 export var isModuleDepDec = function isModuleDepDec(obj) {
   if (Array.isArray(obj) && obj.length === 2) {
     if (typeof obj[0] !== 'string') {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { inject, StoreModule, Store, useInject } from "../src";
+import { inject, StoreModule, Store } from "../src";
+import {useInject} from '../src/hooks';
 import initStore from "./initStore";
 
 type props = {
@@ -10,7 +11,7 @@ type props = {
 let store: Store;
 const App: React.FC<props> = () => {
 	// const [count] = useInject(['count', {state: ['name']}]);
-	const [count] = useInject(['count', {state: []}]);
+	const [count, count2] = useInject(['count', {state: []}], 'count2');
 
 	const {state,actions,maps} = count;
 	const incProxy = () => actions.inc(state)
@@ -26,9 +27,20 @@ const App: React.FC<props> = () => {
 				value={count.state.name}
 				onChange={e => count.actions.changeName(e.target.value)}
 			/>
+			<br/>
+			<br/>
+			count2:
+			<br/>
+			<button onClick={() => count2.actions.inc(count2.state)}>+</button>
+			<span>{count2.state.count}</span>
+			<button onClick={() => count2.actions.dec(count2.state)}>-</button>
+			<br/>
+			<input
+				type="text"
+				value={count2.state.name}
+				onChange={e => count2.actions.changeName(e.target.value)}
+			/>
 			<br/><br/>
-			{/* <button onClick={() => setStoreModuleNames(['count'])}>count</button>
-			<button onClick={() => setStoreModuleNames(['count'])}>count</button> */}
 		</>
 	);
 };

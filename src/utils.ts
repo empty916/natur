@@ -141,7 +141,7 @@ export function isEqualWithDepthLimit(
  * @param obj State
  * @param keyPath 'a.b[0].c'
  */
-export const getValueFromObjByKeyPath = (obj: State, keyPath: string): any => {
+export function getValueFromObjByKeyPath (obj: State, keyPath: string): any {
 	const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
 	let value = obj;
 	for(let i = 0; i < formatKeyArr.length; i ++) {
@@ -154,7 +154,7 @@ export const getValueFromObjByKeyPath = (obj: State, keyPath: string): any => {
 	return value;
 }
 
-export const arrayIsEqual = (arr1: Array<any>, arr2: Array<any>) => {
+export function arrayIsEqual (arr1: Array<any>, arr2: Array<any>) {
 	if (arr1.length !== arr2.length) {
 		return false;
 	}

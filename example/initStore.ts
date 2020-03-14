@@ -18,6 +18,7 @@ const LogMiddleware: Middleware = ({setState}) => next => record => {
 export default () => createStore(
 	{
 		count: countModule,
+		count2: countModule,
 	},
 	{},
 	{},
