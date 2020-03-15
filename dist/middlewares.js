@@ -7,7 +7,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 import { isPromise, isObj, isEqualWithDepthLimit } from './utils';
 export var thunkMiddleware = function thunkMiddleware(_ref) {
   var getState = _ref.getState,
-      getMaps = _ref.getMaps;
+      getMaps = _ref.getMaps,
+      dispatch = _ref.dispatch;
   return function (next) {
     return function (record) {
       if (typeof record.state === 'function') {
@@ -17,8 +18,25 @@ export var thunkMiddleware = function thunkMiddleware(_ref) {
           }));
         };
 
+        var _dispatch = function _dispatch(action) {
+          for (var _len = arguments.length, arg = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            arg[_key - 1] = arguments[_key];
+          }
+
+          if (/^\w+\/\w+$/.test(action)) {
+            return dispatch.apply(void 0, [action].concat(arg));
+          }
+
+          return dispatch.apply(void 0, [record.moduleName + "/" + action].concat(arg));
+        };
+
         return next(_objectSpread({}, record, {
-          state: record.state(getState, setState, getMaps)
+          state: record.state({
+            getState: getState,
+            setState: setState,
+            getMaps: getMaps,
+            dispatch: _dispatch
+          })
         }));
       }
 

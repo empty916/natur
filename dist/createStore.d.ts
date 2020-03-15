@@ -48,6 +48,7 @@ declare type MiddlewareParams = {
     setState: Next;
     getState: () => State;
     getMaps: () => InjectMaps | undefined;
+    dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
 export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
 export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;

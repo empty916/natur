@@ -10,7 +10,6 @@ import {
 	thunkMiddleware,
 } from '../src/middlewares'
 
-let countMapCallTimes = 0;
 let store;
 const count = {
 	state: {
@@ -20,10 +19,10 @@ const count = {
 	},
 	actions: {
 		inc: state => ({ ...state, count: state.count + 1 }),
-		thunkInc: () => (getState, setState, getMaps) => {
-			expect(getMaps()).toEqual({
-				isOdd: false,
-            });
+		thunkInc: () => ({getState, setState, getMaps, dispatch}) => {
+            dispatch('inc', getState());
+            dispatch('count2/inc');
+
             return setState({ ...getState(), count: getState().count + 1 });
 		},
 		updateName: () => ({ name: 'tom' }),
@@ -40,6 +39,13 @@ const count = {
         isOdd: ['count', count => count % 2 !== 0],
 	}
 }
+
+const count2 = {
+    state: 0, 
+    actions: {
+        inc: () => ({getState}) => getState() + 1,
+    }
+}
 describe('actions', () => {
 	beforeEach(() => {
         let recordCache = null;
@@ -53,12 +59,17 @@ describe('actions', () => {
         // ]);
 	});
 	test('thunkMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
+        store = createStore({ count, count2 }, {}, {}, [
             thunkMiddleware,
             filterUndefinedMiddleware,
         ]);
-        let countModule = store.getModule('count');
-		expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 1);
+        const countModule = store.getModule('count');
+        
+		expect(countModule.maps.isOdd).toBe(false);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        const count2Module = store.getModule('count2');
+        
+		expect(count2Module.state).toBe(1);
     });
     test('promiseMiddleware', () => {
         store = createStore({ count }, {}, {}, [

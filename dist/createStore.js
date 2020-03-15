@@ -294,7 +294,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       },
       getMaps: function getMaps() {
         return createMapsProxy(moduleName);
-      }
+      },
+      dispatch: dispatch
     };
     var chain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);

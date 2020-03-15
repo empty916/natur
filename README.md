@@ -444,7 +444,8 @@ type Next = (record: Record) => ReturnType<Action>;
 middlewareParams: {
   setState: Next, 
   getState: () => State,
-  getMaps: () => InjectMaps
+  getMaps: () => InjectMaps,
+  dispatch: (action, ...arg: any[]) => ReturnType<Action>,
 };
 
 */
@@ -473,9 +474,11 @@ export default store;
 
 import { thunkMiddleware } from 'natur/dist/middlewares'
 
-const actionExample = (myParams: any) => (getState, setState: (s: State) => State, getMaps: () => InjectMaps) => {
+const actionExample = (myParams: any) => ({getState, setState: (s: State) => State, getMaps: () => InjectMaps, dispatch}) => {
   const currentState = getState(); // 最新的state
   const currentMaps = getMaps(); // 最新的maps
+  // dispatch('otherActionNameOfThisModule', ...params)
+  // dispatch('otherModuleName/otherActionNameOfOtherModule', ...params);
   setState(currentState); // 更新state
 }
 ```

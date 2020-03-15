@@ -28,7 +28,7 @@ const count = {
 	},
 	actions: {
 		inc: state => ({ ...state, count: state.count + 1 }),
-		_inc: () => (getState, setState, getMaps) => {
+		_inc: () => ({getState, setState, getMaps}) => {
 			expect(getMaps()).toEqual({
 				isOdd: true,
 				getSplitNameWhenCountIsOdd: 'count'.split(''),
@@ -507,6 +507,32 @@ describe('lazyModule', () => {
 	test('hasNotModule', hasNotModule('lazyModule'));
 	test('get module not exist', getModuleNotExist('lazyModule'));
 	test('getAllModuleName', getAllModuleName(['count', 'name', 'lazyModule', 'lazyModuleWithoutMaps']))
+});
+
+describe('loadModule', () => {
+	const lazyModule = () => Promise.resolve(count);
+	const lazyModuleWithoutMaps = () => Promise.resolve(countWithoutMaps);
+	beforeEach(() => {
+		store = createStore({ count, name }, {
+			lazyModule,
+			lazyModuleWithoutMaps,
+		});
+	});
+	test('load exist module', () => {
+		const countModule = store.getModule('count');
+	
+		return store.loadModule('count')
+			.then(_countModule => {
+				expect(countModule.actions).toBe(_countModule.actions);
+			})
+	});
+	test('load not exist module', () => {
+		expect(store.hasModule('lazyModule')).toBe(false);
+		return store.loadModule('lazyModule')
+			.then(() => {
+				expect(store.hasModule('lazyModule')).toBe(true);
+			})
+	});
 });
 
 describe('subscribe', () => {

@@ -66,6 +66,7 @@ type MiddlewareParams = {
 	setState: Next,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
+	dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
 
 export type ModuleName = keyof Modules | keyof LazyStoreModules;
@@ -287,6 +288,7 @@ const createStore: CreateStore = (
 			setState: setStateProxy,
 			getState: () => currentModules[moduleName].state,
 			getMaps: () => createMapsProxy(moduleName),
+			dispatch,
 		};
 		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setStateProxy);
