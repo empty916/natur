@@ -24,6 +24,13 @@ const count = {
             dispatch('count2/inc');
 
             return setState({ ...getState(), count: getState().count + 1 });
+        },
+        thunkInc2: () => ({getState, setState, getMaps, dispatch}) => {
+            dispatch('inc', getState());
+            dispatch('count2/inc');
+
+            setState({ ...getState(), count: getState().count + 1 });
+            return true;
 		},
 		updateName: () => ({ name: 'tom' }),
 		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
@@ -70,6 +77,7 @@ describe('actions', () => {
         const count2Module = store.getModule('count2');
         
 		expect(count2Module.state).toBe(1);
+        expect(countModule.actions.thunkInc2()).toBe(true);
     });
     test('promiseMiddleware', () => {
         store = createStore({ count }, {}, {}, [
