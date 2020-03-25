@@ -200,7 +200,7 @@ const app = {
       getState(); // 获取当前最新的state
       setState({name: newName}); // 设置state的name
       getMaps(); // 获取当前最新的maps
-      return {name: newName + newName} // 更新state的name
+      return setState({name: newName + newName}) // 更新state的name
     }
   },
 };
@@ -480,6 +480,7 @@ const actionExample = (myParams: any) => ({getState, setState: (s: State) => Sta
   // dispatch('otherActionNameOfThisModule', ...params)
   // dispatch('otherModuleName/otherActionNameOfOtherModule', ...params);
   setState(currentState); // 更新state
+  return true; // 返回值会返回给调用者true值，不会用作新的state
 }
 ```
 
