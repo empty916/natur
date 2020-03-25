@@ -30,14 +30,12 @@ export var thunkMiddleware = function thunkMiddleware(_ref) {
           return dispatch.apply(void 0, [record.moduleName + "/" + action].concat(arg));
         };
 
-        return next(_objectSpread({}, record, {
-          state: record.state({
-            getState: getState,
-            setState: setState,
-            getMaps: getMaps,
-            dispatch: _dispatch
-          })
-        }));
+        return record.state({
+          getState: getState,
+          setState: setState,
+          getMaps: getMaps,
+          dispatch: _dispatch
+        });
       }
 
       return next(record);

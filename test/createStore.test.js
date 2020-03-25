@@ -35,7 +35,7 @@ const count = {
 				a1: 2,
 				a2: 3,
 			});
-			return { ...getState(), count: getState().count + 1 };
+			return setState({ ...getState(), count: getState().count + 1 });
 		},
 		updateName: state => ({ ...state, name: state.name + 1 }),
 		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),

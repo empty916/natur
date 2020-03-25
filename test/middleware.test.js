@@ -43,7 +43,7 @@ const count = {
 const count2 = {
     state: 0, 
     actions: {
-        inc: () => ({getState}) => getState() + 1,
+        inc: () => ({getState, setState}) => setState(getState() + 1),
     }
 }
 describe('actions', () => {
