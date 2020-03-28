@@ -253,9 +253,16 @@ const createStore: CreateStore = (
 			console.warn(`dispatch: ${action} is invalid!`);
 			throw new Error(`dispatch: ${action} is invalid!`);
 		}
-		const [moduleName, actionName] = action.split('/');
+		const slashIndex = action.indexOf('/');
+		const moduleName = action.substr(0, slashIndex);
+		const actionName = action.substr(slashIndex + 1);
 		checkModuleIsValid(moduleName);
-		return createActionsProxy(moduleName)[actionName](...arg);
+		const moduleProxyActions = createActionsProxy(moduleName);
+		if (!(actionName in moduleProxyActions)) {
+			console.warn(`dispatch: ${action} is invalid!`);
+			throw new Error(`dispatch: ${action} is invalid!`);
+		};
+		return moduleProxyActions[actionName](...arg);
 	}
 
 	// 获取原本的module

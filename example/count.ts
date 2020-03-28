@@ -19,33 +19,33 @@ export const maps = {
 	firstChar: ['name', (name: string) => name[0]],
 };
 export const actions = {
-	inc: () => (getState) => ({count: getState().count + 1}),
-	dec: () => (getState) => {
-		return { 
+	inc: () => ({getState, setState}) => setState({count: getState().count + 1}),
+	dec: () => ({getState, setState}) => {
+		return setState({ 
 			count: getState().count - 1, 
-		};
+		});
 	},
-	incDeeep: () => getState => {
+	incDeeep: () => ({getState, setState}) => {
 		const state = getState();
-		return {
+		return setState({
 			deeep: {
 				deep: {
 					...state.deeep.deep,
 					count: state.deeep.deep.count + 1,
 				}
 			}
-		};
+		});
 	},
-	decDeeep: () => getState => {
+	decDeeep: () => ({getState, setState}) => {
 		const state = getState();
-		return {
+		return setState({
 			deeep: {
 				deep: {
 					...state.deeep.deep,
 					count: state.deeep.deep.count - 1,
 				}
 			}
-		};
+		});
 	},
 	changeName: (newName: string) => ({
 		name: newName,

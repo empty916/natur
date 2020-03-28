@@ -11,11 +11,12 @@ type props = {
 let store: Store;
 const App: React.FC<props> = () => {
 	// const [count] = useInject(['count', {state: ['name']}]);
-	const [count, count2] = useInject(['count', {state: []}], ['count2', {}]);
+	// const [count, count2] = useInject(['count', {state: []}], ['count2', {}]);
+	const [count, count2] = useInject('count', 'count2');
 
 	const {state,actions,maps} = count;
-	const incProxy = () => actions.inc(state)
-	const decProxy = () => actions.dec(state);
+	const incProxy = () => store.dispatch('count/inc');
+	const decProxy = () => actions.dec();
 	return (
 		<>
 			<button onClick={incProxy}>+</button>
@@ -31,9 +32,9 @@ const App: React.FC<props> = () => {
 			<br/>
 			count2:
 			<br/>
-			<button onClick={() => count2.actions.inc(count2.state)}>+</button>
+			<button onClick={() => count2.actions.inc()}>+</button>
 			<span>{count2.state.count}</span>
-			<button onClick={() => count2.actions.dec(count2.state)}>-</button>
+			<button onClick={() => count2.actions.dec()}>-</button>
 			<br/>
 			<input
 				type="text"
