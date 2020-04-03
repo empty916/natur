@@ -62,7 +62,7 @@ export interface Modules {
 
 type Next = (record: Record) => ReturnType<Action>;
 type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
-type MiddlewareParams = {
+export type MiddlewareParams = {
 	setState: Next,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,

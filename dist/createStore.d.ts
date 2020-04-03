@@ -44,7 +44,7 @@ declare type Record = {
     actionName: String;
     state: ReturnType<Action>;
 };
-declare type MiddlewareParams = {
+export declare type MiddlewareParams = {
     setState: Next;
     getState: () => State;
     getMaps: () => InjectMaps | undefined;

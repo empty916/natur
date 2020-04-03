@@ -24,6 +24,7 @@ export {
 	Modules,
 	Store,
 	Middleware,
+	MiddlewareParams
 } from "./createStore";
 
 export const setMapDepParser = MapCache.setMapDepParser;
