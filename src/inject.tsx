@@ -8,20 +8,17 @@
 import React from 'react';
 import hoistStatics from 'hoist-non-react-statics'
 import {
-	StoreModule,
-	InjectStoreModule,
 	ModuleName,
 	Store,
 	getStoreInstance,
 	Modules
 } from './createStore';
 import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './utils';
-import MapCache from './MapCache';
 
-type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
+type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 type ModuleNames = ModuleName[];
 
-let Loading: TReactComponent<{}, {}> = () => null;
+let Loading: TReactComponent<{}> = () => null;
 let _getStoreInstance = getStoreInstance;
 
 type Tstate = {
@@ -29,31 +26,31 @@ type Tstate = {
 	modulesHasLoaded: boolean,
 }
 
-type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }, S>
-const connect = <P, S, SP>(
+type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
+
+const connect = <P, SP>(
 	moduleNames: Array<ModuleName>,
 	depDecs: DepDecs,
-	WrappedComponent: TReactComponent<P, S>,
-	LoadingComponent?: TReactComponent<any, any>
-): connectReturn<P, S, SP> => {
-	// return WrappedComponent as any;
+	WrappedComponent: TReactComponent<P>,
+	LoadingComponent?: TReactComponent<any>
+): connectReturn<P, SP> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
-	class Connect extends React.Component<ConnectProps, any> {
+	class Connect extends React.Component<ConnectProps> {
 		private store: Store;
 		private integralModulesName: ModuleNames;
 		private unLoadedModules: ModuleNames;
 		private injectModules: Modules = {};
 		private unsubStore: () => void = () => { };
-		private LoadingComponent: TReactComponent<{}, {}>;
+		private LoadingComponent: TReactComponent<{}>;
 		private storeModuleDiff: Diff | undefined;
 		private destoryCache: Function = () => {};
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
 		}
-		constructor(props: ConnectProps, state: S) {
-			super(props, state);
+		constructor(props: ConnectProps) {
+			super(props);
 			// 初始化store, integralModulesName(合法模块名)
 			const { store, integralModulesName } = this.init();
 			this.store = store;
@@ -118,7 +115,7 @@ const connect = <P, S, SP>(
 						modulesHasLoaded: true,
 					})
 				})
-				.catch((e: Error) => {
+				.catch(() => {
 					this.setState({
 						modulesHasLoaded: false,
 					})
@@ -183,22 +180,23 @@ const connect = <P, S, SP>(
 			return this.state.modulesHasLoaded ? render : <this.LoadingComponent />;
 		}
 	}
-	let FinalConnect = Connect;
+	let FinalConnect:any = Connect;
 	if (!!React.forwardRef) {
-		FinalConnect = React.forwardRef<any, P>(
+		FinalConnect = React.forwardRef<any, any>(
 			function ForwardConnect(props: P, ref) {return <Connect {...props} forwardedRef={ref} />}
-		) as any;
+		);
 	}
-	return hoistStatics(FinalConnect as any, WrappedComponent) as React.ComponentClass<Omit<P, keyof SP>, S>;
+	return hoistStatics(FinalConnect, WrappedComponent);
 }
 
-type InjectReturn<StoreProp> = <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) =>
-	connectReturn<P, C, SP>;
+// type InjectReturn<StoreProp> = <P extends StoreProp>(
+// 	WrappedComponent: TReactComponent<P>, 
+// 	LoadingComponent?: TReactComponent<{}>
+// ) => connectReturn<P, StoreProp>;
 
-type InjectParams = Array<string|ModuleDepDec>;
+// type InjectParams = Array<string|ModuleDepDec>;
 
-
-function Inject<StoreProp>(...moduleDec: InjectParams):InjectReturn<StoreProp> {
+function Inject<StoreProp>(...moduleDec: Array<string|ModuleDepDec>) {
 	const depDecs: DepDecs = {};
 	const moduleNames = moduleDec.map(m => {
 		if (isModuleDepDec(m)) {
@@ -207,13 +205,13 @@ function Inject<StoreProp>(...moduleDec: InjectParams):InjectReturn<StoreProp> {
 		}
 		return m;
 	});
-	return <P, S, SP extends StoreProp>(
-		WrappedComponent: TReactComponent<P, S>, 
-		LoadingComponent?: TReactComponent<{}, {}>
-	) => connect<P, S, SP>(moduleNames, depDecs, WrappedComponent, LoadingComponent);
+	return <P extends StoreProp>(
+		WrappedComponent: TReactComponent<P>, 
+		LoadingComponent?: TReactComponent<{}>
+	) => connect<P, StoreProp>(moduleNames, depDecs, WrappedComponent, LoadingComponent);
 }
 
-Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}, {}>) => Loading = LoadingComponent;
+Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}>) => Loading = LoadingComponent;
 Inject.setStoreGetter = (storeGetter: () => Store) => {
 	_getStoreInstance = storeGetter;
 }
