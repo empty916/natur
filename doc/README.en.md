@@ -200,7 +200,7 @@ const app = {
       getState(); // Get the latest state
       setState({name: newName}); // Set state name
       getMaps(); // Get the latest maps
-      return setState({name: newName + newName}) // Update state name
+      return {name: newName + newName} // Update state name
     }
   },
 };
@@ -484,7 +484,7 @@ const actionExample = (myParams: any) => ({
   // dispatch('otherActionNameOfThisModule', ...params)
   // dispatch('otherModuleName/otherActionNameOfOtherModule', ...params);
   setState(currentState); // Update state
-  return true; // The return value will return true to the caller and will not be used as a new state
+  return currentState; // Update state too
 }
 ```
 

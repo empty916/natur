@@ -136,20 +136,7 @@ const connect = <P, S, SP>(
 			this.destoryCache = () => {};
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
-			/**
-			 * why is depth 3?
-			 * because the router props will be:
-			 * props: {
-			 * 		// depth: 1
-			 * 		match: {
-			 * 			// depth: 2
-			 * 			params: { // and this one will be change every times;
-			 * 				// depth: 3,
-			 * 			},
-			 * 		}
-			 * }
-			 */
-			const propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 3);
+			const propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 1);
 			const stateChanged = nextState.modulesHasLoaded !== this.state.modulesHasLoaded || nextState.storeStateChange !== this.state.storeStateChange;
 			return propsChanged || stateChanged;
 		}

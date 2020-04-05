@@ -159,20 +159,7 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
     };
 
     _proto.shouldComponentUpdate = function shouldComponentUpdate(nextProps, nextState) {
-      /**
-       * why is depth 3?
-       * because the router props will be:
-       * props: {
-       * 		// depth: 1
-       * 		match: {
-       * 			// depth: 2
-       * 			params: { // and this one will be change every times;
-       * 				// depth: 3,
-       * 			},
-       * 		}
-       * }
-       */
-      var propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 3);
+      var propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 1);
       var stateChanged = nextState.modulesHasLoaded !== this.state.modulesHasLoaded || nextState.storeStateChange !== this.state.storeStateChange;
       return propsChanged || stateChanged;
     };

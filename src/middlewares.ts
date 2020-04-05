@@ -13,7 +13,10 @@ export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => ne
 			}
 			return dispatch(`${record.moduleName}/${action}`, ...arg);
 		}
-		return record.state({getState, setState, getMaps, dispatch: _dispatch});
+		return next({
+			...record,
+			state: record.state({getState, setState, getMaps, dispatch: _dispatch}),
+		});
 	}
 	return next(record);
 }
