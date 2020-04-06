@@ -28,10 +28,10 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
   var Connect = /*#__PURE__*/function (_React$Component) {
     _inheritsLoose(Connect, _React$Component);
 
-    function Connect(props, state) {
+    function Connect(props) {
       var _this;
 
-      _this = _React$Component.call(this, props, state) || this;
+      _this = _React$Component.call(this, props) || this;
       _this.injectModules = {};
 
       _this.unsubStore = function () {};
@@ -137,7 +137,7 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
           _this2.setState({
             modulesHasLoaded: true
           });
-        })["catch"](function (e) {
+        })["catch"](function () {
           _this2.setState({
             modulesHasLoaded: false
           });
@@ -235,7 +235,12 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
   }
 
   return hoistStatics(FinalConnect, WrappedComponent);
-};
+}; // type InjectReturn<StoreProp> = <P extends StoreProp>(
+// 	WrappedComponent: TReactComponent<P>, 
+// 	LoadingComponent?: TReactComponent<{}>
+// ) => connectReturn<P, StoreProp>;
+// type InjectParams = Array<string|ModuleDepDec>;
+
 
 function Inject() {
   var depDecs = {};

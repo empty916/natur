@@ -8,15 +8,12 @@
 import React from 'react';
 import { Store } from './createStore';
 import { ModuleDepDec } from './utils';
-declare type TReactComponent<P, S> = React.FC<P> | React.ComponentClass<P, S>;
-declare type connectReturn<P, S, SP> = React.ComponentClass<Omit<P, keyof SP> & {
-    forwardedRef?: React.Ref<any>;
-}, S>;
-declare type InjectReturn<StoreProp> = <P, C, SP extends StoreProp>(WrappedComponent: TReactComponent<P, C>, LoadingComponent?: TReactComponent<{}, {}>) => connectReturn<P, C, SP>;
-declare type InjectParams = Array<string | ModuleDepDec>;
-declare function Inject<StoreProp>(...moduleDec: InjectParams): InjectReturn<StoreProp>;
+declare type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+declare function Inject<StoreProp>(...moduleDec: Array<string | ModuleDepDec>): <P extends StoreProp>(WrappedComponent: TReactComponent<P>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined) => React.ComponentClass<Pick<P, Exclude<keyof P, keyof StoreProp>> & {
+    forwardedRef?: ((instance: any) => void) | React.RefObject<any> | null | undefined;
+}, any>;
 declare namespace Inject {
-    var setLoadingComponent: (LoadingComponent: TReactComponent<{}, {}>) => TReactComponent<{}, {}>;
+    var setLoadingComponent: (LoadingComponent: TReactComponent<{}>) => TReactComponent<{}>;
     var setStoreGetter: (storeGetter: () => Store) => void;
 }
 export default Inject;
