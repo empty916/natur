@@ -163,68 +163,73 @@ const demo = {
 
 ## <a id='complex-demo'>complex demo</a>
 
+[codesandbox](https://codesandbox.io/s/natur-complex-demo-b7ppl?fontsize=14&hidenavigation=1&theme=dark)
+
 
 ### The first step is to create a store instance
 
 ```js
-import { createStore } from 'natur';
-import { 
-  thunkMiddleware,
-  promiseMiddleware, 
-  shallowEqualMiddleware, 
-  fillObjectRestDataMiddleware
-  filterUndefinedMiddleware,
-} from 'natur/dist/middlewares';
 
+import { createStore } from "natur";
+
+// 这是natur内置常用的中间件, 推荐使用
+import {
+  thunkMiddleware,
+  promiseMiddleware,
+  shallowEqualMiddleware,
+  fillObjectRestDataMiddleware,
+  filterUndefinedMiddleware
+} from "natur/dist/middlewares";
+import devtool from "./redux.devtool.middleware.js";
 
 const app = {
   state: {
-    name: 'tom',
-    todos: [{
-      text: 'play game ',
-    }],
-    games: new Map(['favorite', 'lol'])
+    name: "tom",
+    todos: [
+      {
+        text: "play game "
+      }
+    ],
+    games: new Map([["favorite", "lol"]])
   },
-  
-  maps: { 
+  maps: {
+    firstTodoText: ["todos[0].text", firstTodoText => firstTodoText],
     deepDep: [
-      'todos[0].text',
-      (s: State) => s.info.get('favorite'),
-      (firstTodo, favorite) => firstTodo + favorite;
+      "todos[0].text",
+      s => s.games.get("favorite"),
+      (firstTodo, favorite) => firstTodo + favorite
     ]
   },
   actions: {
     changeName: newName => ({ name: newName }),
     asyncChangeName: newName => Promise.resolve({ name: newName }),
-    thunkChangeName: newName => (getState, setState, getMaps) => {
-      getState(); // Get the latest state
-      setState({name: newName}); // Set state name
-      getMaps(); // Get the latest maps
-      return {name: newName + newName} // Update state name
+    thunkChangeName: newName => ({ getState, setState, getMaps }) => {
+      getState(); // 获取当前最新的state
+      setState({ name: newName }); // 设置state的name
+      getMaps(); // 获取当前最新的maps
+      return { name: newName + "1" }; // 更新state的name
     }
-  },
+  }
 };
 
-// Other modules
-const otherModules = { 
-  //... 
+// 其他的模块
+const otherModules = {
+  //...
 };
 
-// Create a store instance
-const store = createStore(
-  { app, ...otherModules },
-  {},
-  undefined,
-  [ // This is the recommended middleware configuration, and the order is also required. For details, please see the middleware article.
-    thunkMiddleware,
-    promiseMiddleware,
-    fillObjectRestDataMiddleware,
-    shallowEqualMiddleware,
-    filterUndefinedMiddleware,
-  ],
-); 
+// 创建store实例
+const store = createStore({ app, ...otherModules }, {}, undefined, [
+  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+  thunkMiddleware,
+  promiseMiddleware,
+  fillObjectRestDataMiddleware,
+  shallowEqualMiddleware,
+  filterUndefinedMiddleware,
+  devtool
+]);
 
 export default store;
+
 ```
 
 ---

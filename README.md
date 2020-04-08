@@ -163,66 +163,68 @@ const demo = {
 
 ## <a id='complex-demo'>复杂的例子</a>
 
+[codesandbox](https://codesandbox.io/s/natur-complex-demo-b7ppl?fontsize=14&hidenavigation=1&theme=dark)
+
 ### 创建 store 实例
 
 ```js
-import { createStore, State } from 'natur';
+import { createStore } from "natur";
 
 // 这是natur内置常用的中间件, 推荐使用
-import { 
+import {
   thunkMiddleware,
-  promiseMiddleware, 
-  shallowEqualMiddleware, 
-  fillObjectRestDataMiddleware
-  filterUndefinedMiddleware,
-} from 'natur/dist/middlewares';
+  promiseMiddleware,
+  shallowEqualMiddleware,
+  fillObjectRestDataMiddleware,
+  filterUndefinedMiddleware
+} from "natur/dist/middlewares";
+import devtool from "./redux.devtool.middleware.js";
 
 const app = {
   state: {
-    name: 'tom',
-    todos: [{
-      text: 'play game ',
-    }],
-    games: new Map(['favorite', 'lol'])
+    name: "tom",
+    todos: [
+      {
+        text: "play game "
+      }
+    ],
+    games: new Map([["favorite", "lol"]])
   },
-  maps: { 
-    firstTodoText: ['todos[0].text', firstTodoText => firstTodoText],
+  maps: {
+    firstTodoText: ["todos[0].text", firstTodoText => firstTodoText],
     deepDep: [
-      'todos[0].text',
-      (s: State) => s.info.get('favorite'),
-      (firstTodo, favorite) => firstTodo + favorite;
+      "todos[0].text",
+      s => s.games.get("favorite"),
+      (firstTodo, favorite) => firstTodo + favorite
     ]
   },
   actions: {
     changeName: newName => ({ name: newName }),
     asyncChangeName: newName => Promise.resolve({ name: newName }),
-    thunkChangeName: newName => (getState, setState, getMaps) => {
+    thunkChangeName: newName => ({ getState, setState, getMaps }) => {
       getState(); // 获取当前最新的state
-      setState({name: newName}); // 设置state的name
+      setState({ name: newName }); // 设置state的name
       getMaps(); // 获取当前最新的maps
-      return {name: newName + newName} // 更新state的name
+      return { name: newName + "1" }; // 更新state的name
     }
-  },
+  }
 };
 
 // 其他的模块
-const otherModules = { 
-  //... 
+const otherModules = {
+  //...
 };
 
 // 创建store实例
-const store = createStore(
-  { app, ...otherModules },
-  {},
-  undefined,
-  [ // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
-    thunkMiddleware,
-    promiseMiddleware,
-    fillObjectRestDataMiddleware,
-    shallowEqualMiddleware,
-    filterUndefinedMiddleware,
-  ],
-); 
+const store = createStore({ app, ...otherModules }, {}, undefined, [
+  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+  thunkMiddleware,
+  promiseMiddleware,
+  fillObjectRestDataMiddleware,
+  shallowEqualMiddleware,
+  filterUndefinedMiddleware,
+  devtool
+]);
 
 export default store;
 
@@ -233,38 +235,41 @@ export default store;
 ### 使用 inject 将模块注入组件当中
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app, otherModuleName}) => {
+
+import React from "react";
+import "./styles.css";
+
+import { inject } from "natur";
+
+const App = ({ app }) => {
   // 获取注入的app模块
-  const {state, actions, maps} = app;
-  /*
-    获取到的 app模块
-    state: {
-      name: 'tom',
-      todos: [{
-        text: 'play game ',
-      }],
-      games: new Map(['favorite', 'lol'])
-    },
-    actions: {
-      changeName,
-      asyncChangeName,
-      thunkChangeName,
-    },
-    maps: {
-      deepDep: 'play game lol',
-    }
-  */
+  const { state, actions } = app;
   return (
-    <input
-      value={state.name} // app中的数据
-      onChange={e => actions.changeName(e.target.value)}
-    />
-  )
+    <>
+      changeName:
+      <input
+        value={state.name} // app中的数据
+        onChange={e => actions.changeName(e.target.value)}
+      />
+      <br />
+      asyncChangeName:
+      <input
+        value={state.name} // app中的数据
+        onChange={e => actions.asyncChangeName(e.target.value)}
+      />
+      <br />
+      thunkChangeName:
+      <input
+        value={state.name} // app中的数据
+        onChange={e => actions.thunkChangeName(e.target.value)}
+      />
+    </>
+  );
 };
 
 // 注入store中的app模块；
-export default inject('app', 'otherModuleName')(App);   
+export default inject("app")(App);
+ 
 
 ```  
 
