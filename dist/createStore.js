@@ -107,13 +107,16 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     return allModuleNames;
   };
 
-  var runListeners = function runListeners(moduleName) {
+  var runListeners = function runListeners(moduleName, me) {
     return Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(function (listener) {
-      return listener();
+      return listener(me);
     });
   };
 
-  var setState = function setState(moduleName, newState) {
+  var setState = function setState(_ref) {
+    var moduleName = _ref.moduleName,
+        newState = _ref.state,
+        actionName = _ref.actionName;
     var stateHasNoChange = currentModules[moduleName].state === newState;
 
     if (stateHasNoChange) {
@@ -122,7 +125,10 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     currentModules[moduleName].state = newState;
     mapsCacheShouldCheckForValid(moduleName);
-    runListeners(moduleName);
+    runListeners(moduleName, {
+      type: 'update',
+      actionName: actionName
+    });
     return currentModules[moduleName].state;
   }; // 修改module
 
@@ -150,7 +156,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       mapsCacheList[moduleName] = [];
     }
 
-    runListeners(moduleName);
+    runListeners(moduleName, {
+      type: 'init'
+    });
     return currentStoreInstance;
   };
 
@@ -163,7 +171,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
   var removeModule = function removeModule(moduleName) {
     destoryModule(moduleName);
-    runListeners(moduleName);
+    runListeners(moduleName, {
+      type: 'remove'
+    });
     return currentStoreInstance;
   };
 
@@ -285,15 +295,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
   var createDispatch = function createDispatch(moduleName) {
     checkModuleIsValid(moduleName);
-
-    var setStateProxy = function setStateProxy(_ref) {
-      var state = _ref.state,
-          _moduleName = _ref.moduleName;
-      return setState(_moduleName, state);
-    };
-
     var middlewareParams = {
-      setState: setStateProxy,
+      setState: setState,
       getState: function getState() {
         return currentModules[moduleName].state;
       },
@@ -305,7 +308,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     var chain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);
     });
-    var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setStateProxy);
+    var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setState);
     return function (type) {
       var _targetModule$actions;
 

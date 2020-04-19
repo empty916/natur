@@ -1,5 +1,9 @@
+declare type ModuleEvent = {
+    type: 'init' | 'update' | 'remove';
+    actionName?: string;
+};
 export interface Listener {
-    (): void;
+    (me: ModuleEvent): any;
 }
 export declare type State = any;
 export interface States {
@@ -41,7 +45,7 @@ export interface Modules {
 declare type Next = (record: Record) => ReturnType<Action>;
 declare type Record = {
     moduleName: ModuleName;
-    actionName: String;
+    actionName: string;
     state: ReturnType<Action>;
 };
 export declare type MiddlewareParams = {

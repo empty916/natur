@@ -13,8 +13,14 @@ import {
 
 import MapCache from './MapCache'
 
+
+type ModuleEvent = {
+	type: 'init' | 'update' | 'remove',
+	actionName?: string,
+};
+
 export interface Listener {
-	(): void;
+	(me: ModuleEvent): any;
 }
 
 export type State = any;
@@ -61,7 +67,7 @@ export interface Modules {
 }
 
 type Next = (record: Record) => ReturnType<Action>;
-type Record = {moduleName: ModuleName, actionName: String, state: ReturnType<Action>};
+type Record = {moduleName: ModuleName, actionName: string, state: ReturnType<Action>};
 export type MiddlewareParams = {
 	setState: Next,
 	getState: () => State,
@@ -156,15 +162,18 @@ const createStore: CreateStore = (
 		}
 		return allModuleNames;
 	}
-	const runListeners = (moduleName: ModuleName) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener());
-	const setState = (moduleName: ModuleName, newState: any) => {
+	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener(me));
+	const setState = ({moduleName, state: newState, actionName}: Record) => {
 		const stateHasNoChange = currentModules[moduleName].state === newState;
 		if (stateHasNoChange) {
 			return newState;
 		}
 		currentModules[moduleName].state = newState;
 		mapsCacheShouldCheckForValid(moduleName);
-		runListeners(moduleName);
+		runListeners(moduleName, {
+			type: 'update',
+			actionName,
+		});
 		return currentModules[moduleName].state;
 	}
 
@@ -189,7 +198,7 @@ const createStore: CreateStore = (
 			mapsCache[moduleName] = {};
 			mapsCacheList[moduleName] = [];
 		}
-		runListeners(moduleName);
+		runListeners(moduleName, {type: 'init'});
 		return currentStoreInstance;
 	}
 	const destoryModule = (moduleName: ModuleName) => {
@@ -200,7 +209,7 @@ const createStore: CreateStore = (
 	}
 	const removeModule = (moduleName: ModuleName) => {
 		destoryModule(moduleName);
-		runListeners(moduleName);
+		runListeners(moduleName, {type: 'remove'});
 		return currentStoreInstance;
 	};
 	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
@@ -290,15 +299,14 @@ const createStore: CreateStore = (
 	};
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
-		const setStateProxy: Next = ({state, moduleName: _moduleName}: Record) => setState(_moduleName, state);
 		const middlewareParams = {
-			setState: setStateProxy,
+			setState,
 			getState: () => currentModules[moduleName].state,
 			getMaps: () => createMapsProxy(moduleName),
 			dispatch,
 		};
 		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams));
-		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setStateProxy);
+		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setState);
 
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);

@@ -542,7 +542,32 @@ describe('subscribe', () => {
 			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
 		);
 	});
-
+	test('subscribe listener get update module event', done => {
+		let countModule = store.getModule('count');
+		store.subscribe('count', ({type, actionName}) => {
+			expect(type).toBe('update');
+			expect(actionName).toBe('inc');
+			done();
+		});
+		countModule.actions.inc(countModule.state);
+	});
+	test('subscribe listener get init module event', done => {
+		store.subscribe('count', ({type, actionName}) => {
+			expect(type).toBe('init');
+			expect(actionName).toBe(undefined);
+			done();
+		});
+		store.setModule('count', count);
+		// countModule.actions.inc(countModule.state);
+	});
+	test('subscribe listener get remove module event', done => {
+		store.subscribe('count', ({type, actionName}) => {
+			expect(type).toBe('remove');
+			expect(actionName).toBe(undefined);
+			done();
+		});
+		store.removeModule('count');
+	});
 	test('subscribe listener', done => {
 		let countModule = store.getModule('count');
 		const oldCount = countModule.state.count;

@@ -644,9 +644,21 @@ app.actions.changeName('jerry');
 // 等同于
 store.dispatch('app/changeName', 'jerry');
 
-
+/**
+ * 
+ * type: 模块变动的类型
+ * init: 模块初始化事件
+ * update: 模块state更新事件
+ * remove: 模块移除事件
+ * 
+ * actionName: 模块更新state时的action名字
+ */
+type ModuleEvent = {
+	type: 'init' | 'update' | 'remove',
+	actionName?: string,
+};
 // 监听模块变动
-const unsubscribe = store.subscribe('app', () => {
+const unsubscribe = store.subscribe('app', (me: ModuleEvent) => {
   // 这里可以拿到最新的app数据
   store.getModule('app');
 });
