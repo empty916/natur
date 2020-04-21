@@ -14,7 +14,7 @@ import {
 import MapCache from './MapCache'
 
 
-type ModuleEvent = {
+export type ModuleEvent = {
 	type: 'init' | 'update' | 'remove',
 	actionName?: string,
 };

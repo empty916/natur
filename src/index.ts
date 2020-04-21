@@ -11,6 +11,7 @@ import { default as inject } from "./inject";
 import { useInject } from "./hooks";
 export {
 	default as createStore,
+	ModuleEvent,
 	Listener,
 	State,
 	States,

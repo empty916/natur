@@ -1,4 +1,4 @@
-declare type ModuleEvent = {
+export declare type ModuleEvent = {
     type: 'init' | 'update' | 'remove';
     actionName?: string;
 };
