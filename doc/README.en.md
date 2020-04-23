@@ -24,6 +24,7 @@
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
 - [middleware](#middleware)
+- [complex business scenarios of cross-module interaction](#complex-business-scenarios-of-cross-module-interaction)
 - [set loading component](#loading-component)
 - [use natur without react](#use-store-without-react)
 - [dispatch](#dispatch)
@@ -544,7 +545,7 @@ const createMiddleware = ():Middleware => {
           [record.moduleName]: record.state,
         },
       });
-      next(record);
+      return next(record);
     }
   }
   return () => next => record => next(record);
@@ -584,6 +585,10 @@ const store = createStore(
 );
 ```
 
+
+## <a id='complex-business-scenarios-of-cross-module-interaction'>complex business scenarios of cross-module interaction</a>
+
+> In complex business scenarios, there are usually scenarios where multiple modules monitor and call each other, so for this scenario, you can use [natur-service](https://www.npmjs.com/package/natur-service) Non-intrusive solution, you can monitor any changes in the module, and non-invasive development of complex business logic, while retaining the simplicity and maintainability of each module.
 
 ---
 

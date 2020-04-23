@@ -25,6 +25,7 @@
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
 - [中间件](#middleware)
+- [跨模块的交互的复杂业务场景](#complex-business-scenarios-of-cross-module-interaction)
 - [懒加载模块，加载中，占位组件配置](#loading-component)
 - [在react外使用natur](#use-store-without-react)
 - [手动导入模块](#manual-import-module)
@@ -584,6 +585,12 @@ const store = createStore(
 
 
 ---
+
+
+## <a id='complex-business-scenarios-of-cross-module-interaction'>跨模块的交互的复杂业务场景</a>
+
+> 在复杂的业务场景下，通常会存在多个模块之间相互监控，调用的场景，所以为了这种场景，可以使用[natur-service](https://www.npmjs.com/package/natur-service)无侵入性的解决方案，可以监听模块的任何变动，以及无侵入性的开发复杂的业务逻辑，同时保留每个模块的简洁和可维护性。
+
 
 
 ## <a id='loading-component'>加载时候的占位组件配置</a>
