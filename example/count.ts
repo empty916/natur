@@ -16,10 +16,16 @@ export const maps = {
 	splitName: ['name', (name: string) => {
 		return name.split("");
 	}],
-	firstChar: ['name', (name: string) => name[0]],
+	firstChar: ['name', (name: string) => {
+		console.log(name);
+		return  name[0];
+	}],
 };
 export const actions = {
-	inc: () => ({getState, setState}) => setState({count: getState().count + 1}),
+	inc: () => ({getState}) => {
+		console.log(getState());
+		return {count: getState().count + 1};
+	},
 	dec: () => ({getState, setState}) => {
 		return setState({ 
 			count: getState().count - 1, 

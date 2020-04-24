@@ -31,6 +31,24 @@
 - [manual import module](#manual-import-module)
 - [typescript](#typescript)
 - [caution](#caution)
+- [api](#api)
+  - [createStore](#CreateStore)
+  - [store api](#store.api)
+    - [getModule](#store.getModule)
+    - [setModule](#store.setModule)
+    - [removeModule](#store.removeModule)
+    - [hasModule](#store.hasModule)
+    - [loadModule](#store.loadModule)
+    - [getOriginModule](#store.getOriginModule)
+    - [getLazyModule](#store.getLazyModule)
+    - [subscribe](#store.subscribe)
+    - [getAllModuleName](#store.getAllModuleName)
+    - [dispatch](#store.dispatch)
+    - [destory](#store.destory)
+  - [inject api](#inject.api)
+    - [inject](#inject.self)
+    - [setLoadingComponent](#inject.setLoadingComponent)
+  - [useInject](#useInject.api)
 
 
 ## <a id='start'>start</a>
@@ -797,3 +815,144 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 - **To modify state in actions, you need to follow the immutable specification**
+
+
+
+## <a id='api'>api</a>
+
+### <a id='CreateStore'>createStore</a>
+
+````typescript
+createStore(
+  modules?: Modules,
+  lazyModules?: LazyStoreModules,
+  initStates?: States,
+  middlewares?: Middleware[],
+) => Store;
+````
+### <a id='store.api'>store api</a>
+
+#### <a id='store.getModule'>getModule</a>
+
+````typescript
+store.getModule('moduleName') => InjectStoreModule
+````
+
+#### <a id='store.setModule'>setModule</a>
+
+````typescript
+store.setModule('moduleName', StoreModule) => Store;
+````
+
+#### <a id='store.removeModule'>removeModule</a>
+
+````typescript
+store.removeModule('moduleName') => Store;
+````
+
+#### <a id='store.hasModule'>hasModule</a>
+
+````typescript
+store.hasModule('moduleName') => boolean;
+````
+
+#### <a id='store.loadModule'>loadModule: load lazy module</a>
+
+If the module is already loaded, return the already loaded module
+````typescript
+store.loadModule('moduleName') => Promise<InjectStoreModule>;
+````
+
+
+#### <a id='store.getOriginModule'>getOriginModule</a>
+
+````typescript
+store.getOriginModule('moduleName') => StoreModule;
+````
+
+#### <a id='store.getLazyModule'>getLazyModule: getLazyModule import function</a>
+
+````typescript
+store.getLazyModule('moduleName') => () => Promise<StoreModule>;
+````
+
+
+#### <a id='store.subscribe'>subscribe: listen module change</a>
+
+````typescript
+export type ModuleEvent = {
+  type: 'init' | 'update' | 'remove',
+  actionName?: string,
+};
+
+export interface Listener {
+  (me: ModuleEvent): any;
+}
+
+store.subscribe('moduleName', listener: Listener) => Function;
+````
+
+#### <a id='store.getAllModuleName'>getAllModuleName</a>
+
+````typescript
+store.getAllModuleName('moduleName') => string[];
+````
+
+
+#### <a id='store.dispatch'>dispatch: run action</a>
+
+````typescript
+store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+````
+
+#### <a id='store.destory'>destory 销毁store</a>
+
+````typescript
+store.destory() => void;
+````
+
+
+### <a id='inject.api'>inject api</a>
+
+#### <a id='inject.self'>inject</a>
+
+````typescript
+
+type ModuleDepDec = [string, {
+  state?: Array<string|Function>;
+  maps?: Array<string>;
+}]
+type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+
+type StoreProps = {[m: string]: InjectStoreModule}
+
+inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>) 
+=> <P extends T>(
+  WrappedComponent: TReactComponent<P>, 
+  LoadingComponent?: TReactComponent<{}>
+) => React.ComponentClass<Omit<P, keyof T> & { forwardedRef?: React.Ref<any> }>
+
+````
+
+
+#### <a id='inject.setLoadingComponent'>setLoadingComponent</a>
+
+````typescript
+
+type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+
+inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
+
+````
+
+### <a id='useInject.api'>useInject</a>
+
+````typescript
+type ModuleDepDec = [string, {
+  state?: Array<string|Function>;
+  maps?: Array<string>;
+}]
+
+useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
+
+````

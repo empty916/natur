@@ -32,6 +32,24 @@
 - [dispatch](#dispatch)
 - [在typescript中使用](#typescript)
 - [使用注意事项](#caution)
+- [api](#api)
+  - [createStore](#CreateStore)
+  - [store api](#store.api)
+    - [getModule](#store.getModule)
+    - [setModule](#store.setModule)
+    - [removeModule](#store.removeModule)
+    - [hasModule](#store.hasModule)
+    - [loadModule](#store.loadModule)
+    - [getOriginModule](#store.getOriginModule)
+    - [getLazyModule](#store.getLazyModule)
+    - [subscribe](#store.subscribe)
+    - [getAllModuleName](#store.getAllModuleName)
+    - [dispatch](#store.dispatch)
+    - [destory](#store.destory)
+  - [inject api](#inject.api)
+    - [inject](#inject.self)
+    - [setLoadingComponent](#inject.setLoadingComponent)
+  - [useInject](#useInject.api)
 
 
 ## <a id='start'>起步</a>
@@ -812,3 +830,142 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 - **在actions中修改state，需要遵循immutable规范**
+
+## <a id='api'>api</a>
+
+### <a id='CreateStore'>createStore 创建store实例</a>
+
+````typescript
+createStore(
+  modules?: Modules,
+  lazyModules?: LazyStoreModules,
+  initStates?: States,
+  middlewares?: Middleware[],
+) => Store;
+````
+### <a id='store.api'>store api</a>
+
+#### <a id='store.getModule'>getModule 获取模块</a>
+
+````typescript
+store.getModule('moduleName') => InjectStoreModule
+````
+
+#### <a id='store.setModule'>setModule 初始化/设置模块</a>
+
+````typescript
+store.setModule('moduleName', StoreModule) => Store;
+````
+
+#### <a id='store.removeModule'>removeModule 移除模块</a>
+
+````typescript
+store.removeModule('moduleName') => Store;
+````
+
+#### <a id='store.hasModule'>hasModule 判断当前已加载模块中是否存在某模块</a>
+
+````typescript
+store.hasModule('moduleName') => boolean;
+````
+
+#### <a id='store.loadModule'>loadModule 加载某懒加载模块</a>
+
+如果该模块已经加载则返回已经加载的模块
+````typescript
+store.loadModule('moduleName') => Promise<InjectStoreModule>;
+````
+
+
+#### <a id='store.getOriginModule'>getOriginModule 获取未包装的模块</a>
+
+````typescript
+store.getOriginModule('moduleName') => StoreModule;
+````
+
+#### <a id='store.getLazyModule'>getLazyModule 获取懒加载模块的加载函数</a>
+
+````typescript
+store.getLazyModule('moduleName') => () => Promise<StoreModule>;
+````
+
+
+#### <a id='store.subscribe'>subscribe 订阅/监听模块</a>
+
+````typescript
+export type ModuleEvent = {
+  type: 'init' | 'update' | 'remove',
+  actionName?: string,
+};
+
+export interface Listener {
+  (me: ModuleEvent): any;
+}
+
+store.subscribe('moduleName', listener: Listener) => Function;
+````
+
+#### <a id='store.getAllModuleName'>getAllModuleName 获取所有模块的模块名</a>
+
+````typescript
+store.getAllModuleName('moduleName') => string[];
+````
+
+
+#### <a id='store.dispatch'>dispatch 执行action</a>
+
+````typescript
+store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+````
+
+#### <a id='store.destory'>destory 销毁store</a>
+
+````typescript
+store.destory() => void;
+````
+
+
+### <a id='inject.api'>inject api</a>
+
+#### <a id='inject.self'>inject</a>
+
+````typescript
+
+type ModuleDepDec = [string, {
+  state?: Array<string|Function>;
+  maps?: Array<string>;
+}]
+type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+
+type StoreProps = {[m: string]: InjectStoreModule}
+
+inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>) 
+=> <P extends T>(
+  WrappedComponent: TReactComponent<P>, 
+  LoadingComponent?: TReactComponent<{}>
+) => React.ComponentClass<Omit<P, keyof T> & { forwardedRef?: React.Ref<any> }>
+
+````
+
+
+#### <a id='inject.setLoadingComponent'>setLoadingComponent 设置懒加载模块加载中的占位组件</a>
+
+````typescript
+
+type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+
+inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
+
+````
+
+### <a id='useInject.api'>useInject</a>
+
+````typescript
+type ModuleDepDec = [string, {
+  state?: Array<string|Function>;
+  maps?: Array<string>;
+}]
+
+useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
+
+````

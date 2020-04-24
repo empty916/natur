@@ -29,11 +29,6 @@ export interface States {
 	[type: string]: State,
 };
 
-type PartialState = Partial<State>;
-type PartialStates = {
-	[type: string]: PartialState,
-}
-
 export interface Action {
 	(...arg: any[]): any;
 }
@@ -75,7 +70,7 @@ export type MiddlewareParams = {
 	dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
 
-export type ModuleName = keyof Modules | keyof LazyStoreModules;
+export type ModuleName = string;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
 export interface Store {
@@ -95,7 +90,7 @@ export interface Store {
 type CreateStore = (
 	modules?: Modules,
 	lazyModules?: LazyStoreModules,
-	initStates?: PartialStates,
+	initStates?: States,
 	middlewares?: Middleware[],
 ) => Store;
 
@@ -104,7 +99,7 @@ let currentStoreInstance: Store;
 const createStore: CreateStore = (
 	modules: Modules = {},
 	lazyModules: LazyStoreModules = {},
-	initStates: PartialStates = {},
+	initStates: States = {},
 	middlewares: Middleware[] = [],
 ) => {
 	let currentInitStates = {...initStates};

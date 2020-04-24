@@ -9,10 +9,6 @@ export declare type State = any;
 export interface States {
     [type: string]: State;
 }
-declare type PartialState = Partial<State>;
-declare type PartialStates = {
-    [type: string]: PartialState;
-};
 export interface Action {
     (...arg: any[]): any;
 }
@@ -54,7 +50,7 @@ export declare type MiddlewareParams = {
     getMaps: () => InjectMaps | undefined;
     dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
-export declare type ModuleName = keyof Modules | keyof LazyStoreModules;
+export declare type ModuleName = string;
 export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 export interface Store {
     getModule: (moduleName: ModuleName) => InjectStoreModule;
@@ -69,7 +65,7 @@ export interface Store {
     destory: () => void;
     dispatch: (action: string, ...arg: any) => ReturnType<Action>;
 }
-declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: PartialStates, middlewares?: Middleware[]) => Store;
+declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;
 export declare const getStoreInstance: () => Store;
 export default createStore;
