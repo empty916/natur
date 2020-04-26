@@ -32,6 +32,7 @@
 - [dispatch](#dispatch)
 - [在typescript中使用](#typescript)
 - [使用注意事项](#caution)
+- [插件](#plugins)
 - [api](#api)
   - [createStore](#CreateStore)
   - [store api](#store.api)
@@ -830,6 +831,11 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
  ```
 - **在actions中修改state，需要遵循immutable规范**
+
+## <a id='plugins'>插件</a>
+
+- [natur-persist: localStorage数据持久化插件](https://www.npmjs.com/package/natur-persist)
+- [natur-service: natur上层调度库](https://www.npmjs.com/package/natur-persist)
 
 ## <a id='api'>api</a>
 

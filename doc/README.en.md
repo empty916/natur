@@ -31,6 +31,7 @@
 - [manual import module](#manual-import-module)
 - [typescript](#typescript)
 - [caution](#caution)
+- [plugins](#plugins)
 - [api](#api)
   - [createStore](#CreateStore)
   - [store api](#store.api)
@@ -817,6 +818,10 @@ const App = @inject<storeProps>('count', 'name')(_App);
 - **To modify state in actions, you need to follow the immutable specification**
 
 
+## <a id='plugins'>plugins</a>
+
+- [natur-persist: localStorage plugins](https://www.npmjs.com/package/natur-persist)
+- [natur-service: natur upper scheduling library](https://www.npmjs.com/package/natur-persist)
 
 ## <a id='api'>api</a>
 
