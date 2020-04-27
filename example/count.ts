@@ -64,4 +64,25 @@ const a = {
 	actions
 };
 
+type State = typeof state;
+
+export type InjectCountStore = {
+	state: State;
+	maps: {
+		isOdd: boolean;
+		deeepCountIsOdd: boolean;
+		splitName: string[];
+		firstChar: string,
+	};
+	actions: {
+		inc(): State;
+		dec(): State;
+		incDeeep(): State;
+		decDeeep(): State;
+		changeName(newName: string): State;
+	}
+}
+
+
+
 export default a;

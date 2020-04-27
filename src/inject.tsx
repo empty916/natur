@@ -14,6 +14,7 @@ import {
 	Modules
 } from './createStore';
 import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './utils';
+import { InjectStoreModule } from './createStore';
 
 type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 type ModuleNames = ModuleName[];
@@ -189,14 +190,7 @@ const connect = <P, SP>(
 	return hoistStatics(FinalConnect, WrappedComponent);
 }
 
-// type InjectReturn<StoreProp> = <P extends StoreProp>(
-// 	WrappedComponent: TReactComponent<P>, 
-// 	LoadingComponent?: TReactComponent<{}>
-// ) => connectReturn<P, StoreProp>;
-
-// type InjectParams = Array<string|ModuleDepDec>;
-
-function Inject<StoreProp>(...moduleDec: Array<string|ModuleDepDec>) {
+function Inject<StoreProp extends {[storeModuleName: string]: InjectStoreModule}>(...moduleDec: Array<string|ModuleDepDec>) {
 	const depDecs: DepDecs = {};
 	const moduleNames = moduleDec.map(m => {
 		if (isModuleDepDec(m)) {

@@ -38,6 +38,8 @@
     - [getModule](#store.getModule)
     - [setModule](#store.setModule)
     - [removeModule](#store.removeModule)
+    - [setLazyModule](#store.setLazyModule)
+    - [removeLazyModule](#store.removeLazyModule)
     - [hasModule](#store.hasModule)
     - [loadModule](#store.loadModule)
     - [getOriginModule](#store.getOriginModule)
@@ -821,7 +823,7 @@ const App = @inject<storeProps>('count', 'name')(_App);
 ## <a id='plugins'>plugins</a>
 
 - [natur-persist: localStorage plugins](https://www.npmjs.com/package/natur-persist)
-- [natur-service: natur upper scheduling library](https://www.npmjs.com/package/natur-persist)
+- [natur-service: natur upper scheduling library](https://www.npmjs.com/package/natur-service)
 
 ## <a id='api'>api</a>
 
@@ -854,6 +856,20 @@ store.setModule('moduleName', StoreModule) => Store;
 ````typescript
 store.removeModule('moduleName') => Store;
 ````
+
+
+#### <a id='store.setLazyModule'>setLazyModule init/set lazy module</a>
+
+````typescript
+store.setLazyModule('moduleName', () => Promise<StoreModule>) => Store;
+````
+
+#### <a id='store.removeLazyModule'>removeLazyModule remove lazy module</a>
+
+````typescript
+store.removeLazyModule('moduleName') => Store;
+````
+
 
 #### <a id='store.hasModule'>hasModule</a>
 

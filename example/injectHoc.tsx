@@ -3,8 +3,9 @@ import ReactDOM from "react-dom";
 import {inject, InjectStoreModule} from "../src";
 // import { inject, InjectStoreModule } from "../dist/rns";
 import initStore from "./initStore";
+import { InjectCountStore } from './count';
 
-type storeProps = { count?: InjectStoreModule; name?: InjectStoreModule };
+type storeProps = { count?: InjectCountStore; name?: InjectStoreModule };
 type otherProps = {
 	className: string;
 	style: Object;
@@ -13,7 +14,7 @@ type otherProps = {
 let renderStart = 0;
 
 const _App: React.FC<otherProps & storeProps> = ({count}) => {
-	const {state, actions, maps} = count as InjectStoreModule;
+	const {state, actions, maps} = count;
 	return (
 		<div>
 			count:

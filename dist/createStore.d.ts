@@ -56,6 +56,8 @@ export interface Store {
     getModule: (moduleName: ModuleName) => InjectStoreModule;
     setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
     removeModule: (moduleName: ModuleName) => Store;
+    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store;
+    removeLazyModule: (moduleName: ModuleName) => Store;
     hasModule: (moduleName: ModuleName) => boolean;
     loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
     getOriginModule: (moduleName: ModuleName) => StoreModule | {};

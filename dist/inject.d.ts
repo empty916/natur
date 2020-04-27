@@ -8,8 +8,11 @@
 import React from 'react';
 import { Store } from './createStore';
 import { ModuleDepDec } from './utils';
+import { InjectStoreModule } from './createStore';
 declare type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-declare function Inject<StoreProp>(...moduleDec: Array<string | ModuleDepDec>): <P extends StoreProp>(WrappedComponent: TReactComponent<P>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined) => React.ComponentClass<Pick<P, Exclude<keyof P, keyof StoreProp>> & {
+declare function Inject<StoreProp extends {
+    [storeModuleName: string]: InjectStoreModule;
+}>(...moduleDec: Array<string | ModuleDepDec>): <P extends StoreProp>(WrappedComponent: TReactComponent<P>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined) => React.ComponentClass<Pick<P, Exclude<keyof P, keyof StoreProp>> & {
     forwardedRef?: ((instance: any) => void) | React.RefObject<any> | null | undefined;
 }, any>;
 declare namespace Inject {

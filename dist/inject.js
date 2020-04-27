@@ -235,12 +235,7 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
   }
 
   return hoistStatics(FinalConnect, WrappedComponent);
-}; // type InjectReturn<StoreProp> = <P extends StoreProp>(
-// 	WrappedComponent: TReactComponent<P>, 
-// 	LoadingComponent?: TReactComponent<{}>
-// ) => connectReturn<P, StoreProp>;
-// type InjectParams = Array<string|ModuleDepDec>;
-
+};
 
 function Inject() {
   var depDecs = {};

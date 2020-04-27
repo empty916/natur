@@ -77,6 +77,8 @@ export interface Store {
 	getModule: (moduleName: ModuleName) => InjectStoreModule;
 	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
 	removeModule: (moduleName: ModuleName) => Store;
+	setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store;
+	removeLazyModule: (moduleName: ModuleName) => Store;
 	hasModule: (moduleName: ModuleName) => boolean;
 	loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
@@ -104,7 +106,7 @@ const createStore: CreateStore = (
 ) => {
 	let currentInitStates = {...initStates};
 	let currentModules: Modules = {};
-	let currentLazyModules = lazyModules;
+	let currentLazyModules = {...lazyModules};
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
 	let currentMiddlewares = [...middlewares];
@@ -207,6 +209,17 @@ const createStore: CreateStore = (
 		runListeners(moduleName, {type: 'remove'});
 		return currentStoreInstance;
 	};
+	const setLazyModule = (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => {
+		allModuleNames = undefined;
+		currentLazyModules[moduleName] = lazyModule;
+		return currentStoreInstance;
+	}
+	const removeLazyModule = (moduleName: ModuleName) => {
+		allModuleNames = undefined;
+		delete currentLazyModules[moduleName];
+		return currentStoreInstance;
+	}
+
 	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
 		const {maps} = currentModules[moduleName];
 		if (maps === undefined) {
@@ -344,12 +357,14 @@ const createStore: CreateStore = (
 	currentStoreInstance = {
 		getAllModuleName,
 		getModule,
-		removeModule,
 		getOriginModule,
 		getLazyModule,
 		loadModule,
 		setModule,
+		removeModule,
 		hasModule,
+		setLazyModule,
+		removeLazyModule,
 		subscribe,
 		destory,
 		dispatch,

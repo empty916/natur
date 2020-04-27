@@ -309,12 +309,14 @@ describe('init', () => {
 		expect(Object.keys(store)).toEqual([
 			'getAllModuleName',
 			'getModule',
-			'removeModule',
 			'getOriginModule',
 			'getLazyModule',
 			'loadModule',
 			'setModule',
+			'removeModule',
 			'hasModule',
+			'setLazyModule',
+			'removeLazyModule',
 			'subscribe',
 			'destory',
 			'dispatch',
@@ -532,6 +534,39 @@ describe('loadModule', () => {
 			.then(() => {
 				expect(store.hasModule('lazyModule')).toBe(true);
 			})
+	});
+});
+
+describe('set lazy module', () => {
+	const lazyModule = () => Promise.resolve(count);
+	beforeEach(() => {
+		store = createStore({ count, name });
+	});
+	test('set not exsit lazy module', () => {
+		store.setLazyModule('lazyModule', lazyModule);
+		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
+	});
+	test('set exsit lazy module', () => {
+		store.setLazyModule('lazyModule', lazyModule);
+		const _lazyModule = () => Promise.resolve(count);
+		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
+		store.setLazyModule('lazyModule', _lazyModule);
+		expect(store.getLazyModule('lazyModule')).toBe(_lazyModule);
+	});
+});
+
+describe('remove lazy module', () => {
+	const lazyModule = () => Promise.resolve(count);
+	beforeEach(() => {
+		store = createStore({ count, name }, {
+			lazyModule,
+		});
+	});
+	test('remove lazy module', () => {
+		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
+		store.removeLazyModule('lazyModule');
+
+		expect(() => store.getLazyModule('lazyModule')).toThrow();
 	});
 });
 

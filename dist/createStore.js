@@ -40,7 +40,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   var currentInitStates = _objectSpread({}, initStates);
 
   var currentModules = {};
-  var currentLazyModules = lazyModules;
+
+  var currentLazyModules = _objectSpread({}, lazyModules);
+
   var listeners = {};
   var allModuleNames;
   var currentMiddlewares = [].concat(middlewares);
@@ -174,6 +176,18 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     runListeners(moduleName, {
       type: 'remove'
     });
+    return currentStoreInstance;
+  };
+
+  var setLazyModule = function setLazyModule(moduleName, lazyModule) {
+    allModuleNames = undefined;
+    currentLazyModules[moduleName] = lazyModule;
+    return currentStoreInstance;
+  };
+
+  var removeLazyModule = function removeLazyModule(moduleName) {
+    allModuleNames = undefined;
+    delete currentLazyModules[moduleName];
     return currentStoreInstance;
   };
 
@@ -366,12 +380,14 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   currentStoreInstance = {
     getAllModuleName: getAllModuleName,
     getModule: getModule,
-    removeModule: removeModule,
     getOriginModule: getOriginModule,
     getLazyModule: getLazyModule,
     loadModule: loadModule,
     setModule: setModule,
+    removeModule: removeModule,
     hasModule: hasModule,
+    setLazyModule: setLazyModule,
+    removeLazyModule: removeLazyModule,
     subscribe: subscribe,
     destory: destory,
     dispatch: dispatch

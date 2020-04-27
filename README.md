@@ -39,6 +39,8 @@
     - [getModule](#store.getModule)
     - [setModule](#store.setModule)
     - [removeModule](#store.removeModule)
+    - [setLazyModule](#store.setLazyModule)
+    - [removeLazyModule](#store.removeLazyModule)
     - [hasModule](#store.hasModule)
     - [loadModule](#store.loadModule)
     - [getOriginModule](#store.getOriginModule)
@@ -835,7 +837,7 @@ const App = @inject<storeProps>('count', 'name')(_App);
 ## <a id='plugins'>插件</a>
 
 - [natur-persist: localStorage数据持久化插件](https://www.npmjs.com/package/natur-persist)
-- [natur-service: natur上层调度库](https://www.npmjs.com/package/natur-persist)
+- [natur-service: natur上层调度库](https://www.npmjs.com/package/natur-service)
 
 ## <a id='api'>api</a>
 
@@ -867,6 +869,19 @@ store.setModule('moduleName', StoreModule) => Store;
 
 ````typescript
 store.removeModule('moduleName') => Store;
+````
+
+
+#### <a id='store.setLazyModule'>setLazyModule 初始化/设置懒加载模块</a>
+
+````typescript
+store.setLazyModule('moduleName', () => Promise<StoreModule>) => Store;
+````
+
+#### <a id='store.removeLazyModule'>removeLazyModule 移除懒加载模块</a>
+
+````typescript
+store.removeLazyModule('moduleName') => Store;
 ````
 
 #### <a id='store.hasModule'>hasModule 判断当前已加载模块中是否存在某模块</a>
