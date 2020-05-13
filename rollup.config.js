@@ -7,7 +7,7 @@ export default {
     external: ['react', 'react-dom', 'hoist-non-react-statics'],
     output: [
         {
-            file: "dist/rns.js",
+            file: "dist/natur.js",
             format: "cjs",
             esModule: false,
             sourcemap: false
@@ -15,7 +15,7 @@ export default {
     ],
     plugins: [
         terser({
-            include: ["rns.js"]
+            include: ["natur.js"]
         }),
         resolve({
             jsnext: true,

@@ -13,7 +13,7 @@
 		"dev": "webpack-dev-server --config ./example/webpack.config.js",
 		"test": "jest",
 		"test:report": "jest --coverage",
-		"gzip": "gzip-size dist/rns.js"
+		"gzip": "gzip-size dist/natur.js"
 	},
 	"repository": {
 		"type": "git",
