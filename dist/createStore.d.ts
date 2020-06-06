@@ -50,6 +50,10 @@ export declare type MiddlewareParams = {
     getMaps: () => InjectMaps | undefined;
     dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
+declare type globalResetStatesOption = {
+    include?: Array<string | RegExp>;
+    exclude?: Array<string | RegExp>;
+};
 export declare type ModuleName = string;
 export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 export interface Store {
@@ -66,6 +70,8 @@ export interface Store {
     getAllModuleName: () => ModuleName[];
     destory: () => void;
     dispatch: (action: string, ...arg: any) => ReturnType<Action>;
+    globalSetStates: (s: States) => void;
+    globalResetStates: (option: globalResetStatesOption) => void;
 }
 declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;

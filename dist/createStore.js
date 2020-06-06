@@ -39,6 +39,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
   var currentInitStates = _objectSpread({}, initStates);
 
+  var resetStateData = {};
   var currentModules = {};
 
   var currentLazyModules = _objectSpread({}, lazyModules);
@@ -51,7 +52,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   var mapsCacheList = {};
 
   var replaceModule = function replaceModule(moduleName, storeModule) {
-    var res;
+    var res; // 缓存每个模块的初始化状态，供globalResetStates使用
+
+    resetStateData[moduleName] = storeModule.state;
 
     if (!!currentInitStates[moduleName]) {
       res = _objectSpread({}, storeModule, {
@@ -132,6 +135,66 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       actionName: actionName
     });
     return currentModules[moduleName].state;
+  };
+
+  var globalSetStates = function globalSetStates(states) {
+    Object.keys(states).forEach(function (moduleName) {
+      if (hasModule(moduleName)) {
+        setState({
+          moduleName: moduleName,
+          actionName: 'globalSetStates',
+          state: states[moduleName]
+        });
+      } else {
+        currentInitStates[moduleName] = states[moduleName];
+      }
+    });
+  };
+
+  var globalResetStates = function globalResetStates(_temp) {
+    var _ref2 = _temp === void 0 ? {} : _temp,
+        include = _ref2.include,
+        exclude = _ref2.exclude;
+
+    var shouldResetModuleNames = Object.keys(resetStateData).filter(hasModule);
+
+    if (exclude) {
+      var stringExclude = exclude.filter(function (ex) {
+        return typeof ex === 'string';
+      });
+      var regExpExclude = exclude.filter(function (ex) {
+        return typeof ex !== 'string';
+      }); // 过滤不需要重制状态的模块
+
+      shouldResetModuleNames = shouldResetModuleNames.filter(function (mn) {
+        return stringExclude.indexOf(mn) === -1 && !regExpExclude.some(function (reg) {
+          return reg.test(mn);
+        });
+      });
+    }
+
+    if (include) {
+      var stringInclude = include.filter(function (ex) {
+        return typeof ex === 'string';
+      });
+      var regExpInclude = include.filter(function (ex) {
+        return typeof ex !== 'string';
+      }); // 如果存在include配置，则只重制include配置中的模块
+
+      shouldResetModuleNames = shouldResetModuleNames.filter(function (mn) {
+        return stringInclude.indexOf(mn) > -1 || regExpInclude.some(function (reg) {
+          return reg.test(mn);
+        });
+      });
+    }
+
+    shouldResetModuleNames.forEach(function (mn) {
+      setState({
+        moduleName: mn,
+        actionName: 'globalResetStates',
+        state: resetStateData[mn]
+      });
+    });
   }; // 修改module
 
 
@@ -390,7 +453,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     removeLazyModule: removeLazyModule,
     subscribe: subscribe,
     destory: destory,
-    dispatch: dispatch
+    dispatch: dispatch,
+    globalSetStates: globalSetStates,
+    globalResetStates: globalResetStates
   };
   return currentStoreInstance;
 };
