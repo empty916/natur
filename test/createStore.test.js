@@ -320,6 +320,8 @@ describe('init', () => {
 			'subscribe',
 			'destory',
 			'dispatch',
+			'globalSetStates',
+			'globalResetStates',
 		]);
 		expect(getStoreInstance()).toBe(store);
 	});
@@ -821,4 +823,274 @@ describe('actions', () => {
 		expect(unlimit.state).toBe(ns)
 		expect(unlimit.maps.firstAdd1).toBe(NaN);
 	})
+});
+
+describe('globalSetStates', () => {
+	beforeEach(() => {
+		store = createStore(
+			{
+				count,
+				name,
+			},
+		);
+		store.setModule('countWithoutMaps', countWithoutMaps);
+		store.setModule('nameWithMaps', nameWithMaps);
+	});
+	test('base', () => {
+		const newStates = {
+			count: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			nameWithMaps: {
+				name: 'test11',
+				name2: 'test2',
+			}
+		}
+		store.subscribe('count', ({type, actionName}) => {
+			if (type === 'update' && actionName === 'globalSetStates') {
+				expect(store.getModule('count').state).toBe(newStates.count);
+			}
+		});
+		store.subscribe('nameWithMaps', ({type, actionName}) => {
+			if (type === 'update' && actionName === 'globalSetStates') {
+				expect(store.getModule('nameWithMaps').state).toBe(newStates.nameWithMaps);
+			}
+		});
+		store.globalSetStates(newStates);
+	})
+	test('setStates before set module manually', () => {
+		const newStates = {
+			count1: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+		}
+		store.globalSetStates(newStates);
+		store.setModule('count1', count);
+		expect(store.getModule('count1').state).toBe(newStates.count1);
+	});
+	test('setStates before lazy module init', () => {
+		const newStates = {
+			count1: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+		}
+		store.setLazyModule('count1', () => Promise.resolve(count));
+		store.globalSetStates(newStates);
+		return store.loadModule('count1')
+			.then(() => {
+				expect(store.getModule('count1').state).toBe(newStates.count1);
+			});
+	});
+});
+
+
+describe('globalResetStates', () => {
+	beforeEach(() => {
+		store = createStore(
+			{
+				count,
+				name,
+				aaaa: count,
+				bbbb: name,
+			},
+			{
+				lazyCount: () => Promise.resolve(count),
+			}
+		);
+		store.setModule('countWithoutMaps', countWithoutMaps);
+		store.setModule('nameWithMaps', nameWithMaps);
+	});
+	test('base', () => {
+		const newStates = {
+			count: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			nameWithMaps: {
+				name: 'test11',
+				name2: 'test2',
+			}
+		}
+		store.globalSetStates(newStates);
+		expect(store.getModule('count').state).toBe(newStates.count);
+		store.globalResetStates();
+		expect(store.getModule('count').state).toBe(count.state);
+		expect(store.getModule('nameWithMaps').state).toBe(nameWithMaps.state);
+	});
+
+	test('include', () => {
+		const newStates = {
+			count: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			aaaa: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			countWithoutMaps: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			name: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			nameWithMaps: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			bbbb: {
+				name: 'test11',
+				name2: 'test2',
+			}
+		}
+		store.globalSetStates(newStates);
+		expect(store.getModule('count').state).toBe(newStates.count);
+		store.globalResetStates({include: ['count', /aa/, /bb/]});
+		
+		
+		expect(store.getModule('count').state).toBe(count.state);
+		expect(store.getModule('aaaa').state).toBe(count.state);
+		expect(store.getModule('countWithoutMaps').state).toBe(newStates.countWithoutMaps);
+
+		expect(store.getModule('name').state).toBe(newStates.name);
+		expect(store.getModule('nameWithMaps').state).toBe(newStates.nameWithMaps);
+		expect(store.getModule('bbbb').state).toBe(name.state);
+	});
+
+	test('exclude', () => {
+		const newStates = {
+			count: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			aaaa: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			countWithoutMaps: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			name: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			nameWithMaps: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			bbbb: {
+				name: 'test11',
+				name2: 'test2',
+			}
+		}
+		store.globalSetStates(newStates);
+		expect(store.getModule('count').state).toBe(newStates.count);
+		store.globalResetStates({exclude: ['countWithoutMaps', /name/]});
+		
+		
+		expect(store.getModule('count').state).toBe(count.state);
+		expect(store.getModule('aaaa').state).toBe(count.state);
+		expect(store.getModule('countWithoutMaps').state).toBe(newStates.countWithoutMaps);
+
+		expect(store.getModule('name').state).toBe(newStates.name);
+		expect(store.getModule('nameWithMaps').state).toBe(newStates.nameWithMaps);
+		expect(store.getModule('bbbb').state).toBe(name.state);
+	});
+
 });

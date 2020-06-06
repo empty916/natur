@@ -70,6 +70,11 @@ export type MiddlewareParams = {
 	dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
 };
 
+type globalResetStatesOption = {
+	include?: Array<string|RegExp>;
+	exclude?: Array<string|RegExp>;
+};
+
 export type ModuleName = string;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
@@ -86,7 +91,9 @@ export interface Store {
 	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
 	getAllModuleName: () => ModuleName[];
 	destory: () => void;
-	dispatch: (action: string, ...arg: any) => ReturnType<Action>
+	dispatch: (action: string, ...arg: any) => ReturnType<Action>;
+	globalSetStates: (s: States) => void;
+	globalResetStates: (option: globalResetStatesOption) => void;
 }
 
 type CreateStore = (
@@ -105,6 +112,7 @@ const createStore: CreateStore = (
 	middlewares: Middleware[] = [],
 ) => {
 	let currentInitStates = {...initStates};
+	let resetStateData: States = {};
 	let currentModules: Modules = {};
 	let currentLazyModules = {...lazyModules};
 	let listeners: {[p: string]: Listener[]} = {};
@@ -117,6 +125,8 @@ const createStore: CreateStore = (
 
 	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		let res;
+		// 缓存每个模块的初始化状态，供globalResetStates使用
+		resetStateData[moduleName] = storeModule.state;
 		if (!!currentInitStates[moduleName]) {
 			res = {
 				...storeModule,
@@ -173,6 +183,47 @@ const createStore: CreateStore = (
 		});
 		return currentModules[moduleName].state;
 	}
+
+	const globalSetStates = (states: States) => {
+		Object.keys(states).forEach(moduleName => {
+			if (hasModule(moduleName)) {
+				setState({
+					moduleName, 
+					actionName: 'globalSetStates',
+					state: states[moduleName],
+				});
+			} else {
+				currentInitStates[moduleName] = states[moduleName];
+			}
+		});
+	}
+	const globalResetStates = ({include, exclude}: globalResetStatesOption = {}) => {
+		let shouldResetModuleNames: string[] = Object.keys(resetStateData).filter(hasModule);
+		if (exclude) {
+			const stringExclude = exclude.filter(ex => typeof ex === 'string') as string[];
+			const regExpExclude = exclude.filter(ex => typeof ex !== 'string') as RegExp[];
+			// 过滤不需要重制状态的模块
+			shouldResetModuleNames = shouldResetModuleNames.filter(mn => {
+				return (stringExclude.indexOf(mn) === -1) && !regExpExclude.some(reg => reg.test(mn));
+			});
+		}
+		if (include) {
+			const stringInclude = include.filter(ex => typeof ex === 'string') as string[];
+			const regExpInclude = include.filter(ex => typeof ex !== 'string') as RegExp[];
+			// 如果存在include配置，则只重制include配置中的模块
+			shouldResetModuleNames = shouldResetModuleNames.filter(mn => {
+				return (stringInclude.indexOf(mn) > -1) || regExpInclude.some(reg => reg.test(mn));
+			});
+		}
+		shouldResetModuleNames.forEach(mn => {
+			setState({
+				moduleName: mn,
+				actionName: 'globalResetStates',
+				state: resetStateData[mn],
+			});
+		});
+	}
+
 
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
@@ -368,6 +419,8 @@ const createStore: CreateStore = (
 		subscribe,
 		destory,
 		dispatch,
+		globalSetStates,
+		globalResetStates,
 	};
 	return currentStoreInstance;
 };
