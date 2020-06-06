@@ -47,6 +47,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   var listeners = {};
   var allModuleNames;
   var currentMiddlewares = [].concat(middlewares);
+  var setStateProxyWithMiddlewareCache = {};
   var actionsProxyCache = {};
   var mapsCache = {};
   var mapsCacheList = {};
@@ -140,7 +141,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   var globalSetStates = function globalSetStates(states) {
     Object.keys(states).forEach(function (moduleName) {
       if (hasModule(moduleName)) {
-        setState({
+        if (!setStateProxyWithMiddlewareCache[moduleName]) {
+          createDispatch(moduleName);
+        }
+
+        setStateProxyWithMiddlewareCache[moduleName]({
           moduleName: moduleName,
           actionName: 'globalSetStates',
           state: states[moduleName]
@@ -189,7 +194,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     }
 
     shouldResetModuleNames.forEach(function (mn) {
-      setState({
+      if (!setStateProxyWithMiddlewareCache[mn]) {
+        createDispatch(mn);
+      }
+
+      setStateProxyWithMiddlewareCache[mn]({
         moduleName: mn,
         actionName: 'globalResetStates',
         state: resetStateData[mn]
@@ -386,6 +395,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       return middleware(middlewareParams);
     });
     var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setState);
+    setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
     return function (type) {
       var _targetModule$actions;
 

@@ -118,8 +118,9 @@ const createStore: CreateStore = (
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
 	let currentMiddlewares = [...middlewares];
+	
+	const setStateProxyWithMiddlewareCache: {[p: string]: Next} = {};
 	const actionsProxyCache: {[p: string]: Actions} = {};
-
 	const mapsCache: {[p: string]: {[p: string]: MapCache}} = {};
 	const mapsCacheList: {[p: string]: MapCache[] } = {};
 
@@ -187,7 +188,10 @@ const createStore: CreateStore = (
 	const globalSetStates = (states: States) => {
 		Object.keys(states).forEach(moduleName => {
 			if (hasModule(moduleName)) {
-				setState({
+				if (!setStateProxyWithMiddlewareCache[moduleName]) {
+					createDispatch(moduleName);
+				}
+				setStateProxyWithMiddlewareCache[moduleName]({
 					moduleName, 
 					actionName: 'globalSetStates',
 					state: states[moduleName],
@@ -216,14 +220,16 @@ const createStore: CreateStore = (
 			});
 		}
 		shouldResetModuleNames.forEach(mn => {
-			setState({
+			if (!setStateProxyWithMiddlewareCache[mn]) {
+				createDispatch(mn);
+			}
+			setStateProxyWithMiddlewareCache[mn]({
 				moduleName: mn,
 				actionName: 'globalResetStates',
 				state: resetStateData[mn],
 			});
 		});
 	}
-
 
 	// 修改module
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
@@ -366,7 +372,7 @@ const createStore: CreateStore = (
 		};
 		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setState);
-
+		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);
 			let newState: ReturnType<Action>;
