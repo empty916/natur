@@ -48,6 +48,8 @@
     - [getAllModuleName](#store.getAllModuleName)
     - [dispatch](#store.dispatch)
     - [destory](#store.destory)
+    - [globalSetStates](#store.globalSetStates)
+    - [globalResetStates](#store.globalResetStates)
   - [inject api](#inject.api)
     - [inject](#inject.self)
     - [setLoadingComponent](#inject.setLoadingComponent)
@@ -930,6 +932,28 @@ store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Actio
 
 ````typescript
 store.destory() => void;
+````
+
+
+#### <a id='store.globalSetStates'>globalSetStates</a>
+
+````typescript
+// Manually set all state, incoming module name, and corresponding state, it will be updated, and push notification
+store.globalSetStates({
+  [mn: moduleName]: State;
+})
+````
+
+
+#### <a id='store.globalResetStates'>globalResetStates</a>
+
+````typescript
+// Use store to initialize the state of all modules and push notifications
+// You can pass, exclude, include to filter modules that do not need to be initialized, exclude is higher than include
+store.globalResetStates({
+  exclude: Arrary<string|RegExp>;
+  include: Arrary<string|RegExp>,
+})
 ````
 
 

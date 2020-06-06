@@ -1093,4 +1093,77 @@ describe('globalResetStates', () => {
 		expect(store.getModule('bbbb').state).toBe(name.state);
 	});
 
+
+	test('include and exclude', () => {
+		const newStates = {
+			count: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			aaaa: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			countWithoutMaps: {
+				count: 1,
+				name: 'count1',
+				obj: [{
+					t: {
+						a: 11,
+					}, 
+				}, {
+					a: {
+						a: 2
+					},
+				}]
+			},
+			name: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			nameWithMaps: {
+				name: 'test11',
+				name2: 'test2',
+			},
+			bbbb: {
+				name: 'test11',
+				name2: 'test2',
+			}
+		}
+		store.globalSetStates(newStates);
+		expect(store.getModule('count').state).toBe(newStates.count);
+		store.globalResetStates({
+			include: [/count/, 'aaaa', 'bbbb'],
+			exclude: ['countWithoutMaps', /name/]
+		});
+		
+		
+		expect(store.getModule('count').state).toBe(count.state);
+		expect(store.getModule('aaaa').state).toBe(count.state);
+		expect(store.getModule('countWithoutMaps').state).toBe(newStates.countWithoutMaps);
+
+		expect(store.getModule('name').state).toBe(newStates.name);
+		expect(store.getModule('nameWithMaps').state).toBe(newStates.nameWithMaps);
+		expect(store.getModule('bbbb').state).toBe(name.state);
+	});
+
+
 });

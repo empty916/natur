@@ -49,11 +49,12 @@
     - [getAllModuleName](#store.getAllModuleName)
     - [dispatch](#store.dispatch)
     - [destory](#store.destory)
+    - [globalSetStates全局设置state](#store.globalSetStates)
+    - [globalResetStates全局初始化state](#store.globalResetStates)
   - [inject api](#inject.api)
     - [inject](#inject.self)
     - [setLoadingComponent](#inject.setLoadingComponent)
   - [useInject](#useInject.api)
-
 
 ## <a id='start'>起步</a>
 
@@ -943,6 +944,28 @@ store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Actio
 
 ````typescript
 store.destory() => void;
+````
+
+
+#### <a id='store.globalSetStates'>globalSetStates全局设置state</a>
+
+````typescript
+// 手动设置所有的state，传入模块名，以及对应的state，则会更新，并推送通知
+store.globalSetStates({
+  [mn: moduleName]: State;
+})
+````
+
+
+#### <a id='store.globalResetStates'>globalResetStates全局初始化state</a>
+
+````typescript
+// 使用store初始化所有模块的state，并推送通知
+// 可以通过，exclude，include过滤不需要初始化的模块, exclude优先级高于include
+store.globalResetStates({
+  exclude: Arrary<string|RegExp>;
+  include: Arrary<string|RegExp>,
+})
 ````
 
 
