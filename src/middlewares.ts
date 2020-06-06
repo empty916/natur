@@ -1,6 +1,14 @@
 import {Middleware, Action, State} from './createStore';
 import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
 
+
+export type ThunkMiddlewareParams<M = any> = {
+	getState: () => State;
+	setState: (s: State) => State;
+	getMaps: () => M;
+	dispatch: (moduleNameAndActionName: string, params: any) => any;
+}
+
 export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => next => record => {
 	if (typeof record.state === 'function') {
 		const setState = (s: State) => next({
