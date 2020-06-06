@@ -15,22 +15,25 @@ const LogMiddleware: Middleware = ({setState}) => next => record => {
 	return next(record);
 };
 
-export default () => createStore(
-	{
-		count: countModule,
-		count2: countModule,
-	},
-	{},
-	{},
-	[
-		thunkMiddleware,
-		promiseMiddleware, 
-		fillObjectRestDataMiddleware,
-		shallowEqualMiddleware, 
-		// filterUndefinedMiddleware,
-		devTool,
-		// LogMiddleware,
-		// LogMiddleware2
-	],
-);
+export default () => {
+	const store = createStore(
+		{
+			count: countModule,
+			count2: countModule,
+		},
+		{},
+		{},
+		[
+			thunkMiddleware,
+			promiseMiddleware, 
+			fillObjectRestDataMiddleware,
+			shallowEqualMiddleware, 
+			// filterUndefinedMiddleware,
+			devTool,
+			// LogMiddleware,
+			// LogMiddleware2
+		],
+	);
+	return store;
+};
 

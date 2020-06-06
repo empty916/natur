@@ -93,7 +93,7 @@ export interface Store {
 	destory: () => void;
 	dispatch: (action: string, ...arg: any) => ReturnType<Action>;
 	globalSetStates: (s: States) => void;
-	globalResetStates: (option: globalResetStatesOption) => void;
+	globalResetStates: (option?: globalResetStatesOption) => void;
 }
 
 type CreateStore = (

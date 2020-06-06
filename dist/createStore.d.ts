@@ -71,7 +71,7 @@ export interface Store {
     destory: () => void;
     dispatch: (action: string, ...arg: any) => ReturnType<Action>;
     globalSetStates: (s: States) => void;
-    globalResetStates: (option: globalResetStatesOption) => void;
+    globalResetStates: (option?: globalResetStatesOption) => void;
 }
 declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
 declare const createStore: CreateStore;
