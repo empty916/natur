@@ -57,6 +57,9 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
       _this.state.modulesHasLoaded = !unLoadedModules.length;
       _this.setStoreStateChanged = _this.setStoreStateChanged.bind(_assertThisInitialized(_this));
       _this.LoadingComponent = LoadingComponent || Loading;
+
+      _this.loadLazyModule();
+
       return _this;
     }
 
@@ -119,7 +122,7 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
       };
     };
 
-    _proto.componentDidMount = function componentDidMount() {
+    _proto.loadLazyModule = function loadLazyModule() {
       var _this2 = this;
 
       var store = this.store,

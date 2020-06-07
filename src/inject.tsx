@@ -62,6 +62,7 @@ const connect = <P, SP>(
 			this.state.modulesHasLoaded = !unLoadedModules.length;
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 			this.LoadingComponent = LoadingComponent || Loading;
+			this.loadLazyModule();
 		}
 		setStoreStateChanged(moduleName: ModuleName) {
 			if (!depDecs[moduleName]) {
@@ -98,7 +99,7 @@ const connect = <P, SP>(
 			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, () => setStoreStateChanged(mn)));
 			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 		}
-		componentDidMount() {
+		loadLazyModule() {
 			const {
 				store,
 				unLoadedModules,
