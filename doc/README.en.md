@@ -824,8 +824,9 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
 ## <a id='plugins'>plugins</a>
 
-- [natur-persist: localStorage plugins](https://www.npmjs.com/package/natur-persist)
 - [natur-service: natur upper scheduling library](https://www.npmjs.com/package/natur-service)
+- [natur-persist: localStorage plugins](https://www.npmjs.com/package/natur-persist)
+- [natur-persist-async: async presit plugin](https://www.npmjs.com/package/natur-persist-async)
 
 ## <a id='api'>api</a>
 

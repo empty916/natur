@@ -837,8 +837,9 @@ const App = @inject<storeProps>('count', 'name')(_App);
 
 ## <a id='plugins'>插件</a>
 
-- [natur-persist: localStorage数据持久化插件](https://www.npmjs.com/package/natur-persist)
 - [natur-service: natur上层调度库](https://www.npmjs.com/package/natur-service)
+- [natur-persist: localStorage数据持久化插件](https://www.npmjs.com/package/natur-persist)
+- [natur-persist-async: 异步数据持久化插件](https://www.npmjs.com/package/natur-persist-async)
 
 ## <a id='api'>api</a>
 

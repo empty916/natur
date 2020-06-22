@@ -161,7 +161,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
         include = _ref2.include,
         exclude = _ref2.exclude;
 
-    var shouldResetModuleNames = Object.keys(resetStateData).filter(hasModule);
+    var shouldResetModuleNames = Object.keys(resetStateData || {}).filter(hasModule);
 
     if (exclude) {
       var stringExclude = exclude.filter(function (ex) {
@@ -423,11 +423,12 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     listeners[moduleName].push(listener);
     return function () {
-      return listeners[moduleName] = listeners[moduleName].filter(function (lis) {
-        return listener !== lis;
-      });
+      if (Array.isArray(listeners[moduleName])) {
+        listeners[moduleName] = listeners[moduleName].filter(function (lis) {
+          return listener !== lis;
+        });
+      }
     };
-    ;
   };
 
   var destory = function destory() {

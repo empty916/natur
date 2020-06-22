@@ -390,7 +390,11 @@ const createStore: CreateStore = (
 			listeners[moduleName] = [];
 		}
 		listeners[moduleName].push(listener);
-		return () => listeners[moduleName] = listeners[moduleName].filter((lis: Listener) => listener !== lis);;
+		return () => {
+			if (Array.isArray(listeners[moduleName])) {
+				listeners[moduleName] = listeners[moduleName].filter((lis: Listener) => listener !== lis)
+			}
+		};
 	};
 	const destory = () => {
 		Object.keys(currentModules).forEach(destoryModule);
