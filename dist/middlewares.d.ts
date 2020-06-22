@@ -1,7 +1,7 @@
-import { Middleware, State } from './createStore';
-export declare type ThunkMiddlewareParams<M = any> = {
-    getState: () => State;
-    setState: (s: State) => State;
+import { Middleware } from './createStore';
+export declare type ThunkParams<S = any, M = any> = {
+    getState: () => S;
+    setState: (s: Partial<S>) => S;
     getMaps: () => M;
     dispatch: (moduleNameAndActionName: string, params: any) => any;
 };
