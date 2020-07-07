@@ -3,7 +3,7 @@ export declare type ThunkParams<S = any, M = any> = {
     getState: () => S;
     setState: (s: Partial<S>) => S;
     getMaps: () => M;
-    dispatch: (moduleNameAndActionName: string, params: any) => any;
+    dispatch: (moduleNameAndActionName: string, ...params: any[]) => any;
 };
 export declare const thunkMiddleware: Middleware;
 export declare const promiseMiddleware: Middleware;

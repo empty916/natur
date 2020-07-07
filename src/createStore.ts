@@ -338,7 +338,6 @@ const createStore: CreateStore = (
 		};
 		return moduleProxyActions[actionName](...arg);
 	}
-
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
 		checkModuleIsValid(moduleName);

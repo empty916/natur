@@ -6,7 +6,7 @@ export type ThunkParams<S = any, M = any> = {
 	getState: () => S;
 	setState: (s: Partial<S>) => S;
 	getMaps: () => M;
-	dispatch: (moduleNameAndActionName: string, params: any) => any;
+	dispatch: (moduleNameAndActionName: string, ...params: any[]) => any;
 }
 
 export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => next => record => {
