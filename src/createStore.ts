@@ -11,6 +11,8 @@ import {
 	isStoreModule,
 } from './utils';
 
+import {GenerateStoreType, PickPromiseType} from './ts-utils';
+
 import MapCache from './MapCache'
 
 
@@ -25,6 +27,8 @@ export interface Listener {
 
 export type State = any;
 
+type AnyFun = (...arg: any) => any;
+
 export interface States {
 	[type: string]: State,
 };
@@ -37,7 +41,7 @@ export interface Actions {
 	[type: string]: Action;
 };
 
-type StoreMap = Array<string | Function>;
+type StoreMap = Array<string | AnyFun>;
 export interface Maps {
 	[p: string]: StoreMap;
 };
@@ -61,8 +65,8 @@ export interface Modules {
 	[p: string]: StoreModule;
 }
 
-type Next = (record: Record) => ReturnType<Action>;
-type Record = {moduleName: ModuleName, actionName: string, state: ReturnType<Action>};
+type Next<MN extends any = ModuleName> = (record: Record<MN>) => ReturnType<Action>;
+type Record<MN extends any = ModuleName> = {moduleName: MN, actionName: string, state: ReturnType<Action>};
 export type MiddlewareParams = {
 	setState: Next,
 	getState: () => State,
@@ -78,12 +82,24 @@ type globalResetStatesOption = {
 export type ModuleName = string;
 export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
 
-export interface Store {
-	getModule: (moduleName: ModuleName) => InjectStoreModule;
-	setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
-	removeModule: (moduleName: ModuleName) => Store;
-	setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store;
-	removeLazyModule: (moduleName: ModuleName) => Store;
+export interface Store<
+	StoreType extends {
+		[k: string]: InjectStoreModule
+	},
+	AOST extends {
+		[k: string]: StoreModule
+	},
+	S extends Partial<{
+		[k in keyof StoreType]: StoreType[k]['state']
+	}> = Partial<{
+		[k in keyof StoreType]: StoreType[k]['state']
+	}>
+> {
+	getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
+	setModule: <MN extends keyof AOST>(moduleName: MN, storeModule: AOST[MN]) => Store<StoreType, AOST>;
+	removeModule: (moduleName: ModuleName) => Store<StoreType, AOST>;
+	setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store<StoreType, AOST>;
+	removeLazyModule: (moduleName: ModuleName) => Store<StoreType, AOST>;
 	hasModule: (moduleName: ModuleName) => boolean;
 	loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
 	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
@@ -92,48 +108,82 @@ export interface Store {
 	getAllModuleName: () => ModuleName[];
 	destory: () => void;
 	dispatch: (action: string, ...arg: any) => ReturnType<Action>;
-	globalSetStates: (s: States) => void;
+	globalSetStates: (s: S) => void;
 	globalResetStates: (option?: globalResetStatesOption) => void;
+	type: StoreType;
 }
 
-type CreateStore = (
-	modules?: Modules,
-	lazyModules?: LazyStoreModules,
-	initStates?: States,
-	middlewares?: Middleware[],
-) => Store;
+// type CreateStore = <
+// 	M extends Modules,
+// 	LM extends LazyStoreModules,
+// 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>,
+// 	S extends Partial<{
+// 		[k in keyof StoreType]: StoreType[k]['state']
+// 	}> = Partial<{
+// 		[k in keyof StoreType]: StoreType[k]['state']
+// 	}>
+// >(
+// 	modules?: M,
+// 	lazyModules?: LM,
+// 	initStates?: {
+// 		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>['state']
+// 	},
+// 	middlewares?: Middleware[],
+// ) => Store;
 
-let currentStoreInstance: Store;
+let currentStoreInstance: unknown;
 
-const createStore: CreateStore = (
-	modules: Modules = {},
-	lazyModules: LazyStoreModules = {},
-	initStates: States = {},
+const createStore = <
+	M extends Modules,
+	LM extends LazyStoreModules,
+>(
+	modules: M = {} as any,
+	lazyModules: LM = {} as any,
+	initStates: Partial<{
+		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>[k]['state']
+	}> = {},
 	middlewares: Middleware[] = [],
 ) => {
+	type AM = (M & {
+		[k in keyof LM]: PickPromiseType<LM[k]>;
+	});
+	type StoreType = GenerateStoreType<M, LM>;
+	type AS = Partial<{
+		[k in keyof StoreType]: StoreType[k]['state']
+	}>;
+	type PS = Partial<{
+		[k in keyof StoreType]: StoreType[k]['state']
+	}>;
 	let currentInitStates = {...initStates};
-	let resetStateData: States = {};
-	let currentModules: Modules = {};
+	let resetStateData: Partial<PS> = {};
+	let currentModules: Partial<{
+		[k in keyof StoreType]: StoreModule
+	}> = {};
 	let currentLazyModules = {...lazyModules};
 	let listeners: {[p: string]: Listener[]} = {};
 	let allModuleNames: string[] | undefined;
 	let currentMiddlewares = [...middlewares];
 	
 	const setStateProxyWithMiddlewareCache: {[p: string]: Next} = {};
-	const actionsProxyCache: {[p: string]: Actions} = {};
+	const actionsProxyCache: {
+		[p: string]: Actions
+	} = {};
 	const mapsCache: {[p: string]: {[p: string]: MapCache}} = {};
 	const mapsCacheList: {[p: string]: MapCache[] } = {};
 
-	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
+	const replaceModule = <MN extends keyof AM>(
+		moduleName: MN,
+		storeModule: AM[MN]
+	) => {
 		let res;
 		// 缓存每个模块的初始化状态，供globalResetStates使用
-		resetStateData[moduleName] = storeModule.state;
-		if (!!currentInitStates[moduleName]) {
+		resetStateData[moduleName as keyof StoreType] = storeModule.state;
+		if (!!currentInitStates[moduleName as keyof StoreType]) {
 			res = {
 				...storeModule,
-				state: currentInitStates[moduleName],
+				state: currentInitStates[moduleName as keyof StoreType],
 			};
-			delete currentInitStates[moduleName];
+			delete currentInitStates[moduleName as keyof StoreType];
 		} else {
 			res = {...storeModule};
 		}
@@ -141,16 +191,16 @@ const createStore: CreateStore = (
 	};
 
 	// 查看module是否存在
-	const hasModule = (moduleName: ModuleName) => !!currentModules[moduleName];
+	const hasModule = (moduleName: keyof StoreType) => !!currentModules[moduleName as string];
 
-	const checkModuleIsValid = (moduleName: ModuleName) => {
+	const checkModuleIsValid = (moduleName: keyof StoreType) => {
 		if (!hasModule(moduleName)) {
 			const errMsg = `module: ${moduleName} is not valid!`;
 			console.error(errMsg);
 			throw new Error(errMsg);
 		}
 	}
-	const clearActionsProxyCache = (moduleName: ModuleName) => delete actionsProxyCache[moduleName];
+	const clearActionsProxyCache = (moduleName: string) => delete actionsProxyCache[moduleName];
 
 	const clearMapsProxyCache = (moduleName: ModuleName) => {
 		delete mapsCache[moduleName];
@@ -171,22 +221,22 @@ const createStore: CreateStore = (
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener(me));
-	const setState = ({moduleName, state: newState, actionName}: Record) => {
-		const stateHasNoChange = currentModules[moduleName].state === newState;
+	const setState = ({moduleName, state: newState, actionName}: Record<keyof StoreType>) => {
+		const stateHasNoChange = currentModules[moduleName]!.state === newState;
 		if (stateHasNoChange) {
 			return newState;
 		}
-		currentModules[moduleName].state = newState;
-		mapsCacheShouldCheckForValid(moduleName);
-		runListeners(moduleName, {
+		currentModules[moduleName]!.state = newState;
+		mapsCacheShouldCheckForValid(moduleName as string);
+		runListeners(moduleName as string, {
 			type: 'update',
 			actionName,
 		});
-		return currentModules[moduleName].state;
+		return currentModules[moduleName]!.state;
 	}
 
-	const globalSetStates = (states: States) => {
-		Object.keys(states).forEach(moduleName => {
+	const globalSetStates = (states: PS) => {
+		Object.keys(states).forEach((moduleName: string) => {
 			if (hasModule(moduleName)) {
 				if (!setStateProxyWithMiddlewareCache[moduleName]) {
 					createDispatch(moduleName);
@@ -197,7 +247,7 @@ const createStore: CreateStore = (
 					state: states[moduleName],
 				});
 			} else {
-				currentInitStates[moduleName] = states[moduleName];
+				currentInitStates[moduleName as keyof StoreType] = states[moduleName];
 			}
 		});
 	}
@@ -232,27 +282,27 @@ const createStore: CreateStore = (
 	}
 
 	// 修改module
-	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
+	const setModule = <MN extends keyof AM>(moduleName: MN, storeModule: AM[MN]) => {
 		if (!isStoreModule(storeModule)) {
 			const errMsg = `setModule: storeModule ${moduleName} is illegal!`;
 			console.error(errMsg);
 			throw new Error(errMsg);
 		}
-		const isModuleExist = hasModule(moduleName)
+		const isModuleExist = hasModule(moduleName as keyof StoreType)
 		currentModules = {
 			...currentModules,
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		if(isModuleExist) {
-			clearAllCache(moduleName);
+			clearAllCache(moduleName as string);
 		} else {
 			allModuleNames = undefined;
 		}
-		if (!mapsCache[moduleName]) {
-			mapsCache[moduleName] = {};
-			mapsCacheList[moduleName] = [];
+		if (!mapsCache[moduleName as string]) {
+			mapsCache[moduleName as string] = {};
+			mapsCacheList[moduleName as string] = [];
 		}
-		runListeners(moduleName, {type: 'init'});
+		runListeners(moduleName as string, {type: 'init'});
 		return currentStoreInstance;
 	}
 	const destoryModule = (moduleName: ModuleName) => {
@@ -266,9 +316,9 @@ const createStore: CreateStore = (
 		runListeners(moduleName, {type: 'remove'});
 		return currentStoreInstance;
 	};
-	const setLazyModule = (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => {
+	const setLazyModule = (moduleName: keyof LM, lazyModule: () => Promise<StoreModule>) => {
 		allModuleNames = undefined;
-		currentLazyModules[moduleName] = lazyModule;
+		currentLazyModules[moduleName] = lazyModule as any;
 		return currentStoreInstance;
 	}
 	const removeLazyModule = (moduleName: ModuleName) => {
@@ -278,7 +328,7 @@ const createStore: CreateStore = (
 	}
 
 	const createMapsProxy = (moduleName: ModuleName): InjectMaps | undefined => {
-		const {maps} = currentModules[moduleName];
+		const {maps} = currentModules[moduleName]!;
 		if (maps === undefined) {
 			return undefined;
 		}
@@ -287,7 +337,7 @@ const createStore: CreateStore = (
 			if (maps.hasOwnProperty(key)) {
 				if (mapsCache[moduleName][key] === undefined) {
 					mapsCache[moduleName][key] = new MapCache(
-						() => currentModules[moduleName].state,
+						() => currentModules[moduleName]!.state,
 						maps[key],
 					);
 					mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
@@ -302,20 +352,20 @@ const createStore: CreateStore = (
 		if (!!actionsProxyCache[moduleName]) {
 			return actionsProxyCache[moduleName];
 		}
-		let actionsProxy = {...currentModules[moduleName].actions};
+		let actionsProxy = {...currentModules[moduleName]!.actions};
 		const dispatch = createDispatch(moduleName);
 		Object.keys(actionsProxy).forEach(key => actionsProxy[key] = (...data: any[]) => dispatch(key, ...data))
 		actionsProxyCache[moduleName] = actionsProxy;
 		return actionsProxy;
 	};
 	// 获取module
-	const getModule = (moduleName: ModuleName) => {
+	const getModule = <MN extends keyof StoreType>(moduleName: MN) => {
 		checkModuleIsValid(moduleName);
-		const proxyModule: InjectStoreModule = {
-			state: currentModules[moduleName].state,
-			actions: createActionsProxy(moduleName),
-			maps: createMapsProxy(moduleName),
-		};
+		const proxyModule: StoreType[MN] = {
+			state: currentModules[moduleName]!.state,
+			actions: createActionsProxy(moduleName as string),
+			maps: createMapsProxy(moduleName as string),
+		} as any;
 		return proxyModule;
 	};
 	/**
@@ -357,7 +407,7 @@ const createStore: CreateStore = (
 		}
 		return getLazyModule(moduleName)()
 			.then((loadedModule: StoreModule) => {
-				setModule(moduleName, loadedModule);
+				setModule(moduleName, loadedModule as AM[ModuleName]);
 				return getModule(moduleName);
 			});
 	};
@@ -365,7 +415,7 @@ const createStore: CreateStore = (
 		checkModuleIsValid(moduleName);
 		const middlewareParams = {
 			setState,
-			getState: () => currentModules[moduleName].state,
+			getState: () => currentModules[moduleName]!.state,
 			getMaps: () => createMapsProxy(moduleName),
 			dispatch,
 		};
@@ -375,7 +425,7 @@ const createStore: CreateStore = (
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);
 			let newState: ReturnType<Action>;
-			const targetModule = currentModules[moduleName];
+			const targetModule = currentModules[moduleName]!;
 			newState = targetModule.actions[type](...data);
 			return setStateProxyWithMiddleware({
 				moduleName,
@@ -398,17 +448,17 @@ const createStore: CreateStore = (
 	const destory = () => {
 		Object.keys(currentModules).forEach(destoryModule);
 		currentInitStates = {};
-		currentLazyModules = {};
+		currentLazyModules = {} as any;
 		listeners = {};
 		allModuleNames = undefined;
 		currentMiddlewares = [];
 	}
 	const init = () => {
 		if (!!currentStoreInstance) {
-			currentStoreInstance.destory();
+			(currentStoreInstance as Store<StoreType, AM>).destory();
 		}
-		Object.keys(modules).forEach((moduleName: ModuleName) => {
-			setModule(moduleName, modules[moduleName]);
+		Object.keys(modules).forEach((moduleName) => {
+			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
 	};
 
@@ -430,7 +480,8 @@ const createStore: CreateStore = (
 		dispatch,
 		globalSetStates,
 		globalResetStates,
-	};
+		type: null as any as StoreType,
+	} as Store<StoreType, AM>;
 	return currentStoreInstance;
 };
 export const getStoreInstance = () => currentStoreInstance;
