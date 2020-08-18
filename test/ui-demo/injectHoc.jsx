@@ -52,7 +52,10 @@ export const store = createStore(
 		shallowEqualMiddleware,
 	]
 );
-const Inject = createInject({storeGetter: () => store});
+const Inject = createInject({
+	storeGetter: () => store,
+	loadingComponent: () => <>loading</>
+});
 
 const injectSome = Inject(['name', {}], 'lazyName');
 
@@ -91,7 +94,7 @@ const AppWithLoadErrorModule = Inject('lazyLoadError')(({lazyLoadError}) => {
 	);
 });
 
-Inject.setLoadingComponent(() => <>loading</>)
+// Inject.setLoadingComponent()
 
 export {
 	App,
