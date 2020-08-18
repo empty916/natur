@@ -16,13 +16,13 @@ import {GenerateStoreType, PickPromiseType} from './ts-utils';
 import MapCache from './MapCache'
 
 
-export type ModuleEvent = {
+export type ModuleEvent<AN extends string = string> = {
 	type: 'init' | 'update' | 'remove',
-	actionName?: string,
+	actionName?: AN,
 };
 
-export interface Listener {
-	(me: ModuleEvent): any;
+export interface Listener<AN extends string = string> {
+	(me: ModuleEvent<AN>): any;
 }
 
 export type State = any;
@@ -41,7 +41,7 @@ export interface Actions {
 	[type: string]: Action;
 };
 
-type StoreMap = Array<string | AnyFun>;
+type StoreMap = Array<string | AnyFun> | Function;
 export interface Maps {
 	[p: string]: StoreMap;
 };
@@ -64,23 +64,27 @@ export interface LazyStoreModules {
 export interface Modules {
 	[p: string]: StoreModule;
 }
-
-type Next<MN extends any = ModuleName> = (record: Record<MN>) => ReturnType<Action>;
+export type InjectStoreModules = {
+	[k: string]: InjectStoreModule
+}
+type Next<MN extends any = ModuleName, ST extends InjectStoreModules = InjectStoreModules> = (record: Record<MN>) => ReturnType<Action>;
 type Record<MN extends any = ModuleName> = {moduleName: MN, actionName: string, state: ReturnType<Action>};
-export type MiddlewareParams = {
+export type MiddlewareParams<StoreType extends InjectStoreModules> = {
 	setState: Next,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
-	dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
+	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 
-type globalResetStatesOption = {
-	include?: Array<string|RegExp>;
-	exclude?: Array<string|RegExp>;
+type globalResetStatesOption<MN extends string = string> = {
+	include?: Array<MN|RegExp>;
+	exclude?: Array<MN|RegExp>;
 };
 
 export type ModuleName = string;
-export type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
+export type Middleware<StoreType extends {
+	[k: string]: InjectStoreModule
+}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next<keyof StoreType>) => Next<keyof StoreType>;
 
 export interface Store<
 	StoreType extends {
@@ -90,9 +94,9 @@ export interface Store<
 		[k: string]: StoreModule
 	},
 	S extends Partial<{
-		[k in keyof StoreType]: StoreType[k]['state']
+		[k in keyof StoreType]: Partial<StoreType[k]['state']>
 	}> = Partial<{
-		[k in keyof StoreType]: StoreType[k]['state']
+		[k in keyof StoreType]: Partial<StoreType[k]['state']>
 	}>
 > {
 	getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
@@ -101,15 +105,15 @@ export interface Store<
 	setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store<StoreType, AOST>;
 	removeLazyModule: (moduleName: ModuleName) => Store<StoreType, AOST>;
 	hasModule: (moduleName: ModuleName) => boolean;
-	loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
-	getOriginModule: (moduleName: ModuleName) => StoreModule | {};
+	loadModule: <MN extends keyof StoreType>(moduleName: MN) => Promise<StoreType[MN]>;
+	getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
 	getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
-	subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
-	getAllModuleName: () => ModuleName[];
+	subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
+	getAllModuleName: () => (keyof StoreType)[];
 	destory: () => void;
-	dispatch: (action: string, ...arg: any) => ReturnType<Action>;
+	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 	globalSetStates: (s: S) => void;
-	globalResetStates: (option?: globalResetStatesOption) => void;
+	globalResetStates: <MN extends keyof StoreType>(option?: globalResetStatesOption<Extract<MN, string>>) => void;
 	type: StoreType;
 }
 
@@ -142,7 +146,7 @@ const createStore = <
 	initStates: Partial<{
 		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>[k]['state']
 	}> = {},
-	middlewares: Middleware[] = [],
+	middlewares: Middleware<GenerateStoreType<M, LM>>[] = [],
 ) => {
 	type AM = (M & {
 		[k in keyof LM]: PickPromiseType<LM[k]>;
@@ -336,9 +340,18 @@ const createStore = <
 		for(let key in maps) {
 			if (maps.hasOwnProperty(key)) {
 				if (mapsCache[moduleName][key] === undefined) {
+					const targetMap = maps[key];
+					let mapCacheSecondParam: (string | Function)[] = [];
+					if (Array.isArray(targetMap)) {
+						mapCacheSecondParam = targetMap;
+					} else if (targetMap.length !== 0) {
+						mapCacheSecondParam = [() => currentModules[moduleName]!.state, targetMap];
+					} else {
+						mapCacheSecondParam = [() => undefined, targetMap];
+					}
 					mapsCache[moduleName][key] = new MapCache(
 						() => currentModules[moduleName]!.state,
-						maps[key],
+						mapCacheSecondParam,
 					);
 					mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
 				}
@@ -372,21 +385,17 @@ const createStore = <
 	 * 
 	 * @param action count/inc
 	 */
-	const dispatch = (action: string, ...arg: any[]): ReturnType<Action> => {
-		if(!(/\//.test(action))) {
-			console.warn(`dispatch: ${action} is invalid!`);
-			throw new Error(`dispatch: ${action} is invalid!`);
-		}
-		const slashIndex = action.indexOf('/');
-		const moduleName = action.substr(0, slashIndex);
-		const actionName = action.substr(slashIndex + 1);
+	const dispatch = <
+		MN extends keyof StoreType,
+		AN extends keyof StoreType[MN]['actions']
+	>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>): ReturnType<StoreType[MN]['actions'][AN]> => {
 		checkModuleIsValid(moduleName);
-		const moduleProxyActions = createActionsProxy(moduleName);
+		const moduleProxyActions = createActionsProxy(moduleName as string);
 		if (!(actionName in moduleProxyActions)) {
-			console.warn(`dispatch: ${action} is invalid!`);
-			throw new Error(`dispatch: ${action} is invalid!`);
+			console.warn(`dispatch: ${actionName} is invalid!`);
+			throw new Error(`dispatch: ${actionName} is invalid!`);
 		};
-		return moduleProxyActions[actionName](...arg);
+		return moduleProxyActions[actionName as string](...arg);
 	}
 	// 获取原本的module
 	const getOriginModule = (moduleName: ModuleName) => {
@@ -419,8 +428,8 @@ const createStore = <
 			getMaps: () => createMapsProxy(moduleName),
 			dispatch,
 		};
-		const chain = currentMiddlewares.map((middleware: Middleware) => middleware(middlewareParams));
-		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware>)(setState);
+		const chain = currentMiddlewares.map((middleware: Middleware<StoreType>) => middleware(middlewareParams));
+		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware<StoreType>>)(setState);
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);
@@ -454,9 +463,9 @@ const createStore = <
 		currentMiddlewares = [];
 	}
 	const init = () => {
-		if (!!currentStoreInstance) {
-			(currentStoreInstance as Store<StoreType, AM>).destory();
-		}
+		// if (!!currentStoreInstance) {
+		// 	(currentStoreInstance as Store<StoreType, AM>).destory();
+		// }
 		Object.keys(modules).forEach((moduleName) => {
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
@@ -481,8 +490,8 @@ const createStore = <
 		globalSetStates,
 		globalResetStates,
 		type: null as any as StoreType,
-	} as Store<StoreType, AM>;
-	return currentStoreInstance;
+	};
+	return currentStoreInstance as Store<StoreType, AM>;
 };
 export const getStoreInstance = () => currentStoreInstance;
 export default createStore;

@@ -31,6 +31,8 @@ const count = {
 		_inc: () => ({getState, setState, getMaps}) => {
 			expect(getMaps()).toEqual({
 				isOdd: true,
+				isOdd2: true,
+				isTrue: true,
 				getSplitNameWhenCountIsOdd: 'count'.split(''),
 				a1: 2,
 				a2: 3,
@@ -74,6 +76,8 @@ const count = {
 	},
 	maps: {
 		isOdd: ['count', count => count % 2 !== 0],
+		isOdd2: ({count}) => count % 2 !== 0,
+		isTrue: () => true,
 		getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
 			countMapCallTimes ++;
 			if (count % 2 !== 0) {
@@ -165,6 +169,7 @@ const updateCountState = () => {
 	// mapCallTime: 1,
 	expect(countModule.state.count).toBe(0);
 	expect(countModule.maps.isOdd).toBe(false);
+	expect(countModule.maps.isOdd2).toBe(false);
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toBe(countModule.state.count);
 
 	// count = 1, name='count', isOdd = true, getSplitNameWhenCountIsOdd = 'count'.split('');
@@ -172,6 +177,7 @@ const updateCountState = () => {
 	countModule = store.getModule('count');
 	expect(countModule.state.count).toBe(1);
 	expect(countModule.maps.isOdd).toBe(true);
+	expect(countModule.maps.isOdd2).toBe(true);
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toEqual(countModule.state.name.split(''));
 
 
@@ -185,6 +191,7 @@ const updateCountState = () => {
 	countModule = store.getModule('count');
 	expect(countModule.state.count).toBe(0);
 	expect(countModule.maps.isOdd).toBe(false);
+	expect(countModule.maps.isOdd2).toBe(false);
 	expect(countModule.maps.getSplitNameWhenCountIsOdd).toBe(0);
 
 	return countModule.actions.asyncInc(countModule.state)
@@ -193,6 +200,7 @@ const updateCountState = () => {
 			expect(countModule.state).toBe(state);
 			expect(countModule.state.count).toBe(1);
 			expect(countModule.maps.isOdd).toBe(true);
+			expect(countModule.maps.isOdd2).toBe(true);
 		});
 }
 const countMapsCache = () => {
@@ -297,7 +305,7 @@ describe('init', () => {
 			state: {a: 1},
 			actions: {a: () => {}},
 			maps: {a: () => {}}
-		}})).toThrow();
+		}})).not.toThrow();
 
 		expect(() => store = createStore({ count: {
 			state: {},
@@ -322,6 +330,7 @@ describe('init', () => {
 			'dispatch',
 			'globalSetStates',
 			'globalResetStates',
+			'type'
 		]);
 		expect(getStoreInstance()).toBe(store);
 	});
@@ -338,6 +347,24 @@ describe('init', () => {
 	test('get moduleWithMaps', getModuleWithMaps('count', count));
 	test('getAllModuleName', getAllModuleName(['count', 'countWithoutMaps']))
 
+});
+
+describe('destory', () => {
+	beforeEach(() => {
+		store = createStore({ name }, {}, {}, [
+			promiseMiddleware,
+			filterNonObjectMiddleware,
+			shallowEqualMiddleware
+		]);
+		store.setModule('count', name);
+		store.setModule('nameWithMaps', nameWithMaps);
+		store.setModule('count', count);
+	});
+	test('destory', () => {
+		expect(store.hasModule('name')).toBe(true);
+		store.destory();
+		expect(store.hasModule('name')).toBe(false);
+	})
 });
 
 describe('setModule', () => {
@@ -370,13 +397,13 @@ describe('setModule', () => {
 			state: [{a:1}],
 			actions: {a:() => {}},
 			maps: {a:() => {}}
-		})).toThrow();
+		})).not.toThrow();
 
 		expect(() => store.setModule('name1', {
 			state: () => {},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
-		})).toThrow();
+		})).not.toThrow();
 
 		expect(() => store.setModule('name1', {
 			state: {a:1},
@@ -671,14 +698,13 @@ describe('actions', () => {
 	});
 	test('dispatch', () => {
 		const countModule = store.getModule('count');
-		expect(store.dispatch('count/inc', countModule.state).count).toBe(countModule.state.count+1);
+		expect(store.dispatch('count', 'inc', countModule.state).count).toBe(countModule.state.count+1);
 		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
 	});
 	test('dispatch error action', () => {
 		const countModule = store.getModule('count');
-		// expect(store.dispatch('count/inc', countModule.state).count).toBe(countModule.state.count+1);
-		expect(() => store.dispatch('count/inc2', countModule.state).count).toThrowError();
-		expect(() => store.dispatch('count/inc/aa/22', countModule.state).count).toThrowError();
+		expect(() => store.dispatch('count', 'inc2', countModule.state).count).toThrowError();
+		expect(() => store.dispatch('count', 'inc/aa/22', countModule.state).count).toThrowError();
 		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
 	});
 	test('return no change state', () => {
@@ -705,7 +731,7 @@ describe('actions', () => {
 		]);
 		let countModule = store.getModule('count');
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
-		expect(store.dispatch('count/returnGet', countModule.state)).toBe(countModule.state);
+		expect(store.dispatch('count', 'returnGet', countModule.state)).toBe(countModule.state);
 	});
 	test('return function', () => {
 		let countModule = store.getModule('count');

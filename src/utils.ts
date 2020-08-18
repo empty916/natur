@@ -42,7 +42,7 @@ export const isFnObj = (obj: any): obj is fnObj => {
 }
 const isMapsObj = (obj: any): obj is mapsObj => {
 	if (isObj(obj)) {
-		return Object.keys(obj).every(key => obj[key].constructor === Array);
+		return Object.keys(obj).every(key => (obj[key].constructor === Array || obj[key].constructor === Function));
 	}
 	return false;
 }

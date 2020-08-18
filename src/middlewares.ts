@@ -9,7 +9,7 @@ export type ThunkParams<S = any, M = any> = {
 	dispatch: (moduleNameAndActionName: string, ...params: any[]) => any;
 }
 
-export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => next => record => {
+export const thunkMiddleware: Middleware<any> = ({getState, getMaps, dispatch}) => next => record => {
 	if (typeof record.state === 'function') {
 		const setState = (s: State) => next({
 			...record,
@@ -17,9 +17,11 @@ export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => ne
 		});
 		const _dispatch = (action: string, ...arg: any[]) => {
 			if (/^\w+\/\w+$/.test(action)) {
-				return dispatch(action, ...arg);
+				const moduleName = action.split('/')[0];
+				const actionName = action.split('/').slice(1).join('/');
+				return dispatch(moduleName, actionName, ...arg);
 			}
-			return dispatch(`${record.moduleName}/${action}`, ...arg);
+			return dispatch(record.moduleName, action, ...arg);
 		}
 		return next({
 			...record,
@@ -29,7 +31,7 @@ export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => ne
 	return next(record);
 }
 
-export const promiseMiddleware: Middleware = () => next => record => {
+export const promiseMiddleware: Middleware<any> = () => next => record => {
 	if (isPromise<ReturnType<Action>>(record.state)) {
 		return (record.state as Promise<ReturnType<Action>>)
 			.then(ns => next({
@@ -40,14 +42,14 @@ export const promiseMiddleware: Middleware = () => next => record => {
 	return next(record);
 }
 
-export const filterNonObjectMiddleware: Middleware = () => next => record => {
+export const filterNonObjectMiddleware: Middleware<any> = () => next => record => {
 	if (!isObj<State>(record.state)) {
 		return record.state;
 	}
 	return next(record);
 }
 
-export const shallowEqualMiddleware: Middleware = ({getState}) => next => record => {
+export const shallowEqualMiddleware: Middleware<any> = ({getState}) => next => record => {
 	const oldState = getState();
 	if (isEqualWithDepthLimit(record.state, oldState, 1)) {
 		return record.state;
@@ -55,7 +57,7 @@ export const shallowEqualMiddleware: Middleware = ({getState}) => next => record
 	return next(record);
 }
 
-export const fillObjectRestDataMiddleware: Middleware = ({getState}) => next => record => {
+export const fillObjectRestDataMiddleware: Middleware<any> = ({getState}) => next => record => {
 	const currentState = getState();
 	if (isObj(record.state) && isObj(currentState)) {
 		record = Object.assign({}, record, {
@@ -65,7 +67,7 @@ export const fillObjectRestDataMiddleware: Middleware = ({getState}) => next => 
 	return next(record);
 };
 
-export const filterUndefinedMiddleware: Middleware = () => next => record => {
+export const filterUndefinedMiddleware: Middleware<any> = () => next => record => {
 	if (record.state === undefined) {
 		return undefined;
 	}

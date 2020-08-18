@@ -1,3 +1,5 @@
+import { ThunkParams } from "../src/middlewares";
+
 export const state = {
 	count: 1,
 	name: "count",
@@ -42,7 +44,7 @@ export const actions = {
 			}
 		});
 	},
-	decDeeep: () => ({getState, setState}) => {
+	decDeeep: () => ({getState, setState}: ThunkParams<typeof state>) => {
 		const state = getState();
 		return setState({
 			deeep: {
