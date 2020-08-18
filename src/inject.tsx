@@ -197,7 +197,7 @@ const createInject = <
 	AMOT extends Modules
 >({
 	storeGetter,
-	loadingComponent = LoadingComponent,
+	loadingComponent = Loading,
 }: {
 	storeGetter: StoreGetter<ST, AMOT>
 	loadingComponent?: TReactComponent<{}>
