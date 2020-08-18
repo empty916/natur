@@ -1,11 +1,13 @@
-export declare type ModuleEvent = {
+import { GenerateStoreType } from './ts-utils';
+export declare type ModuleEvent<AN extends string = string> = {
     type: 'init' | 'update' | 'remove';
-    actionName?: string;
+    actionName?: AN;
 };
-export interface Listener {
-    (me: ModuleEvent): any;
+export interface Listener<AN extends string = string> {
+    (me: ModuleEvent<AN>): any;
 }
 export declare type State = any;
+declare type AnyFun = (...arg: any) => any;
 export interface States {
     [type: string]: State;
 }
@@ -15,7 +17,7 @@ export interface Action {
 export interface Actions {
     [type: string]: Action;
 }
-declare type StoreMap = Array<string | Function>;
+declare type StoreMap = Array<string | AnyFun> | AnyFun;
 export interface Maps {
     [p: string]: StoreMap;
 }
@@ -38,42 +40,51 @@ export interface LazyStoreModules {
 export interface Modules {
     [p: string]: StoreModule;
 }
-declare type Next = (record: Record) => ReturnType<Action>;
-declare type Record = {
-    moduleName: ModuleName;
+export declare type InjectStoreModules = {
+    [k: string]: InjectStoreModule;
+};
+declare type Next<MN extends any = ModuleName, ST extends InjectStoreModules = InjectStoreModules> = (record: Record<MN>) => ReturnType<Action>;
+declare type Record<MN extends any = ModuleName> = {
+    moduleName: MN;
     actionName: string;
     state: ReturnType<Action>;
 };
-export declare type MiddlewareParams = {
+export declare type MiddlewareParams<StoreType extends InjectStoreModules> = {
     setState: Next;
     getState: () => State;
     getMaps: () => InjectMaps | undefined;
-    dispatch: (action: string, ...arg: any[]) => ReturnType<Action>;
+    dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
-declare type globalResetStatesOption = {
-    include?: Array<string | RegExp>;
-    exclude?: Array<string | RegExp>;
+declare type globalResetStatesOption<MN extends string = string> = {
+    include?: Array<MN | RegExp>;
+    exclude?: Array<MN | RegExp>;
 };
 export declare type ModuleName = string;
-export declare type Middleware = (middlewareParams: MiddlewareParams) => (next: Next) => Next;
-export interface Store {
-    getModule: (moduleName: ModuleName) => InjectStoreModule;
-    setModule: (moduleName: ModuleName, storeModule: StoreModule) => Store;
-    removeModule: (moduleName: ModuleName) => Store;
-    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store;
-    removeLazyModule: (moduleName: ModuleName) => Store;
+export declare type Middleware<StoreType extends {
+    [k: string]: InjectStoreModule;
+}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next<keyof StoreType>) => Next<keyof StoreType>;
+export interface Store<StoreType extends InjectStoreModules, AOST extends Modules, S extends Partial<{
+    [k in keyof StoreType]: Partial<StoreType[k]['state']>;
+}> = Partial<{
+    [k in keyof StoreType]: Partial<StoreType[k]['state']>;
+}>> {
+    getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
+    setModule: <MN extends keyof AOST>(moduleName: MN, storeModule: AOST[MN]) => Store<StoreType, AOST>;
+    removeModule: (moduleName: ModuleName) => Store<StoreType, AOST>;
+    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store<StoreType, AOST>;
+    removeLazyModule: (moduleName: ModuleName) => Store<StoreType, AOST>;
     hasModule: (moduleName: ModuleName) => boolean;
-    loadModule: (moduleName: ModuleName) => Promise<InjectStoreModule>;
-    getOriginModule: (moduleName: ModuleName) => StoreModule | {};
+    loadModule: <MN extends keyof StoreType>(moduleName: MN) => Promise<StoreType[MN]>;
+    getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
     getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
-    subscribe: (moduleName: ModuleName, listener: Listener) => () => void;
-    getAllModuleName: () => ModuleName[];
+    subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
+    getAllModuleName: () => (keyof StoreType)[];
     destory: () => void;
-    dispatch: (action: string, ...arg: any) => ReturnType<Action>;
-    globalSetStates: (s: States) => void;
-    globalResetStates: (option?: globalResetStatesOption) => void;
+    dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+    globalSetStates: (s: S) => void;
+    globalResetStates: <MN extends keyof StoreType>(option?: globalResetStatesOption<Extract<MN, string>>) => void;
+    type: StoreType;
 }
-declare type CreateStore = (modules?: Modules, lazyModules?: LazyStoreModules, initStates?: States, middlewares?: Middleware[]) => Store;
-declare const createStore: CreateStore;
-export declare const getStoreInstance: () => Store;
+declare const createStore: <M extends Modules, LM extends LazyStoreModules>(modules?: M, lazyModules?: LM, initStates?: Partial<{ [k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>[k]["state"]; }>, middlewares?: Middleware<GenerateStoreType<M, LM>>[]) => Store<GenerateStoreType<M, LM>, M & { [k in keyof LM]: Parameters<Extract<Parameters<ReturnType<LM[k]>["then"]>[0], Function>>[0]; }, Partial<{ [k in keyof GenerateStoreType<M, LM>]: Partial<GenerateStoreType<M, LM>[k]["state"]>; }>>;
+export declare const getStoreInstance: () => unknown;
 export default createStore;

@@ -15,16 +15,14 @@ function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.crea
  */
 import React from 'react';
 import hoistStatics from 'hoist-non-react-statics';
-import { getStoreInstance } from './createStore';
-import { isEqualWithDepthLimit, isModuleDepDec, initDiff as _initDiff } from './utils';
+import { isEqualWithDepthLimit } from './utils';
+import { isModuleDepDec, initDiff as _initDiff } from './injectCache';
 
 var Loading = function Loading() {
   return null;
 };
 
-var _getStoreInstance = getStoreInstance;
-
-var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingComponent) {
+var connect = function connect(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent) {
   var Connect = /*#__PURE__*/function (_React$Component) {
     _inheritsLoose(Connect, _React$Component);
 
@@ -168,15 +166,11 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
     };
 
     _proto.init = function init() {
-      var storeContext = _getStoreInstance();
-
-      var store = storeContext;
-
-      if (store === undefined) {
-        var errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
-        console.error(errMsg);
-        throw new Error(errMsg);
-      }
+      var store = storeGetter(); // if (store === undefined) {
+      // 	const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
+      // 	console.error(errMsg);
+      // 	throw new Error(errMsg);
+      // }
 
       var allModuleNames = store.getAllModuleName(); // 获取store中存在的模块
 
@@ -240,32 +234,45 @@ var connect = function connect(moduleNames, depDecs, WrappedComponent, LoadingCo
   return hoistStatics(FinalConnect, WrappedComponent);
 };
 
-function Inject() {
-  var depDecs = {};
+var createInject = function createInject(_ref) {
+  var storeGetter = _ref.storeGetter,
+      _ref$loadingComponent = _ref.loadingComponent,
+      loadingComponent = _ref$loadingComponent === void 0 ? Loading : _ref$loadingComponent;
 
-  for (var _len = arguments.length, moduleDec = new Array(_len), _key = 0; _key < _len; _key++) {
-    moduleDec[_key] = arguments[_key];
-  }
+  function Inject() {
+    var depDecs = {};
 
-  var moduleNames = moduleDec.map(function (m) {
-    if (isModuleDepDec(m)) {
-      depDecs[m[0]] = m[1];
-      return m[0];
+    for (var _len = arguments.length, moduleDec = new Array(_len), _key = 0; _key < _len; _key++) {
+      moduleDec[_key] = arguments[_key];
     }
 
-    return m;
-  });
-  return function (WrappedComponent, LoadingComponent) {
-    return connect(moduleNames, depDecs, WrappedComponent, LoadingComponent);
+    var moduleNames = moduleDec.map(function (m) {
+      if (isModuleDepDec(m)) {
+        depDecs[m[0]] = m[1];
+        return m[0];
+      }
+
+      return m;
+    });
+
+    var connectHOC = function connectHOC(WrappedComponent, LoadingComponent) {
+      if (LoadingComponent === void 0) {
+        LoadingComponent = loadingComponent;
+      }
+
+      return connect(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent);
+    };
+
+    var type = null;
+    connectHOC.type = type;
+    return connectHOC;
+  }
+
+  Inject.setLoadingComponent = function (LoadingComponent) {
+    return Loading = LoadingComponent;
   };
-}
 
-Inject.setLoadingComponent = function (LoadingComponent) {
-  return Loading = LoadingComponent;
+  return Inject;
 };
 
-Inject.setStoreGetter = function (storeGetter) {
-  _getStoreInstance = storeGetter;
-};
-
-export default Inject;
+export default createInject;

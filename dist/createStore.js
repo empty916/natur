@@ -17,7 +17,24 @@ import MapCache from './MapCache';
 ;
 ;
 ;
-;
+; // type CreateStore = <
+// 	M extends Modules,
+// 	LM extends LazyStoreModules,
+// 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>,
+// 	S extends Partial<{
+// 		[k in keyof StoreType]: StoreType[k]['state']
+// 	}> = Partial<{
+// 		[k in keyof StoreType]: StoreType[k]['state']
+// 	}>
+// >(
+// 	modules?: M,
+// 	lazyModules?: LM,
+// 	initStates?: {
+// 		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>['state']
+// 	},
+// 	middlewares?: Middleware[],
+// ) => Store;
+
 var currentStoreInstance;
 
 var createStore = function createStore(modules, lazyModules, initStates, middlewares) {
@@ -275,9 +292,24 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     for (var key in maps) {
       if (maps.hasOwnProperty(key)) {
         if (mapsCache[moduleName][key] === undefined) {
+          var targetMap = maps[key];
+          var mapCacheSecondParam = [];
+
+          if (Array.isArray(targetMap)) {
+            mapCacheSecondParam = targetMap;
+          } else if (targetMap.length !== 0) {
+            mapCacheSecondParam = [function () {
+              return currentModules[moduleName].state;
+            }, targetMap];
+          } else {
+            mapCacheSecondParam = [function () {
+              return undefined;
+            }, targetMap];
+          }
+
           mapsCache[moduleName][key] = new MapCache(function () {
             return currentModules[moduleName].state;
-          }, maps[key]);
+          }, mapCacheSecondParam);
           mapsCacheList[moduleName].push(mapsCache[moduleName][key]);
         }
 
@@ -326,27 +358,19 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
    */
 
 
-  var dispatch = function dispatch(action) {
-    if (!/\//.test(action)) {
-      console.warn("dispatch: " + action + " is invalid!");
-      throw new Error("dispatch: " + action + " is invalid!");
-    }
-
-    var slashIndex = action.indexOf('/');
-    var moduleName = action.substr(0, slashIndex);
-    var actionName = action.substr(slashIndex + 1);
+  var dispatch = function dispatch(moduleName, actionName) {
     checkModuleIsValid(moduleName);
     var moduleProxyActions = createActionsProxy(moduleName);
 
     if (!(actionName in moduleProxyActions)) {
-      console.warn("dispatch: " + action + " is invalid!");
-      throw new Error("dispatch: " + action + " is invalid!");
+      console.warn("dispatch: " + actionName + " is invalid!");
+      throw new Error("dispatch: " + actionName + " is invalid!");
     }
 
     ;
 
-    for (var _len2 = arguments.length, arg = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-      arg[_key2 - 1] = arguments[_key2];
+    for (var _len2 = arguments.length, arg = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+      arg[_key2 - 2] = arguments[_key2];
     }
 
     return moduleProxyActions[actionName].apply(moduleProxyActions, arg);
@@ -441,10 +465,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   };
 
   var init = function init() {
-    if (!!currentStoreInstance) {
-      currentStoreInstance.destory();
-    }
-
+    // if (!!currentStoreInstance) {
+    // 	(currentStoreInstance as Store<StoreType, AM>).destory();
+    // }
     Object.keys(modules).forEach(function (moduleName) {
       setModule(moduleName, modules[moduleName]);
     });
@@ -466,7 +489,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     destory: destory,
     dispatch: dispatch,
     globalSetStates: globalSetStates,
-    globalResetStates: globalResetStates
+    globalResetStates: globalResetStates,
+    type: null
   };
   return currentStoreInstance;
 };

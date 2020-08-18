@@ -6,13 +6,8 @@
  * @desc [description]
  */
 import MapCache from './MapCache';
-import { default as inject } from "./inject";
-import { useInject } from "./hooks";
+import { default as createInject } from "./inject";
 export { default as createStore } from "./createStore";
 export var setMapDepParser = MapCache.setMapDepParser;
 export var resetMapDepParser = MapCache.resetMapDepParser;
-export { inject, useInject };
-export var setInjectStoreGetter = function setInjectStoreGetter(sg) {
-  useInject.setStoreGetter(sg);
-  inject.setStoreGetter(sg);
-};
+export { createInject };
