@@ -20,7 +20,6 @@
 - [detailed module](#module)
 - [complex demo](#complex-demo)
 - [The component only listens to changes in some data](#partial-listener)
-- [hooks](#hooks)
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
 - [middleware](#middleware)
@@ -53,7 +52,6 @@
   - [inject api](#inject.api)
     - [inject](#inject.self)
     - [setLoadingComponent](#inject.setLoadingComponent)
-  - [useInject](#useInject.api)
 
 
 ## <a id='start'>start</a>
@@ -339,38 +337,7 @@ inject(
 
 // Because actions stay the same after they are created, you don't have to listen for changes
 
-// This feature is not available for hooks, because hooks do not have a shouldComponentUpdate switch to control component updates.
 ```  
-
-
-## <a id='hooks'>hooks</a>
-
-```jsx
-
-import { useInject } from 'natur';
-
-const App = () => {
-  /*
-  Note that if there is a lazy loading module in the useInject parameter, the empty array will be returned first.
-  Wait until the lazy loading module is loaded before returning the module you need,
-  So useInject is not recommended for lazy loading modules
-
-  But you can use the way of adding modules manually
-  store.setModule ('otherModuleName', otherModule);
-  See manual import module description for details
-  */
-  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
-  const {state, actions, maps} = app;
-  return (
-    <input
-      value={state.name}
-      onChange={e => actions.changeName(e.target.value)}
-    />
-  )
-};
-export default App; 
-
-```
 
 ---
 
@@ -725,7 +692,6 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts This is a lazy loaded page
-import { useInject } from 'natur';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {
@@ -748,7 +714,7 @@ store.setModule('lazyModuleName', lazyLoadModule);
 
 const lazyLoadView = () => {
   // Now you can get manually added modules
-  const [{state, maps, actions}] = useInject('lazyModuleName');
+  const {state, maps, actions} = store.getModule('lazyModuleName');
   return (
     <div>{state.name}</div>
   )
@@ -988,17 +954,5 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
 type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 
 inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
-
-````
-
-### <a id='useInject.api'>useInject</a>
-
-````typescript
-type ModuleDepDec = [string, {
-  state?: Array<string|Function>;
-  maps?: Array<string>;
-}]
-
-useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
 
 ````
