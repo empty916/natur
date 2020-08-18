@@ -1,4 +1,4 @@
-import {StoreModule} from 'natur';
+import {StoreModule, Maps} from './createStore';
 
 type AnyFun = (...args: any) => any;
 type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;
@@ -17,12 +17,10 @@ export type GenActionsType<OAS extends {[m: string]: AnyFun}, S> = {
 };
 
 
-type Maps = {
-	[m: string]: (string | AnyFun)[];
-}
 type MapsFunType<M extends Maps, S extends StoreModule['state']> = {
-	[k in keyof M]: Exclude<Extract<M[k][0], AnyFun>, (s: S) => any>;
+	[k in keyof M]: M[k] extends Array<any> ? Exclude<Extract<M[k][0], AnyFun>, (s: S) => any> : M[k] extends AnyFun ? M[k] : never;
 }
+
 type MapsFun = {
 	[m: string]: AnyFun;
 }

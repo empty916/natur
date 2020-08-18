@@ -41,7 +41,7 @@ export interface Actions {
 	[type: string]: Action;
 };
 
-type StoreMap = Array<string | AnyFun> | Function;
+type StoreMap = Array<string | AnyFun> | AnyFun;
 export interface Maps {
 	[p: string]: StoreMap;
 };
@@ -87,12 +87,8 @@ export type Middleware<StoreType extends {
 }> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next<keyof StoreType>) => Next<keyof StoreType>;
 
 export interface Store<
-	StoreType extends {
-		[k: string]: InjectStoreModule
-	},
-	AOST extends {
-		[k: string]: StoreModule
-	},
+	StoreType extends InjectStoreModules,
+	AOST extends Modules,
 	S extends Partial<{
 		[k in keyof StoreType]: Partial<StoreType[k]['state']>
 	}> = Partial<{

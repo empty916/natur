@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
-import { inject, InjectStoreModule } from "../src";
+import { createInject, InjectStoreModule } from "../src";
 // import { inject, InjectStoreModule } from "../dist/rns";
 import initStore from "./initStore";
 import { InjectCountStore } from "./count";
@@ -13,7 +13,18 @@ type otherProps = {
 
 let renderStart = 0;
 
-const _App: React.FC<otherProps & storeProps> = ({ count }) => {
+const store = initStore();
+
+const inject = createInject({storeGetter: () => store});
+
+const injectStore = inject([
+	"count", {
+		maps: ['deeepCountIsOdd', 'firstChar'],
+		state: ['count', s => s.count + s.deeep.deep.count]
+	}
+], 'count2');
+
+const _App: React.FC<otherProps & typeof injectStore.type> = ({ count }) => {
 	const { state, actions, maps } = count;
 	return (
 		<div>
@@ -51,34 +62,15 @@ const createLoading = (bgcolor: string) => () => (
 	</div>
 );
 
-const App = inject<storeProps>(["count", { maps: ["firstChar"] }])(
+const App = injectStore(
 	_App,
 	createLoading("green")
 );
+
 inject.setLoadingComponent(createLoading("red"));
 
-const store = initStore();
-
-console.log(store.getModule("count"));
 const { actions } = store.getModule("count");
 
-store.loadModule("lazyCount").then((lazyModule) => {
-	lazyModule.actions.decDeeep();
-
-});
-
-
-store.subscribe('lazyCount', me => {
-	if (me.actionName === 'dec') {
-
-	}
-});
-
-store.globalSetStates({
-	count2: {
-		count: 1,
-	}
-});
 
 (window as any).countActions = actions;
 

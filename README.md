@@ -21,7 +21,6 @@
 - [module详解](#module)
 - [复杂的例子](#complex-demo)
 - [组件只监听部分数据的变更](#partial-listener)
-- [hooks方式](#hooks)
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
 - [中间件](#middleware)
@@ -54,7 +53,6 @@
   - [inject api](#inject.api)
     - [inject](#inject.self)
     - [setLoadingComponent](#inject.setLoadingComponent)
-  - [useInject](#useInject.api)
 
 ## <a id='start'>起步</a>
 
@@ -340,36 +338,6 @@ inject(
 
 // 此功能不适用于hooks，因为hooks没有shouldComponentUpdate开关控制组件更新，
 ```  
-
-
-## <a id='hooks'>hooks方式</a>
-
-```jsx
-
-import { useInject } from 'natur';
-
-const App = () => {
-  /*
-  注意，如果useInject参数中，存在懒加载模块，则会先返回空的数组，
-  等到懒加载模块加载完成才会返回你需要的模块，
-  所以useInject不建议使用于懒加载模块
-
-  但是你可以使用手动添加模块的的方式
-  store.setModule('otherModuleName', otherModule);
-  详情见手动导入模块说明
-  */
-  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
-  const {state, actions, maps} = app;
-  return (
-    <input
-      value={state.name}
-      onChange={e => actions.changeName(e.target.value)}
-    />
-  )
-};
-export default App; 
-
-```
 
 ---
 
@@ -711,7 +679,6 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts 这是一个懒加载的页面
-import { useInject } from 'natur';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {
@@ -734,7 +701,7 @@ store.setModule('lazyModuleName', lazyLoadModule);
 
 const lazyLoadView = () => {
   // 现在你可以获取手动添加的模块了
-  const [{state, maps, actions}] = useInject('lazyModuleName');
+  const {state, maps, actions} = store.getModule('lazyModuleName');
   return (
     <div>{state.name}</div>
   )
@@ -1000,17 +967,5 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
 type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 
 inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
-
-````
-
-### <a id='useInject.api'>useInject</a>
-
-````typescript
-type ModuleDepDec = [string, {
-  state?: Array<string|Function>;
-  maps?: Array<string>;
-}]
-
-useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
 
 ````

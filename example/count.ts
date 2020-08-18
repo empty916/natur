@@ -1,4 +1,5 @@
 import { ThunkParams } from "../src/middlewares";
+import { ModuleType } from "../src/ts-utils";
 
 export const state = {
 	count: 1,
@@ -12,6 +13,7 @@ export const state = {
 };
 export const maps = {
 	isOdd: ['count', (count: number) => count % 2 !== 0],
+	isOdd2: ({count}: typeof state) => count % 2 !== 0,
 	deeepCountIsOdd: ['deeep.deep.count', (count: number) => {
 		return count % 2 !== 0;
 	}],
@@ -66,25 +68,11 @@ const a = {
 	actions
 };
 
+
+
 type State = typeof state;
 
-export type InjectCountStore = {
-	state: State;
-	maps: {
-		isOdd: boolean;
-		deeepCountIsOdd: boolean;
-		splitName: string[];
-		firstChar: string,
-	};
-	actions: {
-		inc(): State;
-		dec(): State;
-		incDeeep(): State;
-		decDeeep(): State;
-		changeName(newName: string): State;
-	}
-}
-
+export type InjectCountStore = ModuleType<typeof a>;
 
 
 export default a;

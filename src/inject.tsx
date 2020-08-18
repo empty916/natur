@@ -10,35 +10,37 @@ import hoistStatics from 'hoist-non-react-statics'
 import {
 	ModuleName,
 	Store,
-	getStoreInstance,
-	Modules
+	Modules,
+	InjectStoreModules
 } from './createStore';
-import {isEqualWithDepthLimit, ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './utils';
-import { InjectStoreModule } from './createStore';
+import {isEqualWithDepthLimit} from './utils';
+import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
 
 type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 type ModuleNames = ModuleName[];
 
 let Loading: TReactComponent<{}> = () => null;
-let _getStoreInstance = getStoreInstance;
 
 type Tstate = {
 	storeStateChange: {},
 	modulesHasLoaded: boolean,
 }
 
+export type StoreGetter<ST extends InjectStoreModules, AMOT extends Modules> = () => Store<ST, AMOT>;
+
 type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
 
-const connect = <P, SP>(
+const connect = <P, SP, ST extends InjectStoreModules, AMOT extends Modules>(
 	moduleNames: Array<ModuleName>,
 	depDecs: DepDecs,
+	storeGetter: StoreGetter<ST, AMOT>,
 	WrappedComponent: TReactComponent<P>,
-	LoadingComponent?: TReactComponent<any>
+	LoadingComponent?: TReactComponent<any>,
 ): connectReturn<P, SP> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
 	class Connect extends React.Component<ConnectProps> {
-		private store: Store;
+		private store: Store<ST, AMOT>;
 		private integralModulesName: ModuleNames;
 		private unLoadedModules: ModuleNames;
 		private injectModules: Modules = {};
@@ -85,7 +87,7 @@ const connect = <P, SP>(
 				});
 			}
 		}
-		initDiff(moduleDepDec: DepDecs = depDecs, store: Store = this.store):void {
+		initDiff(moduleDepDec: DepDecs = depDecs, store: Store<ST, AMOT> = this.store):void {
 			const {diff, destroy} = initDiff(moduleDepDec, store);
 			this.storeModuleDiff = diff;
 			this.destoryCache = destroy;
@@ -140,13 +142,12 @@ const connect = <P, SP>(
 			return propsChanged || stateChanged;
 		}
 		init() {
-			const storeContext = _getStoreInstance();
-			const store = storeContext;
-			if (store === undefined) {
-				const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
-				console.error(errMsg);
-				throw new Error(errMsg);
-			}
+			const store = storeGetter();
+			// if (store === undefined) {
+			// 	const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
+			// 	console.error(errMsg);
+			// 	throw new Error(errMsg);
+			// }
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块
 			const integralModulesName = moduleNames.filter(mn => {
@@ -191,25 +192,38 @@ const connect = <P, SP>(
 	return hoistStatics(FinalConnect, WrappedComponent);
 }
 
-function Inject<StoreProp extends {[storeModuleName: string]: InjectStoreModule}>(...moduleDec: Array<string|ModuleDepDec>) {
-	const depDecs: DepDecs = {};
-	const moduleNames = moduleDec.map(m => {
-		if (isModuleDepDec(m)) {
-			depDecs[m[0]] = m[1];
-			return m[0];
-		}
-		return m;
-	});
-	return <P extends StoreProp>(
-		WrappedComponent: TReactComponent<P>, 
-		LoadingComponent?: TReactComponent<{}>
-	) => connect<P, StoreProp>(moduleNames, depDecs, WrappedComponent, LoadingComponent);
-}
+const createInject = <
+	ST extends InjectStoreModules,
+	AMOT extends Modules
+>({
+	storeGetter,
+	loadingComponent = LoadingComponent,
+}: {
+	storeGetter: StoreGetter<ST, AMOT>
+	loadingComponent?: TReactComponent<{}>
+}) => {
+	function Inject<MNS extends Extract<keyof ST, string>>(...moduleDec: Array<MNS|ModuleDepDec<MNS, ST>>) {
+		const depDecs: DepDecs = {};
+		const moduleNames = moduleDec.map(m => {
+			if (isModuleDepDec(m)) {
+				depDecs[m[0]] = m[1];
+				return m[0];
+			}
+			return m;
+		});
+		const connectHOC = <P extends Pick<ST, MNS>>(
+			WrappedComponent: TReactComponent<P>,
+			LoadingComponent: TReactComponent<{}> = loadingComponent
+		) => connect<P, Pick<ST, MNS>, ST, AMOT>(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent);
 
-Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}>) => Loading = LoadingComponent;
-Inject.setStoreGetter = (storeGetter: () => Store) => {
-	_getStoreInstance = storeGetter;
-}
+		const type = null as any as Pick<ST, MNS>;
+		connectHOC.type = type;
+		return connectHOC;
+	}
 
-export default Inject;
+	Inject.setLoadingComponent = (LoadingComponent: TReactComponent<{}>) => Loading = LoadingComponent;
+	return Inject;
+};
+
+export default createInject;
 
