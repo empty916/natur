@@ -33,13 +33,8 @@ export default () => {
 		],
 	);
 
-	const LogMiddleware: Middleware<typeof store.type> = ({setState}) => next => record => {
+	const LogMiddleware: Middleware<typeof store.type> = ({setState, dispatch}) => next => record => {
 		console.log(`${record.moduleName}: ${record.actionName}`, record.state);
-		setState({
-			moduleName: 'count',
-			actionName: '1',
-			state: {},
-		})
 		return next(record);
 	};
 	return store;

@@ -67,8 +67,14 @@ export interface Modules {
 export type InjectStoreModules = {
 	[k: string]: InjectStoreModule
 }
-type Next<MN extends any = ModuleName, ST extends InjectStoreModules = InjectStoreModules> = (record: Record<MN>) => ReturnType<Action>;
-type Record<MN extends any = ModuleName> = {moduleName: MN, actionName: string, state: ReturnType<Action>};
+type ActionRecord = {
+	moduleName: string, 
+	actionName: string, 
+	state: ReturnType<Action>
+};
+
+type Next = (record: ActionRecord) => ReturnType<Action>;
+
 export type MiddlewareParams<StoreType extends InjectStoreModules> = {
 	setState: Next,
 	getState: () => State,
@@ -82,9 +88,10 @@ type globalResetStatesOption<MN extends string = string> = {
 };
 
 export type ModuleName = string;
+
 export type Middleware<StoreType extends {
 	[k: string]: InjectStoreModule
-}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next<keyof StoreType>) => Next<keyof StoreType>;
+}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next) => Next;
 
 export interface Store<
 	StoreType extends InjectStoreModules,
@@ -112,24 +119,6 @@ export interface Store<
 	globalResetStates: <MN extends keyof StoreType>(option?: globalResetStatesOption<Extract<MN, string>>) => void;
 	type: StoreType;
 }
-
-// type CreateStore = <
-// 	M extends Modules,
-// 	LM extends LazyStoreModules,
-// 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>,
-// 	S extends Partial<{
-// 		[k in keyof StoreType]: StoreType[k]['state']
-// 	}> = Partial<{
-// 		[k in keyof StoreType]: StoreType[k]['state']
-// 	}>
-// >(
-// 	modules?: M,
-// 	lazyModules?: LM,
-// 	initStates?: {
-// 		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>['state']
-// 	},
-// 	middlewares?: Middleware[],
-// ) => Store;
 
 let currentStoreInstance: unknown;
 
@@ -221,7 +210,7 @@ const createStore = <
 		return allModuleNames;
 	}
 	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(listener => listener(me));
-	const setState = ({moduleName, state: newState, actionName}: Record<keyof StoreType>) => {
+	const setState = ({moduleName, state: newState, actionName}: ActionRecord) => {
 		const stateHasNoChange = currentModules[moduleName]!.state === newState;
 		if (stateHasNoChange) {
 			return newState;
@@ -424,8 +413,8 @@ const createStore = <
 			getMaps: () => createMapsProxy(moduleName),
 			dispatch,
 		};
-		const chain = currentMiddlewares.map((middleware: Middleware<StoreType>) => middleware(middlewareParams));
-		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware<StoreType>>)(setState);
+		const chain = currentMiddlewares.map((middleware: Middleware<StoreType>) => middleware(middlewareParams as any));
+		const setStateProxyWithMiddleware = (compose(...chain) as ReturnType<Middleware<StoreType>>)(setState as any);
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 		return (type: string, ...data: any[]) => {
 			checkModuleIsValid(moduleName);

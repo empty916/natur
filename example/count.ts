@@ -13,7 +13,14 @@ export const state = {
 };
 export const maps = {
 	isOdd: ['count', (count: number) => count % 2 !== 0],
-	isOdd2: ({count}: typeof state) => count % 2 !== 0,
+	isOdd2: (s: typeof state) => {
+		console.log('ssss', s)
+		return s.count % 2 !== 0;
+	},
+	isTrue: () => {
+		console.log('is true')
+		return true;
+	},
 	deeepCountIsOdd: ['deeep.deep.count', (count: number) => {
 		return count % 2 !== 0;
 	}],

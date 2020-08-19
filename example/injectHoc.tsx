@@ -1,26 +1,23 @@
-import React, { useEffect } from "react";
-import ReactDOM from "react-dom";
-import { createInject, InjectStoreModule } from "../src";
-// import { inject, InjectStoreModule } from "../dist/rns";
+import React from "react";
+import { createInject } from "../src";
 import initStore from "./initStore";
-import { InjectCountStore } from "./count";
 
-type storeProps = { count?: InjectCountStore; name?: InjectStoreModule };
 type otherProps = {
 	className: string;
 	style: Object;
 };
 
-let renderStart = 0;
-
 const store = initStore();
 
 const inject = createInject({storeGetter: () => store});
 
+
 const injectStore = inject([
 	"count", {
-		maps: ['deeepCountIsOdd', 'firstChar'],
-		state: ['count', s => s.count + s.deeep.deep.count]
+		// maps: ['deeepCountIsOdd', 'firstChar'],
+		maps: ['deeepCountIsOdd'],
+		// state: ['count', s => s.count + s.deeep.deep.count],
+		state: ['count', 'deeep'],
 	}
 ], 'count2');
 

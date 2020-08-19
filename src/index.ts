@@ -6,8 +6,7 @@
  * @desc [description]
  */
 import MapCache from './MapCache'
-import { Store, InjectStoreModules, Modules } from './createStore'
-import { default as createInject } from "./inject";
+export { default as createInject } from "./inject";
 export {
 	default as createStore,
 	ModuleEvent,
@@ -20,6 +19,7 @@ export {
 	InjectMaps,
 	StoreModule,
 	InjectStoreModule,
+	InjectStoreModules,
 	LazyStoreModules,
 	Modules,
 	Store,
@@ -27,8 +27,8 @@ export {
 	MiddlewareParams
 } from "./createStore";
 
+export {ModuleType} from './ts-utils';
+export {ThunkParams} from './middlewares';
 export const setMapDepParser = MapCache.setMapDepParser;
 export const resetMapDepParser = MapCache.resetMapDepParser;
-export {
-	createInject,
-}
+

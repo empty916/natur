@@ -8,6 +8,7 @@
 ## 基本介绍
 
 1. 这是一个简洁、高效的react状态管理器
+1. 良好的typescript体验
 1. 浏览器兼容：IE8+
 1. 支持react 15.x, 16.x, 以及anujs
 1. 单元测试覆盖率99％，放心使用
@@ -70,7 +71,7 @@
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from 'natur';
+import { createStore, createInject } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
@@ -88,10 +89,12 @@ const count = {
 }
 
 // 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
-createStore({count});
+const store = createStore({count});
+const inject = createInject({storeGetter: () => store});
 
+const injectCount = inject('count');
 
-const App = ({count}) => {
+const App = ({count}: typeof injectCount.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -103,7 +106,7 @@ const App = ({count}) => {
 // 注入count模块
 // 注入count模块
 // 注入count模块
-const IApp = inject<{count: InjectStoreModule}>('count')(App);
+const IApp = injectCount(App);
 
 // 渲染注入后的组件
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -132,7 +135,7 @@ type State = any;
 ````typescript
 
 type Maps = {
-  [map: string]: Array<string|Function>;
+  [map: string]: Array<string|Function> | Function;
 }
 
 const demo = {
@@ -144,15 +147,20 @@ const demo = {
     isEven: ['number', number => number % 2 === 0],
     // 你也可以通过函数的方式声明依赖项，这对于复杂类型的state很有用
     isEven2: [state => state.number, number => number % 2 === 0],
+    // 也可以是个函数，直接依赖整个state，缺点是只要state更新就会重新执行函数，没有缓存
+    isEven3: ({number}) => number % 2 === 0,
+    // 也可以是个函数，没有依赖，只执行一次
+    isTrue: () => true,
   },
   // ...actions
 }
 ````
 1. maps是可选的参数，maps本身必须是一个普通对象
-2. maps是state数据的映射，它的子元素必须是一个数组，我们暂且称其为map
-3. 在map中，前面的元素都是在声明此map对state的依赖项。最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西。在页面中，你可以获取数组最后一个函数运行的结果。
-4. maps的结果是有缓存的，如果你声明的依赖项的值没有变化，那么最后一个函数便不会重新执行
-5. 其实这个应该叫mapState，我嫌名字太长，就改成了maps
+1. maps是state数据的映射，它的子元素必须是一个数组或者函数，我们暂且称其为map
+1. 如果map是数组，前面的元素都是在声明此map对state的依赖项。最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西。在页面中，你可以获取数组最后一个函数运行的结果。
+1. 如果map是函数，那么它只能接受state作为入参，或者没有参数，如果是state作为参数，那么当state更新时，此map一定会重新执行，没有缓存。如果map没有参数，那么此map只会执行一次
+1. maps的结果是有缓存的，如果你声明的依赖项的值没有变化，那么最后一个函数便不会重新执行
+1. 其实这个应该叫mapState，我嫌名字太长，就改成了maps
 
 
 
@@ -260,7 +268,7 @@ export default store;
 import React from "react";
 import "./styles.css";
 
-import { inject } from "natur";
+import { inject } from "your-store";
 
 const App = ({ app }) => {
   // 获取注入的app模块
@@ -467,9 +475,9 @@ export default store;
 
 ```typescript
 
-import { thunkMiddleware } from 'natur/dist/middlewares'
+import { thunkMiddleware, ThunkParams } from 'natur/dist/middlewares'
 
-const actionExample = (myParams: any) => ({getState, setState: (s: State) => State, getMaps: () => InjectMaps, dispatch}) => {
+const actionExample = (myParams: any) => ({getState, setState, getMaps, dispatch}: ThunkParams) => {
   const currentState = getState(); // 最新的state
   const currentMaps = getMaps(); // 最新的maps
   // dispatch('otherActionNameOfThisModule', ...params)
@@ -585,9 +593,12 @@ const store = createStore(
 ## <a id='loading-component'>加载时候的占位组件配置</a>
 
 ```jsx
-import { inject } from 'natur';
+import { createInject } from 'natur';
 // 全局配置
-inject.setLoadingComponent(() => <div>loading...</div>);
+const inject = createInject({
+  storeGetter: () => store,
+  loadingComponent: () => <div>loading...</div>,
+})
 
 // 局部使用
 inject('app')(App, () => <div>loading</div>);
@@ -638,7 +649,7 @@ maps: {
 */
 app.actions.changeName('jerry');
 // 等同于
-store.dispatch('app/changeName', 'jerry');
+store.dispatch('app', 'changeName', 'jerry');
 
 /**
  * 
@@ -733,7 +744,7 @@ const {actions, state} = store.getModule('count')
 
 actions.inc(state.number);
 // 等于
-store.dispatch('count/inc', state.number);
+store.dispatch('count', 'inc', state.number);
 
 ````
 
@@ -904,7 +915,7 @@ store.getAllModuleName('moduleName') => string[];
 #### <a id='store.dispatch'>dispatch 执行action</a>
 
 ````typescript
-store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
 #### <a id='store.destory'>destory 销毁store</a>

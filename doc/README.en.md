@@ -6,6 +6,7 @@
 
 ## basic introduction
 1. This is a simple and efficient react state manager
+1. Good typescript experience
 1. Browser compatible: IE8+
 1. support react 15.x, 16.x and anujs
 1. Unit test coverage rate of 99%, rest assured to use
@@ -71,7 +72,7 @@
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from 'natur';
+import { createStore, createInject } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
@@ -89,10 +90,13 @@ const count = {
 }
 
 // The step of creating the store needs to be completed before rendering the component, because in the component, you need to use the store you created
-createStore({count});
+const store = createStore({count});
+const inject = createInject({storeGetter: () => store});
+
+const injectCount = inject('count');
 
 
-const App = ({count}) => {
+const App = ({count}: typeof injectCount.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -104,7 +108,7 @@ const App = ({count}) => {
 // Inject the count module
 // Inject the count module
 // Inject the count module
-const IApp = inject<{count: InjectStoreModule}>('count')(App);
+const IApp = injectCount(App);
 
 // Render the injected component
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -132,7 +136,9 @@ type State = any;
 
 ````typescript
 
-type StoreMaps = Array<string|Function>;
+type Maps = {
+  [map: string]: Array<string|Function> | Function;
+}
 
 const demo = {
   state: {
@@ -143,15 +149,20 @@ const demo = {
     isEven: ['number', number => number % 2 === 0],
     // You can also declare dependencies as functions, which is useful for complex types of state
     isEven2: [state => state.number, number => number % 2 === 0],
+    // It can also be a function that directly depends on the entire state. The disadvantage is that the function will be re-executed as long as the state is updated, and there is no cache.
+    isEven3: ({number}) => number % 2 === 0,
+    // It can also be a function, no dependencies, only executed once
+    isTrue: () => true,
   },
   // ...actions
 }
 ````
 1. maps is an optional parameter, and maps itself must be an ordinary object
-2. maps is a map of state data, and its child elements must be an array. Let's call it map for now.
-3. In the map, the previous elements are declaring the map's state dependency. The last function can get the previously declared dependencies, and you can implement what you want in it. In the page, you can get the result of the last function of the array.
-4. The results of maps are cached. If the value of the dependencies you declare does not change, the last function will not be re-executed.
-5. In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
+1. maps is a map of state data, and its child elements must be an array. Let's call it map for now.
+1. If the map is an array, the preceding elements are all declaring the dependency of this map on the state. The last function can get the dependency declared earlier, and you can implement what you want in it. On the page, you can get the result of the last function of the array.
+1. If the map is a function, then it can only accept state as an input parameter, or there is no parameter. If it is a state as a parameter, then when the state is updated, the map must be re-executed and there is no cache. If the map has no parameters, then this map will only be executed once
+1. The results of maps are cached. If the value of the dependencies you declare does not change, the last function will not be re-executed.
+1. In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
 
 
 
@@ -259,7 +270,7 @@ export default store;
 ### The second step is to inject the module into the component
 
 ```jsx
-import { inject } from 'natur';
+import { inject } from "your-store";
 const App = ({app, otherModuleName}) => {
   // Get the injected app module
   const {state, actions, maps} = app;
@@ -586,10 +597,12 @@ const store = createStore(
 ### <a id='loading-component'>Placeholder component configuration when loading</a>
 
 ```jsx
-import { inject } from 'natur';
+import { createInject } from 'natur';
 // Global configuration
-inject.setLoadingComponent(() => <div>loading...</div>);
-
+const inject = createInject({
+  storeGetter: () => store,
+  loadingComponent: () => <div>loading...</div>,
+})
 // Local use
 inject('app')(App, () => <div>loading</div>);
 ```
@@ -636,7 +649,7 @@ maps: {
 */
 app.actions.changeName('jerry');
 // Equivalent to
-store.dispatch('app/changeName', 'jerry');
+store.dispatch('app', 'changeName', 'jerry');
 
 // Monitoring module changes
 const unsubscribe = store.subscribe('app', () => {
@@ -676,7 +689,7 @@ const {actions, state} = store.getModule('count')
 
 actions.inc(state.number);
 // Equivalent to
-store.dispatch('count/inc', state.number);
+store.dispatch('count', 'inc', state.number);
 
 ````
 
@@ -892,7 +905,7 @@ store.getAllModuleName('moduleName') => string[];
 #### <a id='store.dispatch'>dispatch: run action</a>
 
 ````typescript
-store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
 #### <a id='store.destory'>destory 销毁store</a>
