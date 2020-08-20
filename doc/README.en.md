@@ -51,8 +51,8 @@
     - [globalSetStates](#store.globalSetStates)
     - [globalResetStates](#store.globalResetStates)
   - [inject api](#inject.api)
+    - [createInject](#inject.createInject)
     - [inject](#inject.self)
-    - [setLoadingComponent](#inject.setLoadingComponent)
 
 
 ## <a id='start'>start</a>
@@ -93,10 +93,10 @@ const count = {
 const store = createStore({count});
 const inject = createInject({storeGetter: () => store});
 
-const injectCount = inject('count');
+const injecter = inject('count');
 
 
-const App = ({count}: typeof injectCount.type) => {
+const App = ({count}: typeof injecter.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -108,7 +108,7 @@ const App = ({count}: typeof injectCount.type) => {
 // Inject the count module
 // Inject the count module
 // Inject the count module
-const IApp = injectCount(App);
+const IApp = injecter(App);
 
 // Render the injected component
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -203,7 +203,7 @@ const demo = {
 
 ```js
 
-import { createStore } from "natur";
+import { createStore, createInject } from "natur";
 
 // 这是natur内置常用的中间件, 推荐使用
 import {
@@ -260,7 +260,9 @@ const store = createStore({ app, ...otherModules }, {}, undefined, [
   filterUndefinedMiddleware,
   devtool
 ]);
-
+export const inject = createInject({
+  storeGetter: () => store,
+})
 export default store;
 
 ```
@@ -270,8 +272,11 @@ export default store;
 ### The second step is to inject the module into the component
 
 ```jsx
-import { inject } from "your-store";
-const App = ({app, otherModuleName}) => {
+import { inject } from "your-inject";
+
+const injecter = inject('app', 'otherModuleName');
+
+const App = ({app, otherModuleName}: typeof injecter.type) => {
   // Get the injected app module
   const {state, actions, maps} = app;
   /*
@@ -301,7 +306,7 @@ const App = ({app, otherModuleName}) => {
 };
 
 // Inject the app module in the store;
-export default inject('app', 'otherModuleName')(App);   
+export default injecter(App);   
 
 ```  
 
@@ -314,8 +319,32 @@ export default inject('app', 'otherModuleName')(App);
 ## <a id='partial-listener'>The component only listens to changes in some data</a>
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app}) => {
+import { inject } from 'your-inject';
+
+
+// Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
+let injecter = inject(
+  ['app', {
+    state: ['name'], // You can also use function declarations state: [s => s.name]
+  }]
+); 
+
+
+// Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
+injecter = inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+)(App); 
+
+// Here the App component will not be updated regardless of any changes in the app module
+injecter = inject(
+  ['app', {}]
+)(App); 
+
+// Because actions stay the same after they are created, you don't have to listen for changes
+
+const App = ({app}: typeof injecter.type) => {
   // get app module
   const {state, actions, maps} = app;
   return (
@@ -325,28 +354,6 @@ const App = ({app}) => {
     />
   )
 };
-
-// Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
-export default inject(
-  ['app', {
-    state: ['name'], // You can also use function declarations state: [s => s.name]
-  }]
-)(App); 
-
-
-// Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
-inject(
-  ['app', {
-    maps: ['deepDep'], 
-  }]
-)(App); 
-
-// Here the App component will not be updated regardless of any changes in the app module
-inject(
-  ['app', {}]
-)(App); 
-
-// Because actions stay the same after they are created, you don't have to listen for changes
 
 ```  
 
@@ -539,11 +546,11 @@ const createMiddleware = ():Middleware => {
   if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
     const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
     const store = createStore(root, devMiddleware);
-    return () => next => record => {
+    return ({getState}) => next => record => {
       store.dispatch({
         type: `${record.moduleName}/${record.actionName}`,
         state: {
-          [record.moduleName]: record.state,
+          [record.moduleName]: record.state || getState(),
         },
       });
       return next(record);
@@ -741,15 +748,16 @@ const lazyLoadView = () => {
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, InjectStoreModule} from 'natur'
+import inject from 'your-inject'
 
-type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
+const injecter = inject('count');
+
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<storeProps & otherProps> = (props) => {
+const App: React.FC<typeof injecter.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -760,7 +768,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
   )
 }
 
-const IApp = inject<storeProps>('count', 'name')(App);
+const IApp = injecter(App);
 
 const app = (
   <IApp className='1' style={{}} />
@@ -781,7 +789,7 @@ ReactDOM.render(
  - Tips in TypeScript may be less friendly, like
  ```ts
 
-@inject<storeProps>('count', 'name')
+@inject('count', 'name')
 class App extends React.Component {
   // ...
 }
@@ -793,7 +801,7 @@ class App extends React.Component {
 class _App extends React.Component {
   // ...
 }
-const App = @inject<storeProps>('count', 'name')(_App);
+const App = inject('count', 'name')(_App);
 // 正确
 <App forwardedRef={console.log} />
 
@@ -939,6 +947,18 @@ store.globalResetStates({
 
 ### <a id='inject.api'>inject api</a>
 
+
+#### <a id='inject.createInject'>createInject</a>
+
+````typescript
+createInject({
+  storeGetter: () => Store,
+  loadingComponent: React.ComponentClass<{}> | React.FC<{}>
+})
+
+````
+
+
 #### <a id='inject.self'>inject</a>
 
 ````typescript
@@ -956,16 +976,5 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
   WrappedComponent: TReactComponent<P>, 
   LoadingComponent?: TReactComponent<{}>
 ) => React.ComponentClass<Omit<P, keyof T> & { forwardedRef?: React.Ref<any> }>
-
-````
-
-
-#### <a id='inject.setLoadingComponent'>setLoadingComponent</a>
-
-````typescript
-
-type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-
-inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
 
 ````

@@ -17,24 +17,7 @@ import MapCache from './MapCache';
 ;
 ;
 ;
-; // type CreateStore = <
-// 	M extends Modules,
-// 	LM extends LazyStoreModules,
-// 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>,
-// 	S extends Partial<{
-// 		[k in keyof StoreType]: StoreType[k]['state']
-// 	}> = Partial<{
-// 		[k in keyof StoreType]: StoreType[k]['state']
-// 	}>
-// >(
-// 	modules?: M,
-// 	lazyModules?: LM,
-// 	initStates?: {
-// 		[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>['state']
-// 	},
-// 	middlewares?: Middleware[],
-// ) => Store;
-
+;
 var currentStoreInstance;
 
 var createStore = function createStore(modules, lazyModules, initStates, middlewares) {

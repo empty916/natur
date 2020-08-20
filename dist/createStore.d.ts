@@ -43,12 +43,12 @@ export interface Modules {
 export declare type InjectStoreModules = {
     [k: string]: InjectStoreModule;
 };
-declare type Next<MN extends any = ModuleName, ST extends InjectStoreModules = InjectStoreModules> = (record: Record<MN>) => ReturnType<Action>;
-declare type Record<MN extends any = ModuleName> = {
-    moduleName: MN;
+declare type ActionRecord = {
+    moduleName: string;
     actionName: string;
     state: ReturnType<Action>;
 };
+declare type Next = (record: ActionRecord) => ReturnType<Action>;
 export declare type MiddlewareParams<StoreType extends InjectStoreModules> = {
     setState: Next;
     getState: () => State;
@@ -62,7 +62,7 @@ declare type globalResetStatesOption<MN extends string = string> = {
 export declare type ModuleName = string;
 export declare type Middleware<StoreType extends {
     [k: string]: InjectStoreModule;
-}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next<keyof StoreType>) => Next<keyof StoreType>;
+}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next) => Next;
 export interface Store<StoreType extends InjectStoreModules, AOST extends Modules, S extends Partial<{
     [k in keyof StoreType]: Partial<StoreType[k]['state']>;
 }> = Partial<{

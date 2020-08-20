@@ -13,10 +13,7 @@ declare const createInject: <ST extends InjectStoreModules, AMOT extends Modules
     storeGetter: StoreGetter<ST, AMOT>;
     loadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined;
 }) => {
-    <MNS extends Extract<keyof ST, string>>(...moduleDec: (MNS | [MNS, {
-        state?: (keyof ST[MNS]["state"] | ((p: ST[MNS]["state"]) => any))[] | undefined;
-        maps?: (keyof ST[MNS]["maps"])[] | undefined;
-    }])[]): {
+    <MNS extends Extract<keyof ST, string>>(...moduleDec: (MNS | [MNS, { [k in Extract<keyof ST[MNS], "state" | "maps">]?: (k extends "state" ? (keyof ST[MNS]["state"] | ((p: ST[MNS]["state"]) => any))[] : k extends "maps" ? (keyof ST[MNS]["maps"])[] : never) | undefined; }])[]): {
         <P extends Pick<ST, MNS>>(WrappedComponent: TReactComponent<P>, LoadingComponent?: TReactComponent<{}>): React.ComponentClass<Pick<P, Exclude<keyof P, MNS>> & {
             forwardedRef?: ((instance: any) => void) | React.RefObject<any> | null | undefined;
         }, any>;

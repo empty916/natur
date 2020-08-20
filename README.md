@@ -52,8 +52,8 @@
     - [globalSetStates全局设置state](#store.globalSetStates)
     - [globalResetStates全局初始化state](#store.globalResetStates)
   - [inject api](#inject.api)
+    - [createInject](#inject.createInject)
     - [inject](#inject.self)
-    - [setLoadingComponent](#inject.setLoadingComponent)
 
 ## <a id='start'>起步</a>
 
@@ -92,9 +92,9 @@ const count = {
 const store = createStore({count});
 const inject = createInject({storeGetter: () => store});
 
-const injectCount = inject('count');
+const injecter = inject('count');
 
-const App = ({count}: typeof injectCount.type) => {
+const App = ({count}: typeof injecter.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -106,7 +106,7 @@ const App = ({count}: typeof injectCount.type) => {
 // 注入count模块
 // 注入count模块
 // 注入count模块
-const IApp = injectCount(App);
+const IApp = injecter(App);
 
 // 渲染注入后的组件
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -197,7 +197,7 @@ const demo = {
 ### 创建 store 实例
 
 ```js
-import { createStore } from "natur";
+import { createStore, createInject } from "natur";
 
 // 这是natur内置常用的中间件, 推荐使用
 import {
@@ -255,6 +255,10 @@ const store = createStore({ app, ...otherModules }, {}, undefined, [
   devtool
 ]);
 
+export const inject = createInject({
+  storeGetter: () => store,
+});
+
 export default store;
 
 ```
@@ -268,7 +272,7 @@ export default store;
 import React from "react";
 import "./styles.css";
 
-import { inject } from "your-store";
+import { inject } from "your-inject";
 
 const App = ({ app }) => {
   // 获取注入的app模块
@@ -309,8 +313,33 @@ export default inject("app")(App);
 ## <a id='partial-listener'>组件只监听部分数据的变更</a>
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app}) => {
+import { inject } from 'your-inject';
+
+
+// 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
+let injecter = inject(
+  ['app', {
+    state: ['name'], // 也可以使用函数声明 state: [s => s.name]
+  }]
+); 
+
+
+// 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
+injecter = inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+); 
+
+// 这里App组件不论app模块发生什么变化，都不会更新
+injecter = inject(
+  ['app', {}]
+); 
+
+
+// 因为actions在创建后会保持不变，所以你不必监听它的变化
+
+const App = ({app}: typeof injecter.type) => {
   // 获取注入的app模块
   const {state, actions, maps} = app;
   return (
@@ -320,28 +349,6 @@ const App = ({app}) => {
     />
   )
 };
-
-// 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
-export default inject(
-  ['app', {
-    state: ['name'], // 也可以使用函数声明 state: [s => s.name]
-  }]
-)(App); 
-
-
-// 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
-inject(
-  ['app', {
-    maps: ['deepDep'], 
-  }]
-)(App); 
-
-// 这里App组件不论app模块发生什么变化，都不会更新
-inject(
-  ['app', {}]
-)(App); 
-
-// 因为actions在创建后会保持不变，所以你不必监听它的变化
 
 
 ```  
@@ -533,11 +540,11 @@ const createMiddleware = ():Middleware => {
   if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
     const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
     const store = createStore(root, devMiddleware);
-    return () => next => record => {
+    return ({getState}) => next => record => {
       store.dispatch({
         type: `${record.moduleName}/${record.actionName}`,
         state: {
-          [record.moduleName]: record.state,
+          [record.moduleName]: record.state || getState(),
         },
       });
       return next(record);
@@ -753,15 +760,16 @@ store.dispatch('count', 'inc', state.number);
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, InjectStoreModule} from 'natur'
+import inject from 'your-inject'
 
-type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
+const injecter = inject('count');
+
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<storeProps & otherProps> = (props) => {
+const App: React.FC<typeof injecter.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -772,7 +780,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
   )
 }
 
-const IApp = inject<storeProps>('count', 'name')(App);
+const IApp = injecter(App);
 
 const app = (
   <IApp className='1' style={{}} />
@@ -793,7 +801,7 @@ ReactDOM.render(
  - 在TypeScript中的提示可能不那么友好，比如
  ```ts
 
-@inject<storeProps>('count', 'name')
+@inject('count', 'name')
 class App extends React.Component {
   // ...
 }
@@ -805,7 +813,7 @@ class App extends React.Component {
 class _App extends React.Component {
   // ...
 }
-const App = @inject<storeProps>('count', 'name')(_App);
+const App = @inject('count', 'name')(_App);
 // 正确
 <App forwardedRef={console.log} />
 
@@ -949,6 +957,18 @@ store.globalResetStates({
 
 ### <a id='inject.api'>inject api</a>
 
+
+#### <a id='inject.createInject'>createInject</a>
+
+````typescript
+createInject({
+  storeGetter: () => Store,
+  loadingComponent: React.ComponentClass<{}> | React.FC<{}>
+})
+
+````
+
+
 #### <a id='inject.self'>inject</a>
 
 ````typescript
@@ -961,7 +981,7 @@ type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 
 type StoreProps = {[m: string]: InjectStoreModule}
 
-inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>) 
+inject(...moduleDec: Array<string|ModuleDepDec>) 
 => <P extends T>(
   WrappedComponent: TReactComponent<P>, 
   LoadingComponent?: TReactComponent<{}>
@@ -969,13 +989,3 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
 
 ````
 
-
-#### <a id='inject.setLoadingComponent'>setLoadingComponent 设置懒加载模块加载中的占位组件</a>
-
-````typescript
-
-type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-
-inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
-
-````

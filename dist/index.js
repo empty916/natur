@@ -6,8 +6,7 @@
  * @desc [description]
  */
 import MapCache from './MapCache';
-import { default as createInject } from "./inject";
+export { default as createInject } from "./inject";
 export { default as createStore } from "./createStore";
 export var setMapDepParser = MapCache.setMapDepParser;
 export var resetMapDepParser = MapCache.resetMapDepParser;
-export { createInject };
