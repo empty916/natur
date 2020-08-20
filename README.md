@@ -760,7 +760,24 @@ store.dispatch('count', 'inc', state.number);
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import inject from 'your-inject'
+import inject from 'your-inject';
+import {ModuleType} from 'natur';
+
+const count = {
+  state: { // 存放数据
+    number: 0,
+  },
+  maps: { // state的映射。比如，我需要知道state中的number是否是偶数
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // 用来修改state。返回的数据会作为新的state(这部分由natur内部完成)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// 生成count模块在组件中获得的类型
+type InjectCountType = ModuleType<typeof count>;
 
 const injecter = inject('count');
 
