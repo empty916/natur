@@ -67,7 +67,7 @@
 
 ## <a id='simple-demo'>简单的示例</a>
 
-[在线体验](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
+[在线体验](https://codesandbox.io/s/natur-2x-simple-demo-nx0pp?file=/src/App.tsx)
 ````tsx
 
 // index.tsx
@@ -192,7 +192,7 @@ const demo = {
 
 ## <a id='complex-demo'>复杂的例子</a>
 
-[codesandbox](https://codesandbox.io/s/natur-complex-demo-b7ppl?fontsize=14&hidenavigation=1&theme=dark)
+[在线体验](https://codesandbox.io/s/natur-2x-complex-demo-jyut0?file=/src/store.ts)
 
 ### 创建 store 实例
 
