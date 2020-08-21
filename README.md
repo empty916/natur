@@ -274,7 +274,9 @@ import "./styles.css";
 
 import { inject } from "your-inject";
 
-const App = ({ app }) => {
+const injecter = inject('app');
+
+const App = ({ app }: typeof injecter.type) => {
   // 获取注入的app模块
   const { state, actions } = app;
   return (
@@ -301,7 +303,7 @@ const App = ({ app }) => {
 };
 
 // 注入store中的app模块；
-export default inject("app")(App);
+export default injecter(App);
  
 
 ```  
