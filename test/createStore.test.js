@@ -1,6 +1,5 @@
 import { createStore } from '../src';
 import { isObj } from '../src/utils';
-import { getStoreInstance } from '../src/createStore';
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -332,7 +331,6 @@ describe('init', () => {
 			'globalResetStates',
 			'type'
 		]);
-		expect(getStoreInstance()).toBe(store);
 	});
 	test('hasModule', hasModule('count'));
 	test('run actions', updateCountState);

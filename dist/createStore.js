@@ -18,7 +18,6 @@ import MapCache from './MapCache';
 ;
 ;
 ;
-var currentStoreInstance;
 
 var createStore = function createStore(modules, lazyModules, initStates, middlewares) {
   if (modules === void 0) {
@@ -36,6 +35,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   if (middlewares === void 0) {
     middlewares = [];
   }
+
+  var currentStoreInstance;
 
   var currentInitStates = _objectSpread({}, initStates);
 
@@ -448,9 +449,6 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   };
 
   var init = function init() {
-    // if (!!currentStoreInstance) {
-    // 	(currentStoreInstance as Store<StoreType, AM>).destory();
-    // }
     Object.keys(modules).forEach(function (moduleName) {
       setModule(moduleName, modules[moduleName]);
     });
@@ -478,7 +476,4 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   return currentStoreInstance;
 };
 
-export var getStoreInstance = function getStoreInstance() {
-  return currentStoreInstance;
-};
 export default createStore;

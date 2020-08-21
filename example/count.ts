@@ -33,7 +33,7 @@ export const maps = {
 	}],
 };
 export const actions = {
-	inc: () => ({getState}) => {
+	inc: () => ({getState, getMaps, dispatch}: ThunkParams<typeof state, typeof maps>) => {
 		console.log(getState());
 		return {count: getState().count + 1};
 	},

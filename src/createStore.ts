@@ -120,7 +120,6 @@ export interface Store<
 	type: StoreType;
 }
 
-let currentStoreInstance: unknown;
 
 const createStore = <
 	M extends Modules,
@@ -143,6 +142,8 @@ const createStore = <
 	type PS = Partial<{
 		[k in keyof StoreType]: StoreType[k]['state']
 	}>;
+	let currentStoreInstance: Store<StoreType, AM>;
+
 	let currentInitStates = {...initStates};
 	let resetStateData: Partial<PS> = {};
 	let currentModules: Partial<{
@@ -448,9 +449,6 @@ const createStore = <
 		currentMiddlewares = [];
 	}
 	const init = () => {
-		// if (!!currentStoreInstance) {
-		// 	(currentStoreInstance as Store<StoreType, AM>).destory();
-		// }
 		Object.keys(modules).forEach((moduleName) => {
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
@@ -475,8 +473,7 @@ const createStore = <
 		globalSetStates,
 		globalResetStates,
 		type: null as any as StoreType,
-	};
+	} as any;
 	return currentStoreInstance as Store<StoreType, AM>;
 };
-export const getStoreInstance = () => currentStoreInstance;
 export default createStore;

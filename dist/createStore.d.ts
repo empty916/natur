@@ -86,5 +86,4 @@ export interface Store<StoreType extends InjectStoreModules, AOST extends Module
     type: StoreType;
 }
 declare const createStore: <M extends Modules, LM extends LazyStoreModules>(modules?: M, lazyModules?: LM, initStates?: Partial<{ [k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<M, LM>[k]["state"]; }>, middlewares?: Middleware<GenerateStoreType<M, LM>>[]) => Store<GenerateStoreType<M, LM>, M & { [k in keyof LM]: Parameters<Extract<Parameters<ReturnType<LM[k]>["then"]>[0], Function>>[0]; }, Partial<{ [k in keyof GenerateStoreType<M, LM>]: Partial<GenerateStoreType<M, LM>[k]["state"]>; }>>;
-export declare const getStoreInstance: () => unknown;
 export default createStore;

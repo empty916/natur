@@ -18,7 +18,7 @@ declare type MapsFun = {
 declare type MapsReturnType<MF extends MapsFun> = {
     [k in keyof MF]: ReturnType<MF[k]>;
 };
-declare type GenMapsType<M extends Maps, S extends StoreModule['state']> = MapsReturnType<MapsFunType<M, S>>;
+export declare type GenMapsType<M extends Maps, S extends StoreModule['state']> = MapsReturnType<MapsFunType<M, S>>;
 declare type StoreModuleWithMaps = {
     state: StoreModule['state'];
     actions: StoreModule['actions'];

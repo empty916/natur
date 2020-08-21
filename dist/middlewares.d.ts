@@ -1,9 +1,14 @@
-import { Middleware } from './createStore';
-export declare type ThunkParams<S = any, M = any> = {
+import { Middleware, Maps } from './createStore';
+import { GenMapsType } from './ts-utils';
+/**
+ * S state的类型
+ * M maps的类型
+ */
+export declare type ThunkParams<S = any, M extends Maps = any> = {
     getState: () => S;
     setState: (s: Partial<S>) => S;
-    getMaps: () => M;
-    dispatch: (moduleNameAndActionName: string, ...params: any[]) => any;
+    getMaps: () => GenMapsType<M, S>;
+    dispatch: (moduleNameAndActionName: string, ...params: any) => any;
 };
 export declare const thunkMiddleware: Middleware<any>;
 export declare const promiseMiddleware: Middleware<any>;
