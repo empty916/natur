@@ -1,5 +1,5 @@
 import { ThunkParams } from "../src/middlewares";
-import { ModuleType } from "../src/ts-utils";
+import {GenMapsType, ModuleType} from "../src/ts-utils";
 
 export const state = {
 	count: 1,
@@ -31,18 +31,21 @@ export const maps = {
 		console.log(name);
 		return  name[0];
 	}],
+	returnFunMapType1: ['name', () => () => true],
+	returnFunMapType22: ['name', (n: State['name']) => (v: any) => !!v],
+	funMapType: () => () => true,
 };
 export const actions = {
 	inc: () => ({getState, getMaps, dispatch}: ThunkParams<typeof state, typeof maps>) => {
 		console.log(getState());
 		return {count: getState().count + 1};
 	},
-	dec: () => ({getState, setState}) => {
-		return setState({ 
-			count: getState().count - 1, 
+	dec: () => ({getState, setState}: ThunkParams<typeof state, typeof maps>) => {
+		return setState({
+			count: getState().count - 1,
 		});
 	},
-	incDeeep: () => ({getState, setState}) => {
+	incDeeep: () => ({getState, setState}: ThunkParams<typeof state, typeof maps>) => {
 		const state = getState();
 		return setState({
 			deeep: {
@@ -81,5 +84,6 @@ type State = typeof state;
 
 export type InjectCountStore = ModuleType<typeof a>;
 
+type Mapt = InjectCountStore['maps'];
 
 export default a;

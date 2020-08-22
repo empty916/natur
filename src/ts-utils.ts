@@ -16,9 +16,10 @@ export type GenActionsType<OAS extends {[m: string]: AnyFun}, S> = {
 	[a in keyof OAS]: Fn<ActionArg<OAS[a]>, ActionReturnType<OAS[a], S>>
 };
 
+type ExcludeStateGetterDep<MapItem, StateGetterDep> =  MapItem extends StateGetterDep ? (StateGetterDep extends MapItem ? never : MapItem) : MapItem;
 
 type MapsFunType<M extends Maps, S extends StoreModule['state']> = {
-	[k in keyof M]: M[k] extends Array<any> ? Exclude<Extract<M[k][0], AnyFun>, (s: S) => any> : M[k] extends AnyFun ? M[k] : never;
+	[k in keyof M]: M[k] extends Array<any> ? ExcludeStateGetterDep<Extract<M[k][0], AnyFun>, (s: S) => any> : M[k] extends AnyFun ? M[k] : never;
 }
 
 type MapsFun = {
@@ -27,7 +28,9 @@ type MapsFun = {
 type MapsReturnType<MF extends MapsFun> = {
 	[k in keyof MF]: ReturnType<MF[k]>;
 }
-
+/**
+ * 生成maps类型
+ */
 export type GenMapsType<M extends Maps, S extends StoreModule['state']> = MapsReturnType<MapsFunType<M, S>>;
 
 type StoreModuleWithMaps = {
