@@ -12,6 +12,9 @@ type ActionReturnType<Action extends AnyFun, S extends any> =
 		(ActionActualReturnType<Action> extends Promise<Partial<S>> ? Promise<S> :
 			ActionActualReturnType<Action> extends undefined ? undefined :Promise<undefined>);
 
+/**
+ * 生成actions类型
+ */
 export type GenActionsType<OAS extends {[m: string]: AnyFun}, S> = {
 	[a in keyof OAS]: Fn<ActionArg<OAS[a]>, ActionReturnType<OAS[a], S>>
 };
@@ -43,6 +46,9 @@ type StoreModuleWithoutMaps = {
 	actions: StoreModule['actions'];
 }
 
+/**
+ * 生成模块类型
+ */
 export type ModuleType<M extends StoreModuleWithMaps|StoreModuleWithoutMaps> = {
 	[m in keyof M]: m extends 'state' ? M['state'] :
 		(m extends 'actions' ? GenActionsType<M['actions'], M['state']> :
@@ -54,7 +60,9 @@ export type ModuleType<M extends StoreModuleWithMaps|StoreModuleWithoutMaps> = {
  */
 export type PickPromiseType<P extends () => Promise<any>> = Parameters<Extract<Parameters<ReturnType<P>['then']>[0], Function>>[0];
 
-
+/**
+ * 生成懒加载模块的类型
+ */
 export type PromiseModuleType<
 	PM extends () => Promise<StoreModuleWithMaps | StoreModuleWithoutMaps>,
 	M extends StoreModuleWithMaps | StoreModuleWithoutMaps = PickPromiseType<PM>
@@ -64,7 +72,9 @@ export type PromiseModuleType<
 			(m extends 'maps' ? (M extends StoreModuleWithMaps ? GenMapsType<M['maps'], M['state']> : undefined) : never));
 }
 
-
+/**
+ * 生成store类型
+ */
 export type GenerateStoreType<
 	MS extends {
 		[m: string]: StoreModuleWithMaps|StoreModuleWithoutMaps
