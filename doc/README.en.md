@@ -93,10 +93,10 @@ const count = {
 const store = createStore({count});
 const inject = createInject({storeGetter: () => store});
 
-const injecter = inject('count');
+const injector = inject('count');
 
 
-const App = ({count}: typeof injecter.type) => {
+const App = ({count}: typeof injector.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -108,7 +108,7 @@ const App = ({count}: typeof injecter.type) => {
 // Inject the count module
 // Inject the count module
 // Inject the count module
-const IApp = injecter(App);
+const IApp = injector(App);
 
 // Render the injected component
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -273,9 +273,9 @@ export default store;
 ```jsx
 import { inject } from "your-inject";
 
-const injecter = inject('app', 'otherModuleName');
+const injector = inject('app', 'otherModuleName');
 
-const App = ({app, otherModuleName}: typeof injecter.type) => {
+const App = ({app, otherModuleName}: typeof injector.type) => {
   // Get the injected app module
   const {state, actions, maps} = app;
   /*
@@ -305,7 +305,7 @@ const App = ({app, otherModuleName}: typeof injecter.type) => {
 };
 
 // Inject the app module in the store;
-export default injecter(App);   
+export default injector(App);   
 
 ```  
 
@@ -322,7 +322,7 @@ import { inject } from 'your-inject';
 
 
 // Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
-let injecter = inject(
+let injector = inject(
   ['app', {
     state: ['name'], // You can also use function declarations state: [s => s.name]
   }]
@@ -330,20 +330,20 @@ let injecter = inject(
 
 
 // Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
-injecter = inject(
+injector = inject(
   ['app', {
     maps: ['deepDep'], 
   }]
 )(App); 
 
 // Here the App component will not be updated regardless of any changes in the app module
-injecter = inject(
+injector = inject(
   ['app', {}]
 )(App); 
 
 // Because actions stay the same after they are created, you don't have to listen for changes
 
-const App = ({app}: typeof injecter.type) => {
+const App = ({app}: typeof injector.type) => {
   // get app module
   const {state, actions, maps} = app;
   return (
@@ -766,14 +766,14 @@ const count = {
 // Generate the type obtained by the count module in the component
 type InjectCountType = ModuleType<typeof count>;
 
-const injecter = inject('count');
+const injector = inject('count');
 
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<typeof injecter.type & otherProps> = (props) => {
+const App: React.FC<typeof injector.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -784,7 +784,7 @@ const App: React.FC<typeof injecter.type & otherProps> = (props) => {
   )
 }
 
-const IApp = injecter(App);
+const IApp = injector(App);
 
 const app = (
   <IApp className='1' style={{}} />

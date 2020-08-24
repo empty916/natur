@@ -92,9 +92,9 @@ const count = {
 const store = createStore({count});
 const inject = createInject({storeGetter: () => store});
 
-const injecter = inject('count');
+const injector = inject('count');
 
-const App = ({count}: typeof injecter.type) => {
+const App = ({count}: typeof injector.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -106,7 +106,7 @@ const App = ({count}: typeof injecter.type) => {
 // 注入count模块
 // 注入count模块
 // 注入count模块
-const IApp = injecter(App);
+const IApp = injector(App);
 
 // 渲染注入后的组件
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -274,9 +274,9 @@ import "./styles.css";
 
 import { inject } from "your-inject";
 
-const injecter = inject('app');
+const injector = inject('app');
 
-const App = ({ app }: typeof injecter.type) => {
+const App = ({ app }: typeof injector.type) => {
   // 获取注入的app模块
   const { state, actions } = app;
   return (
@@ -303,7 +303,7 @@ const App = ({ app }: typeof injecter.type) => {
 };
 
 // 注入store中的app模块；
-export default injecter(App);
+export default injector(App);
  
 
 ```  
@@ -319,7 +319,7 @@ import { inject } from 'your-inject';
 
 
 // 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
-let injecter = inject(
+let injector = inject(
   ['app', {
     state: ['name'], // 也可以使用函数声明 state: [s => s.name]
   }]
@@ -327,21 +327,21 @@ let injecter = inject(
 
 
 // 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
-injecter = inject(
+injector = inject(
   ['app', {
     maps: ['deepDep'], 
   }]
 ); 
 
 // 这里App组件不论app模块发生什么变化，都不会更新
-injecter = inject(
+injector = inject(
   ['app', {}]
 ); 
 
 
 // 因为actions在创建后会保持不变，所以你不必监听它的变化
 
-const App = ({app}: typeof injecter.type) => {
+const App = ({app}: typeof injector.type) => {
   // 获取注入的app模块
   const {state, actions, maps} = app;
   return (
@@ -781,14 +781,14 @@ const count = {
 // 生成count模块在组件中获得的类型
 type InjectCountType = ModuleType<typeof count>;
 
-const injecter = inject('count');
+const injector = inject('count');
 
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<typeof injecter.type & otherProps> = (props) => {
+const App: React.FC<typeof injector.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -799,7 +799,7 @@ const App: React.FC<typeof injecter.type & otherProps> = (props) => {
   )
 }
 
-const IApp = injecter(App);
+const IApp = injector(App);
 
 const app = (
   <IApp className='1' style={{}} />

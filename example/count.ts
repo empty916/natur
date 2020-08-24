@@ -84,6 +84,4 @@ type State = typeof state;
 
 export type InjectCountStore = ModuleType<typeof a>;
 
-type Mapt = InjectCountStore['maps'];
-
 export default a;
