@@ -69,9 +69,13 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
           storeStateChange: {}
         });
       } else if (this.storeModuleDiff) {
-        var hasDepChanged = this.storeModuleDiff[moduleName].some(function (diff) {
+        var hasDepChanged = false;
+        this.storeModuleDiff[moduleName].forEach(function (diff) {
           diff.shouldCheckCache();
-          return diff.hasDepChanged();
+
+          if (diff.hasDepChanged()) {
+            hasDepChanged = true;
+          }
         });
 
         if (hasDepChanged) {

@@ -1,5 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules } from "./createStore";
+import { Store, InjectStoreModules, Modules } from "./ts-utils";
 
 type Fun<P> = (p: P) => any;
 

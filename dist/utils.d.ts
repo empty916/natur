@@ -5,7 +5,7 @@
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
-import { StoreModule, State } from './createStore';
+import { StoreModule, State } from './ts-utils';
 declare type Obj = {
     [p: string]: any;
 };

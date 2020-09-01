@@ -14,11 +14,11 @@ export const state = {
 export const maps = {
 	isOdd: ['count', (count: number) => count % 2 !== 0],
 	isOdd2: (s: typeof state) => {
-		console.log('ssss', s)
+		// console.log('ssss', s)
 		return s.count % 2 !== 0;
 	},
 	isTrue: () => {
-		console.log('is true')
+		// console.log('is true')
 		return true;
 	},
 	deeepCountIsOdd: ['deeep.deep.count', (count: number) => {
@@ -28,7 +28,7 @@ export const maps = {
 		return name.split("");
 	}],
 	firstChar: ['name', (name: string) => {
-		console.log(name);
+		// console.log(name);
 		return  name[0];
 	}],
 	returnFunMapType1: ['name', () => () => true],

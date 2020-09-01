@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-import { StoreModule, State, Store } from './createStore'
+import { StoreModule, State, Store } from './ts-utils'
 import MapCache from './MapCache';
 
 const hasOwn = Object.prototype.hasOwnProperty;

@@ -11,13 +11,12 @@ const store = initStore();
 
 const inject = createInject({storeGetter: () => store});
 
-
 const injectStore = inject([
 	"count", {
 		// maps: ['deeepCountIsOdd', 'firstChar'],
 		maps: ['deeepCountIsOdd'],
 		// state: ['count', s => s.count + s.deeep.deep.count],
-		state: ['count', 'deeep'],
+		state: ['deeep'],
 	}
 ], 'count2');
 

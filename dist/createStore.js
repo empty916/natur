@@ -11,13 +11,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  * @modify date 2019-08-09 17:12:36
  * @desc [description]
  */
-import { // ObjChangedKeys,
-compose, isStoreModule } from './utils';
-import MapCache from './MapCache';
-;
-;
-;
-;
+import { compose, isStoreModule } from "./utils";
+import MapCache from "./MapCache";
 
 var createStore = function createStore(modules, lazyModules, initStates, middlewares) {
   if (modules === void 0) {
@@ -133,7 +128,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     currentModules[moduleName].state = newState;
     mapsCacheShouldCheckForValid(moduleName);
     runListeners(moduleName, {
-      type: 'update',
+      type: "update",
       actionName: actionName
     });
     return currentModules[moduleName].state;
@@ -148,7 +143,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
         setStateProxyWithMiddlewareCache[moduleName]({
           moduleName: moduleName,
-          actionName: 'globalSetStates',
+          actionName: "globalSetStates",
           state: states[moduleName]
         });
       } else {
@@ -166,10 +161,10 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     if (exclude) {
       var stringExclude = exclude.filter(function (ex) {
-        return typeof ex === 'string';
+        return typeof ex === "string";
       });
       var regExpExclude = exclude.filter(function (ex) {
-        return typeof ex !== 'string';
+        return typeof ex !== "string";
       }); // 过滤不需要重制状态的模块
 
       shouldResetModuleNames = shouldResetModuleNames.filter(function (mn) {
@@ -181,10 +176,10 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     if (include) {
       var stringInclude = include.filter(function (ex) {
-        return typeof ex === 'string';
+        return typeof ex === "string";
       });
       var regExpInclude = include.filter(function (ex) {
-        return typeof ex !== 'string';
+        return typeof ex !== "string";
       }); // 如果存在include配置，则只重制include配置中的模块
 
       shouldResetModuleNames = shouldResetModuleNames.filter(function (mn) {
@@ -201,7 +196,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
       setStateProxyWithMiddlewareCache[mn]({
         moduleName: mn,
-        actionName: 'globalResetStates',
+        actionName: "globalResetStates",
         state: resetStateData[mn]
       });
     });
@@ -232,7 +227,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     }
 
     runListeners(moduleName, {
-      type: 'init'
+      type: "init"
     });
     return currentStoreInstance;
   };
@@ -247,7 +242,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   var removeModule = function removeModule(moduleName) {
     destoryModule(moduleName);
     runListeners(moduleName, {
-      type: 'remove'
+      type: "remove"
     });
     return currentStoreInstance;
   };
@@ -338,7 +333,8 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
   };
   /**
    *
-   * @param action count/inc
+   * @param moduleName count
+   * @param actionName inc
    */
 
 
@@ -350,8 +346,6 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       console.warn("dispatch: " + actionName + " is invalid!");
       throw new Error("dispatch: " + actionName + " is invalid!");
     }
-
-    ;
 
     for (var _len2 = arguments.length, arg = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
       arg[_key2 - 2] = arguments[_key2];

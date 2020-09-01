@@ -12,7 +12,7 @@ import {
 	Store,
 	Modules,
 	InjectStoreModules
-} from './createStore';
+} from './ts-utils';
 import {isEqualWithDepthLimit} from './utils';
 import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
 
@@ -72,9 +72,12 @@ const connect = <P, SP, ST extends InjectStoreModules, AMOT extends Modules>(
 					storeStateChange: {},
 				});
 			} else if(this.storeModuleDiff) {
-				const hasDepChanged = this.storeModuleDiff[moduleName].some(diff => {
+				let hasDepChanged = false;
+				this.storeModuleDiff[moduleName].forEach(diff => {
 					diff.shouldCheckCache();
-					return diff.hasDepChanged();
+					if (diff.hasDepChanged()) {
+						hasDepChanged = true;
+					}
 				});
 				if (hasDepChanged) {
 					this.setState({

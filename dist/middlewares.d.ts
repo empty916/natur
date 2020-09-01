@@ -1,4 +1,4 @@
-import { Middleware, Maps } from './createStore';
+import { Middleware, Maps } from './ts-utils';
 import { GenMapsType } from './ts-utils';
 /**
  * S state的类型

@@ -1,5 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules } from "./createStore";
+import { Store, InjectStoreModules, Modules } from "./ts-utils";
 declare type Fun<P> = (p: P) => any;
 export declare type ModuleDepDec<MN extends string = string, ST extends InjectStoreModules = InjectStoreModules> = [MN, {
     [k in Extract<keyof ST[MN], 'state' | 'maps'>]?: k extends 'state' ? Array<keyof ST[MN]['state'] | Fun<ST[MN]['state']>> : k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;

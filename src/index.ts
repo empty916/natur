@@ -9,12 +9,16 @@ import MapCache from './MapCache'
 export { default as createInject } from "./inject";
 export {
 	default as createStore,
+} from "./createStore";
+
+export {
 	ModuleEvent,
 	Listener,
 	State,
 	States,
 	Action,
 	Actions,
+	StoreMap,
 	Maps,
 	InjectMaps,
 	StoreModule,
@@ -22,12 +26,15 @@ export {
 	InjectStoreModules,
 	LazyStoreModules,
 	Modules,
-	Store,
+	ActionRecord,
+	Next,
+	MiddlewareParams,
+	GlobalResetStatesOption,
+	ModuleName,
 	Middleware,
-	MiddlewareParams
-} from "./createStore";
-
-export {ModuleType} from './ts-utils';
+	Store,
+	ModuleType
+} from './ts-utils';
 export {ThunkParams} from './middlewares';
 export const setMapDepParser = MapCache.setMapDepParser;
 export const resetMapDepParser = MapCache.resetMapDepParser;

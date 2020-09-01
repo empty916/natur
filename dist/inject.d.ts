@@ -6,7 +6,7 @@
  * @desc [description]
  */
 import React from 'react';
-import { Store, Modules, InjectStoreModules } from './createStore';
+import { Store, Modules, InjectStoreModules } from './ts-utils';
 declare type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 export declare type StoreGetter<ST extends InjectStoreModules, AMOT extends Modules> = () => Store<ST, AMOT>;
 declare const createInject: <ST extends InjectStoreModules, AMOT extends Modules>({ storeGetter, loadingComponent, }: {
