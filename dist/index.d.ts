@@ -6,11 +6,9 @@
  * @desc [description]
  */
 import MapCache from './MapCache';
-import { Store } from './createStore';
-import { default as inject } from "./inject";
-import { useInject } from "./hooks";
-export { default as createStore, ModuleEvent, Listener, State, States, Action, Actions, Maps, InjectMaps, StoreModule, InjectStoreModule, LazyStoreModules, Modules, Store, Middleware, MiddlewareParams } from "./createStore";
+export { default as createInject } from "./inject";
+export { default as createStore, } from "./createStore";
+export { ModuleEvent, Listener, State, States, Action, Actions, StoreMap, Maps, InjectMaps, StoreModule, InjectStoreModule, InjectStoreModules, LazyStoreModules, Modules, ActionRecord, Next, MiddlewareParams, GlobalResetStatesOption, ModuleName, Middleware, Store, ModuleType } from './ts-utils';
+export { ThunkParams } from './middlewares';
 export declare const setMapDepParser: typeof MapCache.setMapDepParser;
 export declare const resetMapDepParser: typeof MapCache.resetMapDepParser;
-export { inject, useInject, };
-export declare const setInjectStoreGetter: (sg: () => Store) => void;

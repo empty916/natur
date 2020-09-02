@@ -1,4 +1,4 @@
-import { State } from './createStore';
+import { State } from './ts-utils';
 declare type MapDepParser = (s: State, p: any) => any;
 export default class MapCache {
     private type;

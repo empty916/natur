@@ -6,6 +6,7 @@
 
 ## basic introduction
 1. This is a simple and efficient react state manager
+1. Good typescript experience
 1. Browser compatible: IE8+
 1. support react 15.x, 16.x and anujs
 1. Unit test coverage rate of 99%, rest assured to use
@@ -20,7 +21,6 @@
 - [detailed module](#module)
 - [complex demo](#complex-demo)
 - [The component only listens to changes in some data](#partial-listener)
-- [hooks](#hooks)
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
 - [middleware](#middleware)
@@ -51,9 +51,8 @@
     - [globalSetStates](#store.globalSetStates)
     - [globalResetStates](#store.globalResetStates)
   - [inject api](#inject.api)
+    - [createInject](#inject.createInject)
     - [inject](#inject.self)
-    - [setLoadingComponent](#inject.setLoadingComponent)
-  - [useInject](#useInject.api)
 
 
 ## <a id='start'>start</a>
@@ -68,12 +67,12 @@
 
 ## <a id='simple-demo'>simple demo</a>
 
-[online experience](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
+[codesandbox](https://codesandbox.io/s/natur-2x-simple-demo-nx0pp?file=/src/App.tsx)
 
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from 'natur';
+import { createStore, createInject } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
@@ -91,10 +90,13 @@ const count = {
 }
 
 // The step of creating the store needs to be completed before rendering the component, because in the component, you need to use the store you created
-createStore({count});
+const store = createStore({count});
+const inject = createInject({storeGetter: () => store});
+
+const injector = inject('count');
 
 
-const App = ({count}) => {
+const App = ({count}: typeof injector.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -106,7 +108,7 @@ const App = ({count}) => {
 // Inject the count module
 // Inject the count module
 // Inject the count module
-const IApp = inject<{count: InjectStoreModule}>('count')(App);
+const IApp = injector(App);
 
 // Render the injected component
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -134,7 +136,9 @@ type State = any;
 
 ````typescript
 
-type StoreMaps = Array<string|Function>;
+type Maps = {
+  [map: string]: Array<string|Function> | Function;
+}
 
 const demo = {
   state: {
@@ -145,15 +149,20 @@ const demo = {
     isEven: ['number', number => number % 2 === 0],
     // You can also declare dependencies as functions, which is useful for complex types of state
     isEven2: [state => state.number, number => number % 2 === 0],
+    // It can also be a function that directly depends on the entire state. The disadvantage is that the function will be re-executed as long as the state is updated, and there is no cache.
+    isEven3: ({number}) => number % 2 === 0,
+    // It can also be a function, no dependencies, only executed once
+    isTrue: () => true,
   },
   // ...actions
 }
 ````
 1. maps is an optional parameter, and maps itself must be an ordinary object
-2. maps is a map of state data, and its child elements must be an array. Let's call it map for now.
-3. In the map, the previous elements are declaring the map's state dependency. The last function can get the previously declared dependencies, and you can implement what you want in it. In the page, you can get the result of the last function of the array.
-4. The results of maps are cached. If the value of the dependencies you declare does not change, the last function will not be re-executed.
-5. In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
+1. maps is a map of state data, and its child elements must be an array. Let's call it map for now.
+1. If the map is an array, the preceding elements are all declaring the dependency of this map on the state. The last function can get the dependency declared earlier, and you can implement what you want in it. On the page, you can get the result of the last function of the array.
+1. If the map is a function, then it can only accept state as an input parameter, or there is no parameter. If it is a state as a parameter, then when the state is updated, the map must be re-executed and there is no cache. If the map has no parameters, then this map will only be executed once
+1. The results of maps are cached. If the value of the dependencies you declare does not change, the last function will not be re-executed.
+1. In fact, this should be called mapState. I think the name is too long, so I changed it to maps.
 
 
 
@@ -187,14 +196,13 @@ const demo = {
 
 ## <a id='complex-demo'>complex demo</a>
 
-[codesandbox](https://codesandbox.io/s/natur-complex-demo-b7ppl?fontsize=14&hidenavigation=1&theme=dark)
-
+[codesandbox](https://codesandbox.io/s/natur-2x-complex-demo-jyut0?file=/src/store.ts)
 
 ### The first step is to create a store instance
 
 ```js
 
-import { createStore } from "natur";
+import { createStore, createInject } from "natur";
 
 // 这是natur内置常用的中间件, 推荐使用
 import {
@@ -251,7 +259,9 @@ const store = createStore({ app, ...otherModules }, {}, undefined, [
   filterUndefinedMiddleware,
   devtool
 ]);
-
+export const inject = createInject({
+  storeGetter: () => store,
+})
 export default store;
 
 ```
@@ -261,8 +271,11 @@ export default store;
 ### The second step is to inject the module into the component
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app, otherModuleName}) => {
+import { inject } from "your-inject";
+
+const injector = inject('app', 'otherModuleName');
+
+const App = ({app, otherModuleName}: typeof injector.type) => {
   // Get the injected app module
   const {state, actions, maps} = app;
   /*
@@ -292,7 +305,7 @@ const App = ({app, otherModuleName}) => {
 };
 
 // Inject the app module in the store;
-export default inject('app', 'otherModuleName')(App);   
+export default injector(App);   
 
 ```  
 
@@ -305,8 +318,32 @@ export default inject('app', 'otherModuleName')(App);
 ## <a id='partial-listener'>The component only listens to changes in some data</a>
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app}) => {
+import { inject } from 'your-inject';
+
+
+// Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
+let injector = inject(
+  ['app', {
+    state: ['name'], // You can also use function declarations state: [s => s.name]
+  }]
+); 
+
+
+// Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
+injector = inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+)(App); 
+
+// Here the App component will not be updated regardless of any changes in the app module
+injector = inject(
+  ['app', {}]
+)(App); 
+
+// Because actions stay the same after they are created, you don't have to listen for changes
+
+const App = ({app}: typeof injector.type) => {
   // get app module
   const {state, actions, maps} = app;
   return (
@@ -317,60 +354,7 @@ const App = ({app}) => {
   )
 };
 
-// Here the App component will only listen to changes in the name of the app and state. Changes in other values will not cause updates to the App component
-export default inject(
-  ['app', {
-    state: ['name'], // You can also use function declarations state: [s => s.name]
-  }]
-)(App); 
-
-
-// Here the App component only listens to changes in the app and the map's deepDep. Changes in other values will not cause updates to the App component
-inject(
-  ['app', {
-    maps: ['deepDep'], 
-  }]
-)(App); 
-
-// Here the App component will not be updated regardless of any changes in the app module
-inject(
-  ['app', {}]
-)(App); 
-
-// Because actions stay the same after they are created, you don't have to listen for changes
-
-// This feature is not available for hooks, because hooks do not have a shouldComponentUpdate switch to control component updates.
 ```  
-
-
-## <a id='hooks'>hooks</a>
-
-```jsx
-
-import { useInject } from 'natur';
-
-const App = () => {
-  /*
-  Note that if there is a lazy loading module in the useInject parameter, the empty array will be returned first.
-  Wait until the lazy loading module is loaded before returning the module you need,
-  So useInject is not recommended for lazy loading modules
-
-  But you can use the way of adding modules manually
-  store.setModule ('otherModuleName', otherModule);
-  See manual import module description for details
-  */
-  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
-  const {state, actions, maps} = app;
-  return (
-    <input
-      value={state.name}
-      onChange={e => actions.changeName(e.target.value)}
-    />
-  )
-};
-export default App; 
-
-```
 
 ---
 
@@ -561,11 +545,11 @@ const createMiddleware = ():Middleware => {
   if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
     const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
     const store = createStore(root, devMiddleware);
-    return () => next => record => {
+    return ({getState}) => next => record => {
       store.dispatch({
         type: `${record.moduleName}/${record.actionName}`,
         state: {
-          [record.moduleName]: record.state,
+          [record.moduleName]: record.state || getState(),
         },
       });
       return next(record);
@@ -619,10 +603,12 @@ const store = createStore(
 ### <a id='loading-component'>Placeholder component configuration when loading</a>
 
 ```jsx
-import { inject } from 'natur';
+import { createInject } from 'natur';
 // Global configuration
-inject.setLoadingComponent(() => <div>loading...</div>);
-
+const inject = createInject({
+  storeGetter: () => store,
+  loadingComponent: () => <div>loading...</div>,
+})
 // Local use
 inject('app')(App, () => <div>loading</div>);
 ```
@@ -669,7 +655,7 @@ maps: {
 */
 app.actions.changeName('jerry');
 // Equivalent to
-store.dispatch('app/changeName', 'jerry');
+store.dispatch('app', 'changeName', 'jerry');
 
 // Monitoring module changes
 const unsubscribe = store.subscribe('app', () => {
@@ -709,7 +695,7 @@ const {actions, state} = store.getModule('count')
 
 actions.inc(state.number);
 // Equivalent to
-store.dispatch('count/inc', state.number);
+store.dispatch('count', 'inc', state.number);
 
 ````
 
@@ -725,7 +711,6 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts This is a lazy loaded page
-import { useInject } from 'natur';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {
@@ -748,7 +733,7 @@ store.setModule('lazyModuleName', lazyLoadModule);
 
 const lazyLoadView = () => {
   // Now you can get manually added modules
-  const [{state, maps, actions}] = useInject('lazyModuleName');
+  const {state, maps, actions} = store.getModule('lazyModuleName');
   return (
     <div>{state.name}</div>
   )
@@ -762,15 +747,33 @@ const lazyLoadView = () => {
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, InjectStoreModule} from 'natur'
+import inject from 'your-inject'
+import {ModuleType} from 'natur';
 
-type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
+const count = {
+  state: { // 存放数据
+    number: 0,
+  },
+  maps: { // state的映射。比如，我需要知道state中的number是否是偶数
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // 用来修改state。返回的数据会作为新的state(这部分由natur内部完成)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// Generate the type obtained by the count module in the component
+type InjectCountType = ModuleType<typeof count>;
+
+const injector = inject('count');
+
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<storeProps & otherProps> = (props) => {
+const App: React.FC<typeof injector.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -781,7 +784,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
   )
 }
 
-const IApp = inject<storeProps>('count', 'name')(App);
+const IApp = injector(App);
 
 const app = (
   <IApp className='1' style={{}} />
@@ -802,7 +805,7 @@ ReactDOM.render(
  - Tips in TypeScript may be less friendly, like
  ```ts
 
-@inject<storeProps>('count', 'name')
+@inject('count', 'name')
 class App extends React.Component {
   // ...
 }
@@ -814,7 +817,7 @@ class App extends React.Component {
 class _App extends React.Component {
   // ...
 }
-const App = @inject<storeProps>('count', 'name')(_App);
+const App = inject('count', 'name')(_App);
 // 正确
 <App forwardedRef={console.log} />
 
@@ -926,7 +929,7 @@ store.getAllModuleName('moduleName') => string[];
 #### <a id='store.dispatch'>dispatch: run action</a>
 
 ````typescript
-store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
 #### <a id='store.destory'>destory 销毁store</a>
@@ -960,6 +963,18 @@ store.globalResetStates({
 
 ### <a id='inject.api'>inject api</a>
 
+
+#### <a id='inject.createInject'>createInject</a>
+
+````typescript
+createInject({
+  storeGetter: () => Store,
+  loadingComponent: React.ComponentClass<{}> | React.FC<{}>
+})
+
+````
+
+
 #### <a id='inject.self'>inject</a>
 
 ````typescript
@@ -977,28 +992,5 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
   WrappedComponent: TReactComponent<P>, 
   LoadingComponent?: TReactComponent<{}>
 ) => React.ComponentClass<Omit<P, keyof T> & { forwardedRef?: React.Ref<any> }>
-
-````
-
-
-#### <a id='inject.setLoadingComponent'>setLoadingComponent</a>
-
-````typescript
-
-type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-
-inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
-
-````
-
-### <a id='useInject.api'>useInject</a>
-
-````typescript
-type ModuleDepDec = [string, {
-  state?: Array<string|Function>;
-  maps?: Array<string>;
-}]
-
-useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
 
 ````

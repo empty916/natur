@@ -1,3 +1,6 @@
+import { ThunkParams } from "../src/middlewares";
+import {GenMapsType, ModuleType} from "../src/ts-utils";
+
 export const state = {
 	count: 1,
 	name: "count",
@@ -10,6 +13,14 @@ export const state = {
 };
 export const maps = {
 	isOdd: ['count', (count: number) => count % 2 !== 0],
+	isOdd2: (s: typeof state) => {
+		// console.log('ssss', s)
+		return s.count % 2 !== 0;
+	},
+	isTrue: () => {
+		// console.log('is true')
+		return true;
+	},
 	deeepCountIsOdd: ['deeep.deep.count', (count: number) => {
 		return count % 2 !== 0;
 	}],
@@ -17,21 +28,24 @@ export const maps = {
 		return name.split("");
 	}],
 	firstChar: ['name', (name: string) => {
-		console.log(name);
+		// console.log(name);
 		return  name[0];
 	}],
+	returnFunMapType1: ['name', () => () => true],
+	returnFunMapType22: ['name', (n: State['name']) => (v: any) => !!v],
+	funMapType: () => () => true,
 };
 export const actions = {
-	inc: () => ({getState}) => {
+	inc: () => ({getState, getMaps, dispatch}: ThunkParams<typeof state, typeof maps>) => {
 		console.log(getState());
 		return {count: getState().count + 1};
 	},
-	dec: () => ({getState, setState}) => {
-		return setState({ 
-			count: getState().count - 1, 
+	dec: () => ({getState, setState}: ThunkParams<typeof state, typeof maps>) => {
+		return setState({
+			count: getState().count - 1,
 		});
 	},
-	incDeeep: () => ({getState, setState}) => {
+	incDeeep: () => ({getState, setState}: ThunkParams<typeof state, typeof maps>) => {
 		const state = getState();
 		return setState({
 			deeep: {
@@ -42,7 +56,7 @@ export const actions = {
 			}
 		});
 	},
-	decDeeep: () => ({getState, setState}) => {
+	decDeeep: () => ({getState, setState}: ThunkParams<typeof state>) => {
 		const state = getState();
 		return setState({
 			deeep: {
@@ -64,25 +78,10 @@ const a = {
 	actions
 };
 
+
+
 type State = typeof state;
 
-export type InjectCountStore = {
-	state: State;
-	maps: {
-		isOdd: boolean;
-		deeepCountIsOdd: boolean;
-		splitName: string[];
-		firstChar: string,
-	};
-	actions: {
-		inc(): State;
-		dec(): State;
-		incDeeep(): State;
-		decDeeep(): State;
-		changeName(newName: string): State;
-	}
-}
-
-
+export type InjectCountStore = ModuleType<typeof a>;
 
 export default a;

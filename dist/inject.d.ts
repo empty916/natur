@@ -6,17 +6,19 @@
  * @desc [description]
  */
 import React from 'react';
-import { Store } from './createStore';
-import { ModuleDepDec } from './utils';
-import { InjectStoreModule } from './createStore';
+import { Store, Modules, InjectStoreModules } from './ts-utils';
 declare type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-declare function Inject<StoreProp extends {
-    [storeModuleName: string]: InjectStoreModule;
-}>(...moduleDec: Array<string | ModuleDepDec>): <P extends StoreProp>(WrappedComponent: TReactComponent<P>, LoadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined) => React.ComponentClass<Pick<P, Exclude<keyof P, keyof StoreProp>> & {
-    forwardedRef?: ((instance: any) => void) | React.RefObject<any> | null | undefined;
-}, any>;
-declare namespace Inject {
-    var setLoadingComponent: (LoadingComponent: TReactComponent<{}>) => TReactComponent<{}>;
-    var setStoreGetter: (storeGetter: () => Store) => void;
-}
-export default Inject;
+export declare type StoreGetter<ST extends InjectStoreModules, AMOT extends Modules> = () => Store<ST, AMOT>;
+declare const createInject: <ST extends InjectStoreModules, AMOT extends Modules>({ storeGetter, loadingComponent, }: {
+    storeGetter: StoreGetter<ST, AMOT>;
+    loadingComponent?: React.FunctionComponent<{}> | React.ComponentClass<{}, any> | undefined;
+}) => {
+    <MNS extends Extract<keyof ST, string>>(...moduleDec: (MNS | [MNS, { [k in Extract<keyof ST[MNS], "state" | "maps">]?: (k extends "state" ? (keyof ST[MNS]["state"] | ((p: ST[MNS]["state"]) => any))[] : k extends "maps" ? (keyof ST[MNS]["maps"])[] : never) | undefined; }])[]): {
+        <P extends Pick<ST, MNS>>(WrappedComponent: TReactComponent<P>, LoadingComponent?: TReactComponent<{}>): React.ComponentClass<Pick<P, Exclude<keyof P, MNS>> & {
+            forwardedRef?: ((instance: any) => void) | React.RefObject<any> | null | undefined;
+        }, any>;
+        type: Pick<ST, MNS>;
+    };
+    setLoadingComponent(LoadingComponent: TReactComponent<{}>): TReactComponent<{}>;
+};
+export default createInject;

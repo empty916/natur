@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-import { StoreModule, State, Store } from './createStore'
+import { StoreModule, State, Store } from './ts-utils'
 import MapCache from './MapCache';
 
 const hasOwn = Object.prototype.hasOwnProperty;
@@ -42,7 +42,7 @@ export const isFnObj = (obj: any): obj is fnObj => {
 }
 const isMapsObj = (obj: any): obj is mapsObj => {
 	if (isObj(obj)) {
-		return Object.keys(obj).every(key => obj[key].constructor === Array);
+		return Object.keys(obj).every(key => (obj[key].constructor === Array || obj[key].constructor === Function));
 	}
 	return false;
 }
@@ -166,72 +166,3 @@ export function arrayIsEqual (arr1: Array<any>, arr2: Array<any>) {
 	return true;
 }
 
-
-export type ModuleDepDec = [string, {
-	state?: Array<string|Function>;
-	maps?: Array<string>;
-}]
-
-export type DepDecs = {
-	[m: string]: ModuleDepDec[1];
-}
-
-export const isModuleDepDec = (obj: any): obj is ModuleDepDec => {
-	if (Array.isArray(obj) && obj.length === 2) {
-		if (typeof obj[0] !== 'string') {
-			return false;
-		}
-		if (obj[1].state && !Array.isArray(obj[1].state)) {
-			return false;
-		}
-		if (obj[1].maps && !Array.isArray(obj[1].maps)) {
-			return false;
-		}
-		return true;
-	}
-	return false;
-}
-
-export type Diff = {
-    [m: string]: MapCache[];
-};
-
-export const initDiff = (moduleDepDec: DepDecs, store: Store):{
-	diff: Diff,
-	destroy: Function,
-} => {
-	let diff: Diff = {};
-	for(let moduleName in moduleDepDec) {
-		if(moduleDepDec.hasOwnProperty(moduleName)) {
-			diff[moduleName] = [];
-			if (moduleDepDec[moduleName].state) {
-				const stateCache = new MapCache(
-					() => store.getModule(moduleName).state,
-					[...moduleDepDec[moduleName].state as Array<string|Function>, () => {}],
-				);
-				stateCache.hasDepChanged();
-				diff[moduleName].push(stateCache);
-			}
-			if (moduleDepDec[moduleName].maps) {
-				const mapsCache = new MapCache(
-					() => store.getModule(moduleName).maps,
-					[...moduleDepDec[moduleName].maps as Array<string>, () => {}],
-				);
-				mapsCache.hasDepChanged();
-				diff[moduleName].push(mapsCache);
-			}
-		}
-	}
-
-	const destroy = () => {
-		for(let moduleName in diff) {
-			diff[moduleName].forEach(cache => cache.destroy());
-			diff[moduleName] = [];
-		}
-		diff = {};
-	}
-	return {
-		diff,
-		destroy,
-	}
-}

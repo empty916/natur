@@ -7,9 +7,10 @@ import {
 	isFnObj,
 	isObj,
 	getValueFromObjByKeyPath,
-	isModuleDepDec,
+	
 } from '../src/utils'
 
+import {isModuleDepDec} from '../src/injectCache';
 
 const a = {
 	a: 1,

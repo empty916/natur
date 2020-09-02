@@ -24,10 +24,12 @@ export var thunkMiddleware = function thunkMiddleware(_ref) {
           }
 
           if (/^\w+\/\w+$/.test(action)) {
-            return dispatch.apply(void 0, [action].concat(arg));
+            var moduleName = action.split('/')[0];
+            var actionName = action.split('/').slice(1).join('/');
+            return dispatch.apply(void 0, [moduleName, actionName].concat(arg));
           }
 
-          return dispatch.apply(void 0, [record.moduleName + "/" + action].concat(arg));
+          return dispatch.apply(void 0, [record.moduleName, action].concat(arg));
         };
 
         return next(_objectSpread({}, record, {

@@ -10,10 +10,6 @@ import {
 import countModule from './count';
 import devTool from './redux.devtool';
 
-const LogMiddleware: Middleware = ({setState}) => next => record => {
-	console.log(`${record.moduleName}: ${record.actionName}`, record.state);
-	return next(record);
-};
 
 export default () => {
 	const store = createStore(
@@ -21,7 +17,9 @@ export default () => {
 			count: countModule,
 			count2: countModule,
 		},
-		{},
+		{
+			lazyCount: () => Promise.resolve(countModule),
+		},
 		{},
 		[
 			thunkMiddleware,
@@ -34,6 +32,11 @@ export default () => {
 			// LogMiddleware2
 		],
 	);
+
+	const LogMiddleware: Middleware<typeof store.type> = ({setState, dispatch}) => next => record => {
+		console.log(`${record.moduleName}: ${record.actionName}`, record.state);
+		return next(record);
+	};
 	return store;
 };
 

@@ -8,6 +8,7 @@
 ## 基本介绍
 
 1. 这是一个简洁、高效的react状态管理器
+1. 良好的typescript体验
 1. 浏览器兼容：IE8+
 1. 支持react 15.x, 16.x, 以及anujs
 1. 单元测试覆盖率99％，放心使用
@@ -21,7 +22,6 @@
 - [module详解](#module)
 - [复杂的例子](#complex-demo)
 - [组件只监听部分数据的变更](#partial-listener)
-- [hooks方式](#hooks)
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
 - [中间件](#middleware)
@@ -52,9 +52,8 @@
     - [globalSetStates全局设置state](#store.globalSetStates)
     - [globalResetStates全局初始化state](#store.globalResetStates)
   - [inject api](#inject.api)
+    - [createInject](#inject.createInject)
     - [inject](#inject.self)
-    - [setLoadingComponent](#inject.setLoadingComponent)
-  - [useInject](#useInject.api)
 
 ## <a id='start'>起步</a>
 
@@ -68,11 +67,11 @@
 
 ## <a id='simple-demo'>简单的示例</a>
 
-[在线体验](https://codesandbox.io/embed/natur-demo-t12n7?fontsize=14&hidenavigation=1&theme=dark)
+[在线体验](https://codesandbox.io/s/natur-2x-simple-demo-nx0pp?file=/src/App.tsx)
 ````tsx
 
 // index.tsx
-import { createStore, inject, InjectStoreModule } from 'natur';
+import { createStore, createInject } from 'natur';
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
@@ -90,10 +89,12 @@ const count = {
 }
 
 // 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
-createStore({count});
+const store = createStore({count});
+const inject = createInject({storeGetter: () => store});
 
+const injector = inject('count');
 
-const App = ({count}) => {
+const App = ({count}: typeof injector.type) => {
   return (
     <>
       <button onClick={() => count.actions.dec(count.state.number)}>-</button>
@@ -105,7 +106,7 @@ const App = ({count}) => {
 // 注入count模块
 // 注入count模块
 // 注入count模块
-const IApp = inject<{count: InjectStoreModule}>('count')(App);
+const IApp = injector(App);
 
 // 渲染注入后的组件
 ReactDOM.render(<IApp />, document.querySelector('#app'));
@@ -134,7 +135,7 @@ type State = any;
 ````typescript
 
 type Maps = {
-  [map: string]: Array<string|Function>;
+  [map: string]: Array<string|Function> | Function;
 }
 
 const demo = {
@@ -146,15 +147,20 @@ const demo = {
     isEven: ['number', number => number % 2 === 0],
     // 你也可以通过函数的方式声明依赖项，这对于复杂类型的state很有用
     isEven2: [state => state.number, number => number % 2 === 0],
+    // 也可以是个函数，直接依赖整个state，缺点是只要state更新就会重新执行函数，没有缓存
+    isEven3: ({number}) => number % 2 === 0,
+    // 也可以是个函数，没有依赖，只执行一次
+    isTrue: () => true,
   },
   // ...actions
 }
 ````
 1. maps是可选的参数，maps本身必须是一个普通对象
-2. maps是state数据的映射，它的子元素必须是一个数组，我们暂且称其为map
-3. 在map中，前面的元素都是在声明此map对state的依赖项。最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西。在页面中，你可以获取数组最后一个函数运行的结果。
-4. maps的结果是有缓存的，如果你声明的依赖项的值没有变化，那么最后一个函数便不会重新执行
-5. 其实这个应该叫mapState，我嫌名字太长，就改成了maps
+1. maps是state数据的映射，它的子元素必须是一个数组或者函数，我们暂且称其为map
+1. 如果map是数组，前面的元素都是在声明此map对state的依赖项。最后一个函数可以获取前面声明的依赖，你可以在里面实现你想要的东西。在页面中，你可以获取数组最后一个函数运行的结果。
+1. 如果map是函数，那么它只能接受state作为入参，或者没有参数，如果是state作为参数，那么当state更新时，此map一定会重新执行，没有缓存。如果map没有参数，那么此map只会执行一次
+1. maps的结果是有缓存的，如果你声明的依赖项的值没有变化，那么最后一个函数便不会重新执行
+1. 其实这个应该叫mapState，我嫌名字太长，就改成了maps
 
 
 
@@ -186,12 +192,12 @@ const demo = {
 
 ## <a id='complex-demo'>复杂的例子</a>
 
-[codesandbox](https://codesandbox.io/s/natur-complex-demo-b7ppl?fontsize=14&hidenavigation=1&theme=dark)
+[在线体验](https://codesandbox.io/s/natur-2x-complex-demo-jyut0?file=/src/store.ts)
 
 ### 创建 store 实例
 
 ```js
-import { createStore } from "natur";
+import { createStore, createInject } from "natur";
 
 // 这是natur内置常用的中间件, 推荐使用
 import {
@@ -249,6 +255,10 @@ const store = createStore({ app, ...otherModules }, {}, undefined, [
   devtool
 ]);
 
+export const inject = createInject({
+  storeGetter: () => store,
+});
+
 export default store;
 
 ```
@@ -262,9 +272,11 @@ export default store;
 import React from "react";
 import "./styles.css";
 
-import { inject } from "natur";
+import { inject } from "your-inject";
 
-const App = ({ app }) => {
+const injector = inject('app');
+
+const App = ({ app }: typeof injector.type) => {
   // 获取注入的app模块
   const { state, actions } = app;
   return (
@@ -291,7 +303,7 @@ const App = ({ app }) => {
 };
 
 // 注入store中的app模块；
-export default inject("app")(App);
+export default injector(App);
  
 
 ```  
@@ -303,8 +315,33 @@ export default inject("app")(App);
 ## <a id='partial-listener'>组件只监听部分数据的变更</a>
 
 ```jsx
-import { inject } from 'natur';
-const App = ({app}) => {
+import { inject } from 'your-inject';
+
+
+// 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
+let injector = inject(
+  ['app', {
+    state: ['name'], // 也可以使用函数声明 state: [s => s.name]
+  }]
+); 
+
+
+// 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
+injector = inject(
+  ['app', {
+    maps: ['deepDep'], 
+  }]
+); 
+
+// 这里App组件不论app模块发生什么变化，都不会更新
+injector = inject(
+  ['app', {}]
+); 
+
+
+// 因为actions在创建后会保持不变，所以你不必监听它的变化
+
+const App = ({app}: typeof injector.type) => {
   // 获取注入的app模块
   const {state, actions, maps} = app;
   return (
@@ -315,61 +352,8 @@ const App = ({app}) => {
   )
 };
 
-// 这里App组件只会监听app，state中name的变化，其他值的变化不会引起App组件的更新
-export default inject(
-  ['app', {
-    state: ['name'], // 也可以使用函数声明 state: [s => s.name]
-  }]
-)(App); 
 
-
-// 这里App组件只会监听app，maps中deepDep的变化，其他值的变化不会引起App组件的更新
-inject(
-  ['app', {
-    maps: ['deepDep'], 
-  }]
-)(App); 
-
-// 这里App组件不论app模块发生什么变化，都不会更新
-inject(
-  ['app', {}]
-)(App); 
-
-// 因为actions在创建后会保持不变，所以你不必监听它的变化
-
-
-// 此功能不适用于hooks，因为hooks没有shouldComponentUpdate开关控制组件更新，
 ```  
-
-
-## <a id='hooks'>hooks方式</a>
-
-```jsx
-
-import { useInject } from 'natur';
-
-const App = () => {
-  /*
-  注意，如果useInject参数中，存在懒加载模块，则会先返回空的数组，
-  等到懒加载模块加载完成才会返回你需要的模块，
-  所以useInject不建议使用于懒加载模块
-
-  但是你可以使用手动添加模块的的方式
-  store.setModule('otherModuleName', otherModule);
-  详情见手动导入模块说明
-  */
-  const [app, otherModule] = useInject('app', 'otherModuleName'， /* ...moreOtherModuleName */);
-  const {state, actions, maps} = app;
-  return (
-    <input
-      value={state.name}
-      onChange={e => actions.changeName(e.target.value)}
-    />
-  )
-};
-export default App; 
-
-```
 
 ---
 
@@ -500,9 +484,9 @@ export default store;
 
 ```typescript
 
-import { thunkMiddleware } from 'natur/dist/middlewares'
+import { thunkMiddleware, ThunkParams } from 'natur/dist/middlewares'
 
-const actionExample = (myParams: any) => ({getState, setState: (s: State) => State, getMaps: () => InjectMaps, dispatch}) => {
+const actionExample = (myParams: any) => ({getState, setState, getMaps, dispatch}: ThunkParams) => {
   const currentState = getState(); // 最新的state
   const currentMaps = getMaps(); // 最新的maps
   // dispatch('otherActionNameOfThisModule', ...params)
@@ -558,11 +542,11 @@ const createMiddleware = ():Middleware => {
   if (process.env.NODE_ENV === 'development' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
     const devMiddleware = (window as any).__REDUX_DEVTOOLS_EXTENSION__();
     const store = createStore(root, devMiddleware);
-    return () => next => record => {
+    return ({getState}) => next => record => {
       store.dispatch({
         type: `${record.moduleName}/${record.actionName}`,
         state: {
-          [record.moduleName]: record.state,
+          [record.moduleName]: record.state || getState(),
         },
       });
       return next(record);
@@ -618,9 +602,12 @@ const store = createStore(
 ## <a id='loading-component'>加载时候的占位组件配置</a>
 
 ```jsx
-import { inject } from 'natur';
+import { createInject } from 'natur';
 // 全局配置
-inject.setLoadingComponent(() => <div>loading...</div>);
+const inject = createInject({
+  storeGetter: () => store,
+  loadingComponent: () => <div>loading...</div>,
+})
 
 // 局部使用
 inject('app')(App, () => <div>loading</div>);
@@ -671,7 +658,7 @@ maps: {
 */
 app.actions.changeName('jerry');
 // 等同于
-store.dispatch('app/changeName', 'jerry');
+store.dispatch('app', 'changeName', 'jerry');
 
 /**
  * 
@@ -711,7 +698,6 @@ export default createStore({/*...modules*/});
 
 // ================================================
 // lazyloadPage.ts 这是一个懒加载的页面
-import { useInject } from 'natur';
 import store from 'initStore.ts'
 
 const lazyLoadModule = {
@@ -734,7 +720,7 @@ store.setModule('lazyModuleName', lazyLoadModule);
 
 const lazyLoadView = () => {
   // 现在你可以获取手动添加的模块了
-  const [{state, maps, actions}] = useInject('lazyModuleName');
+  const {state, maps, actions} = store.getModule('lazyModuleName');
   return (
     <div>{state.name}</div>
   )
@@ -767,7 +753,7 @@ const {actions, state} = store.getModule('count')
 
 actions.inc(state.number);
 // 等于
-store.dispatch('count/inc', state.number);
+store.dispatch('count', 'inc', state.number);
 
 ````
 
@@ -776,15 +762,33 @@ store.dispatch('count/inc', state.number);
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {inject, InjectStoreModule} from 'natur'
+import inject from 'your-inject';
+import {ModuleType} from 'natur';
 
-type storeProps = {count: InjectStoreModule, name: InjectStoreModule};
+const count = {
+  state: { // 存放数据
+    number: 0,
+  },
+  maps: { // state的映射。比如，我需要知道state中的number是否是偶数
+    isEven: ['number', number => number % 2 === 0],
+  },
+  actions: { // 用来修改state。返回的数据会作为新的state(这部分由natur内部完成)
+    inc: number => ({number: number + 1}),
+    dec: number => ({number: number - 1}),
+  }
+}
+
+// 生成count模块在组件中获得的类型
+type InjectCountType = ModuleType<typeof count>;
+
+const injector = inject('count');
+
 type otherProps = {
   className: string,
   style: Object,
 }
 
-const App: React.FC<storeProps & otherProps> = (props) => {
+const App: React.FC<typeof injector.type & otherProps> = (props) => {
   const {state, actions, maps} = props.count;
   return (
     <>
@@ -795,7 +799,7 @@ const App: React.FC<storeProps & otherProps> = (props) => {
   )
 }
 
-const IApp = inject<storeProps>('count', 'name')(App);
+const IApp = injector(App);
 
 const app = (
   <IApp className='1' style={{}} />
@@ -816,7 +820,7 @@ ReactDOM.render(
  - 在TypeScript中的提示可能不那么友好，比如
  ```ts
 
-@inject<storeProps>('count', 'name')
+@inject('count', 'name')
 class App extends React.Component {
   // ...
 }
@@ -828,7 +832,7 @@ class App extends React.Component {
 class _App extends React.Component {
   // ...
 }
-const App = @inject<storeProps>('count', 'name')(_App);
+const App = @inject('count', 'name')(_App);
 // 正确
 <App forwardedRef={console.log} />
 
@@ -938,7 +942,7 @@ store.getAllModuleName('moduleName') => string[];
 #### <a id='store.dispatch'>dispatch 执行action</a>
 
 ````typescript
-store.dispatch('moduleName/actionName', ...actionArg: any[]) => ReturnType<Action>;
+store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
 #### <a id='store.destory'>destory 销毁store</a>
@@ -972,6 +976,18 @@ store.globalResetStates({
 
 ### <a id='inject.api'>inject api</a>
 
+
+#### <a id='inject.createInject'>createInject</a>
+
+````typescript
+createInject({
+  storeGetter: () => Store,
+  loadingComponent: React.ComponentClass<{}> | React.FC<{}>
+})
+
+````
+
+
 #### <a id='inject.self'>inject</a>
 
 ````typescript
@@ -984,7 +1000,7 @@ type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
 
 type StoreProps = {[m: string]: InjectStoreModule}
 
-inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>) 
+inject(...moduleDec: Array<string|ModuleDepDec>) 
 => <P extends T>(
   WrappedComponent: TReactComponent<P>, 
   LoadingComponent?: TReactComponent<{}>
@@ -992,25 +1008,3 @@ inject<T extends StoreProps>(...moduleDec: Array<string|ModuleDepDec>)
 
 ````
 
-
-#### <a id='inject.setLoadingComponent'>setLoadingComponent 设置懒加载模块加载中的占位组件</a>
-
-````typescript
-
-type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-
-inject.setLoadingComponent = (lc: TReactComponent<{}>) => void;
-
-````
-
-### <a id='useInject.api'>useInject</a>
-
-````typescript
-type ModuleDepDec = [string, {
-  state?: Array<string|Function>;
-  maps?: Array<string>;
-}]
-
-useInject(...md: (ModuleName|ModuleDepDec)[]): InjectStoreModule[]
-
-````

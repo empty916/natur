@@ -5,8 +5,7 @@
  * @modify date 2019-08-09 17:13:15
  * @desc [description]
  */
-import { StoreModule, State, Store } from './createStore';
-import MapCache from './MapCache';
+import { StoreModule, State } from './ts-utils';
 declare type Obj = {
     [p: string]: any;
 };
@@ -37,22 +36,4 @@ export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?:
  */
 export declare function getValueFromObjByKeyPath(obj: State, keyPath: string): any;
 export declare function arrayIsEqual(arr1: Array<any>, arr2: Array<any>): boolean;
-export declare type ModuleDepDec = [string, {
-    state?: Array<string | Function>;
-    maps?: Array<string>;
-}];
-export declare type DepDecs = {
-    [m: string]: ModuleDepDec[1];
-};
-export declare const isModuleDepDec: (obj: any) => obj is [string, {
-    state?: (string | Function)[] | undefined;
-    maps?: string[] | undefined;
-}];
-export declare type Diff = {
-    [m: string]: MapCache[];
-};
-export declare const initDiff: (moduleDepDec: DepDecs, store: Store) => {
-    diff: Diff;
-    destroy: Function;
-};
 export {};

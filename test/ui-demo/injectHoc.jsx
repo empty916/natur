@@ -1,11 +1,12 @@
 import React from "react";
-import { inject, createStore, setInjectStoreGetter } from "../../src";
+import { createInject, createStore } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
 	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware
 } from '../../src/middlewares'
+import { resolvePlugin } from "@babel/core";
 
 const name = {
 	state: {
@@ -32,7 +33,33 @@ const lazyName = {
 		textSplit: ['text', text => text.split('').join(',')],
 	}
 }
-const App = inject(
+
+export const store = createStore(
+	{name},
+	{
+		lazyName: () => new Promise(res => {
+			setTimeout(() => {
+				res(lazyName);
+			}, 500);
+		}),
+		lazyLoadError: () => Promise.reject(lazyName),
+	},
+	{},
+	[
+		promiseMiddleware, 
+		filterNonObjectMiddleware, 
+		fillObjectRestDataMiddleware,
+		shallowEqualMiddleware,
+	]
+);
+const Inject = createInject({
+	storeGetter: () => store,
+	loadingComponent: () => <>loading</>
+});
+
+const injectSome = Inject(['name', {}], 'lazyName');
+
+const App = Inject(
 	['name', {state: ['text'], maps: [m => m.textSplit]}], 
 	'lazyName', 
 	'name1'
@@ -50,7 +77,7 @@ const App = inject(
 	);
 });
 
-const AppWithNoModule = inject('name1')(({name}) => {
+const AppWithNoModule = Inject('name1')(({name}) => {
 	// const { state, actions, maps } = name;
 	return (
 		<>
@@ -59,7 +86,7 @@ const AppWithNoModule = inject('name1')(({name}) => {
 	);
 });
 
-const AppWithLoadErrorModule = inject('lazyLoadError')(({lazyLoadError}) => {
+const AppWithLoadErrorModule = Inject('lazyLoadError')(({lazyLoadError}) => {
 	return (
 		<>
 			aaa
@@ -67,29 +94,10 @@ const AppWithLoadErrorModule = inject('lazyLoadError')(({lazyLoadError}) => {
 	);
 });
 
-const initStore = () => {
-	return createStore(
-		{name},
-		{
-			lazyName: () => Promise.resolve(lazyName),
-			lazyLoadError: () => Promise.reject(lazyName),
-		},
-		{},
-		[
-			promiseMiddleware, 
-			filterNonObjectMiddleware, 
-			fillObjectRestDataMiddleware,
-			shallowEqualMiddleware,
-		]
-	);
-	// setInjectStoreGetter(() => store);
-};
-
-inject.setLoadingComponent(() => <>loading</>)
+// Inject.setLoadingComponent()
 
 export {
 	App,
 	AppWithNoModule,
 	AppWithLoadErrorModule,
-	initStore,
 };
