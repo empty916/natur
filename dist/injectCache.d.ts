@@ -1,16 +1,16 @@
 import MapCache from "./MapCache";
 import { Store, InjectStoreModules, Modules } from "./ts-utils";
 declare type Fun<P> = (p: P) => any;
-export declare type ModuleDepDec<MN extends string = string, ST extends InjectStoreModules = InjectStoreModules> = [MN, {
-    [k in Extract<keyof ST[MN], 'state' | 'maps'>]?: k extends 'state' ? Array<keyof ST[MN]['state'] | Fun<ST[MN]['state']>> : k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
-}];
+export declare type ModuleDepDec<MN extends string = string, ST extends InjectStoreModules = InjectStoreModules> = [
+    MN,
+    {
+        [k in Extract<keyof ST[MN], 'state' | 'maps'>]?: k extends 'state' ? Array<keyof ST[MN]['state'] | Fun<ST[MN]['state']>> : k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
+    }
+];
 export declare type DepDecs = {
     [m: string]: ModuleDepDec[1];
 };
-export declare const isModuleDepDec: (obj: any) => obj is [string, {
-    state?: (string | number | symbol | Fun<any>)[] | undefined;
-    maps?: (string | number | symbol)[] | undefined;
-}];
+export declare const isModuleDepDec: (obj: any) => obj is ModuleDepDec<string, InjectStoreModules>;
 export declare type Diff = {
     [m: string]: MapCache[];
 };

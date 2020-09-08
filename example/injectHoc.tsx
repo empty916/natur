@@ -22,6 +22,7 @@ const injectStore = inject([
 
 const _App: React.FC<otherProps & typeof injectStore.type> = ({ count }) => {
 	const { state, actions, maps } = count;
+	// const a = actions.multiReturnTypeAction()
 	return (
 		<div>
 			count:

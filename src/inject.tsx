@@ -212,7 +212,7 @@ const createInject = <
 				depDecs[m[0]] = m[1];
 				return m[0];
 			}
-			return m;
+			return m as string;
 		});
 		const connectHOC = <P extends Pick<ST, MNS>>(
 			WrappedComponent: TReactComponent<P>,

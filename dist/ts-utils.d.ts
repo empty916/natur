@@ -86,8 +86,18 @@ export interface Store<StoreType extends InjectStoreModules, AOST extends Module
 }
 declare type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;
 declare type ActionArg<Action extends AnyFun> = Parameters<Action>;
+/**
+ * 如果action返回值是一个函数，那么返回 返回函数 的返回值
+ */
 declare type ActionActualReturnType<Action extends AnyFun> = (ReturnType<Action> extends AnyFun ? ReturnType<ReturnType<Action>> : ReturnType<Action>);
-declare type ActionReturnType<Action extends AnyFun, S extends any> = ActionActualReturnType<Action> extends Partial<S> ? S : (ActionActualReturnType<Action> extends Promise<Partial<S>> ? Promise<S> : ActionActualReturnType<Action> extends undefined ? undefined : Promise<undefined>);
+/**
+ * 将actions的返回值中的Partial<state>替换为state
+ */
+declare type ReplacePartialStateToState<ART, S, PS = Partial<S>> = Extract<ART, PS | Promise<PS>> extends never ? ART : Extract<ART, PS | Promise<PS>> extends PS ? (Exclude<ART, PS> | S) : Extract<ART, PS | Promise<PS>> extends Promise<PS> ? (Exclude<ART, Promise<PS>> | Promise<S>) : Extract<ART, PS | Promise<PS>> extends (Promise<PS> | PS) ? (Exclude<ART, (Promise<PS> | PS)> | Promise<S> | S) : ART;
+/**
+ * 生成action方法的返回值
+ */
+declare type ActionReturnType<Action extends AnyFun, S extends any> = ReplacePartialStateToState<ActionActualReturnType<Action>, S>;
 /**
  * 生成actions类型
  */

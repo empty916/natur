@@ -69,8 +69,20 @@ export const actions = {
 	},
 	changeName: (newName: string) => ({
 		name: newName,
-	})
+	}),
+	multiReturnTypeAction: (p: boolean) => {
+		if (p) {
+			return {name: '1'};
+		} else {
+			return undefined;
+		}
+		// if (p === '2') {
+		// 	return Promise.resolve({name: '1'});
+		// }
+	},
 };
+
+type mrt = ReturnType<typeof actions.multiReturnTypeAction>;
 
 const a = {
 	state,
