@@ -1,4 +1,4 @@
-import {Middleware, Action, State, Maps, Actions} from './ts-utils';
+import {Middleware, Action, State, Maps} from './ts-utils';
 import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
 import { GenMapsType } from './ts-utils';
 

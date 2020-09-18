@@ -6,15 +6,15 @@
  * @desc [description]
  */
 import React from 'react';
-import { Store, Modules, InjectStoreModules } from './ts-utils';
+import { Store, Modules, InjectStoreModules, LazyStoreModules, GenerateStoreType } from './ts-utils';
 import { ModuleDepDec } from './injectCache';
 declare type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
-export declare type StoreGetter<ST extends InjectStoreModules, AMOT extends Modules> = () => Store<ST, AMOT>;
+export declare type StoreGetter<M extends Modules, LM extends LazyStoreModules> = () => Store<M, LM>;
 declare type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & {
     forwardedRef?: React.Ref<any>;
 }>;
-declare const createInject: <ST extends InjectStoreModules, AMOT extends Modules>({ storeGetter, loadingComponent, }: {
-    storeGetter: StoreGetter<ST, AMOT>;
+declare const createInject: <M extends Modules, LM extends LazyStoreModules, ST extends InjectStoreModules = GenerateStoreType<M, LM>>({ storeGetter, loadingComponent, }: {
+    storeGetter: StoreGetter<M, LM>;
     loadingComponent?: React.FC<{}> | React.ComponentClass<{}, any> | undefined;
 }) => {
     <MNS extends Extract<keyof ST, string>>(...moduleDec: (MNS | ModuleDepDec<MNS, ST>)[]): {

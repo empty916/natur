@@ -11,7 +11,7 @@ import {
 	ModuleName,
 	Store,
 	Modules,
-	InjectStoreModules
+	InjectStoreModules, LazyStoreModules, GenerateStoreType
 } from './ts-utils';
 import {isEqualWithDepthLimit} from './utils';
 import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
@@ -26,21 +26,21 @@ type Tstate = {
 	modulesHasLoaded: boolean,
 }
 
-export type StoreGetter<ST extends InjectStoreModules, AMOT extends Modules> = () => Store<ST, AMOT>;
+export type StoreGetter<M extends Modules, LM extends LazyStoreModules> = () => Store<M, LM>;
 
 type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
 
-const connect = <P, SP, ST extends InjectStoreModules, AMOT extends Modules>(
+const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	moduleNames: Array<ModuleName>,
 	depDecs: DepDecs,
-	storeGetter: StoreGetter<ST, AMOT>,
+	storeGetter: StoreGetter<M, LM>,
 	WrappedComponent: TReactComponent<P>,
 	LoadingComponent?: TReactComponent<any>,
 ): connectReturn<P, SP> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
 	class Connect extends React.Component<ConnectProps> {
-		private store: Store<ST, AMOT>;
+		private store: Store<M, LM>;
 		private integralModulesName: ModuleNames;
 		private unLoadedModules: ModuleNames;
 		private injectModules: Modules = {};
@@ -90,7 +90,7 @@ const connect = <P, SP, ST extends InjectStoreModules, AMOT extends Modules>(
 				});
 			}
 		}
-		initDiff(moduleDepDec: DepDecs = depDecs, store: Store<ST, AMOT> = this.store):void {
+		initDiff(moduleDepDec: DepDecs = depDecs, store: Store<M, LM> = this.store):void {
 			const {diff, destroy} = initDiff(moduleDepDec, store);
 			this.storeModuleDiff = diff;
 			this.destoryCache = destroy;
@@ -196,13 +196,14 @@ const connect = <P, SP, ST extends InjectStoreModules, AMOT extends Modules>(
 }
 
 const createInject = <
-	ST extends InjectStoreModules,
-	AMOT extends Modules
+	M extends Modules,
+	LM extends LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 >({
 	storeGetter,
 	loadingComponent = Loading,
 }: {
-	storeGetter: StoreGetter<ST, AMOT>
+	storeGetter: StoreGetter<M, LM>
 	loadingComponent?: TReactComponent<{}>
 }) => {
 	function Inject<MNS extends Extract<keyof ST, string>>(...moduleDec: Array<MNS|ModuleDepDec<MNS, ST>>) {
@@ -217,7 +218,7 @@ const createInject = <
 		const connectHOC = <P extends Pick<ST, MNS>>(
 			WrappedComponent: TReactComponent<P>,
 			LoadingComponent: TReactComponent<{}> = loadingComponent
-		) => connect<P, Pick<ST, MNS>, ST, AMOT>(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent);
+		) => connect<P, Pick<ST, MNS>, M, LM>(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent);
 
 		const type = null as any as Pick<ST, MNS>;
 		connectHOC.type = type;

@@ -22,7 +22,7 @@ const injectStore = inject([
 
 const _App: React.FC<otherProps & typeof injectStore.type> = ({ count }) => {
 	const { state, actions, maps } = count;
-	// const a = actions.multiReturnTypeAction()
+	// const a = actions.changeName('1')
 	return (
 		<div>
 			count:
@@ -67,7 +67,6 @@ const App = injectStore(
 inject.setLoadingComponent(createLoading("red"));
 
 const { actions } = store.getModule("count");
-
 
 (window as any).countActions = actions;
 

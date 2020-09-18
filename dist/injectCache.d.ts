@@ -1,5 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules } from "./ts-utils";
+import { Store, InjectStoreModules, Modules, LazyStoreModules } from "./ts-utils";
 declare type Fun<P> = (p: P) => any;
 export declare type ModuleDepDec<MN extends string = string, ST extends InjectStoreModules = InjectStoreModules> = [
     MN,
@@ -14,7 +14,7 @@ export declare const isModuleDepDec: (obj: any) => obj is ModuleDepDec<string, I
 export declare type Diff = {
     [m: string]: MapCache[];
 };
-export declare const initDiff: <ST extends InjectStoreModules, AMOT extends Modules>(moduleDepDec: DepDecs, store: Store<ST, AMOT, Partial<{ [k in keyof ST]: Partial<ST[k]["state"]>; }>>) => {
+export declare const initDiff: <M extends Modules, LM extends LazyStoreModules>(moduleDepDec: DepDecs, store: Store<M, LM>) => {
     diff: Diff;
     destroy: Function;
 };

@@ -55,7 +55,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			[k in keyof StoreType]: StoreType[k]["state"];
 		}
 	>;
-	let currentStoreInstance: Store<StoreType, AM>;
+	let currentStoreInstance: Store<M, LM>;
 
 	let currentInitStates = { ...initStates };
 	let resetStateData: Partial<PS> = {};
@@ -441,6 +441,6 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		globalResetStates,
 		type: (null as any) as StoreType,
 	} as any;
-	return currentStoreInstance as Store<StoreType, AM>;
+	return currentStoreInstance as Store<M, LM>;
 };
 export default createStore;

@@ -6,8 +6,7 @@
  * @desc [description]
  */
 
-import { StoreModule, State, Store } from './ts-utils'
-import MapCache from './MapCache';
+import { StoreModule, State } from './ts-utils'
 
 const hasOwn = Object.prototype.hasOwnProperty;
 // export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
