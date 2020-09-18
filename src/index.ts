@@ -33,7 +33,10 @@ export {
 	ModuleName,
 	Middleware,
 	Store,
-	ModuleType
+	ModuleType,
+	GenMapsType,
+	GenActionsType,
+	GenerateStoreType,
 } from './ts-utils';
 export {ThunkParams} from './middlewares';
 export const setMapDepParser = MapCache.setMapDepParser;
