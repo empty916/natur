@@ -758,12 +758,14 @@ store.dispatch('count', 'inc', state.number);
 ````
 
 ## <a id='typescript'>typescript支持</a>
+
+### 基础用法
 ```ts
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import inject from 'your-inject';
-import {ModuleType} from 'natur';
+import {ModuleType, Store} from 'natur';
 
 const count = {
   state: { // 存放数据
@@ -777,6 +779,8 @@ const count = {
     dec: number => ({number: number - 1}),
   }
 }
+
+
 
 // 生成count模块在组件中获得的类型
 type InjectCountType = ModuleType<typeof count>;
@@ -811,6 +815,34 @@ ReactDOM.render(
 
 
 ```
+
+### 重新定义store类型
+
+````ts
+import {Store, createStore} from 'natur';
+
+const count = {
+  /* ... */
+}
+
+const lazyModule1 = () => import(/* ... */);
+
+const allSyncModules = {
+  count,
+  /* and others */
+}
+const allAsyncModules = {
+  lazyModule1,
+  /* and others */
+}
+
+const store = createStore(allSyncModules, allAsyncModules);
+
+type StoreInsType = Store<typeof allSyncModules, typeof allAsyncModules>;
+
+// StoreInsType的类型就是store的类型，你可以扩展你的类型
+
+````
 
 
 ## <a id='caution'>使用注意事项</a>

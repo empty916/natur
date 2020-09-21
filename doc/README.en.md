@@ -743,6 +743,8 @@ const lazyLoadView = () => {
 ```
 
 ### <a id='typescript'>typescript support</a>
+
+### base usage
 ```ts
 
 import React from 'react';
@@ -796,6 +798,35 @@ ReactDOM.render(
 
 
 ```
+
+
+### Redefine store type
+
+````ts
+import {Store, createStore} from 'natur';
+
+const count = {
+  /* ... */
+}
+
+const lazyModule1 = () => import(/* ... */);
+
+const allSyncModules = {
+  count,
+  /* and others */
+}
+const allAsyncModules = {
+  lazyModule1,
+  /* and others */
+}
+
+const store = createStore(allSyncModules, allAsyncModules);
+
+type StoreInsType = Store<typeof allSyncModules, typeof allAsyncModules>;
+
+// The type of StoreInsType is the type of store, you can extend your type
+
+````
 
 
 ### <a id='caution'>Precautions for use</a>
