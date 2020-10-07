@@ -54,7 +54,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     resetStateData[moduleName] = storeModule.state;
 
     if (!!currentInitStates[moduleName]) {
-      res = _objectSpread({}, storeModule, {
+      res = _objectSpread(_objectSpread({}, storeModule), {}, {
         state: currentInitStates[moduleName]
       });
       delete currentInitStates[moduleName];
@@ -103,7 +103,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
   var getAllModuleName = function getAllModuleName() {
     if (!allModuleNames) {
-      allModuleNames = Object.keys(_objectSpread({}, currentModules, {}, currentLazyModules));
+      allModuleNames = Object.keys(_objectSpread(_objectSpread({}, currentModules), currentLazyModules));
     }
 
     return allModuleNames;
@@ -213,7 +213,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     }
 
     var isModuleExist = hasModule(moduleName);
-    currentModules = _objectSpread({}, currentModules, (_objectSpread2 = {}, _objectSpread2[moduleName] = replaceModule(moduleName, storeModule), _objectSpread2));
+    currentModules = _objectSpread(_objectSpread({}, currentModules), {}, (_objectSpread2 = {}, _objectSpread2[moduleName] = replaceModule(moduleName, storeModule), _objectSpread2));
 
     if (isModuleExist) {
       clearAllCache(moduleName);

@@ -13,7 +13,7 @@ export var thunkMiddleware = function thunkMiddleware(_ref) {
     return function (record) {
       if (typeof record.state === 'function') {
         var setState = function setState(s) {
-          return next(_objectSpread({}, record, {
+          return next(_objectSpread(_objectSpread({}, record), {}, {
             state: s
           }));
         };
@@ -32,7 +32,7 @@ export var thunkMiddleware = function thunkMiddleware(_ref) {
           return dispatch.apply(void 0, [record.moduleName, action].concat(arg));
         };
 
-        return next(_objectSpread({}, record, {
+        return next(_objectSpread(_objectSpread({}, record), {}, {
           state: record.state({
             getState: getState,
             setState: setState,
@@ -51,7 +51,7 @@ export var promiseMiddleware = function promiseMiddleware() {
     return function (record) {
       if (isPromise(record.state)) {
         return record.state.then(function (ns) {
-          return next(_objectSpread({}, record, {
+          return next(_objectSpread(_objectSpread({}, record), {}, {
             state: ns
           }));
         });

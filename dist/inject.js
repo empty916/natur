@@ -205,7 +205,7 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
       if (!this.integralModulesName.length) {
         console.warn("modules: " + moduleNames.join() + " is not exits!");
         console.warn(moduleNames.join() + " \u6A21\u5757\u4E0D\u5B58\u5728!");
-        return React.createElement(WrappedComponent, newProps);
+        return /*#__PURE__*/React.createElement(WrappedComponent, newProps);
       }
 
       if (this.state.modulesHasLoaded) {
@@ -218,8 +218,8 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
       }
 
       Object.assign(newProps, this.injectModules);
-      var render = React.createElement(WrappedComponent, newProps);
-      return this.state.modulesHasLoaded ? render : React.createElement(this.LoadingComponent, null);
+      var render = /*#__PURE__*/React.createElement(WrappedComponent, newProps);
+      return this.state.modulesHasLoaded ? render : /*#__PURE__*/React.createElement(this.LoadingComponent, null);
     };
 
     return Connect;
@@ -228,8 +228,8 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
   var FinalConnect = Connect;
 
   if (!!React.forwardRef) {
-    FinalConnect = React.forwardRef(function ForwardConnect(props, ref) {
-      return React.createElement(Connect, _extends({}, props, {
+    FinalConnect = /*#__PURE__*/React.forwardRef(function ForwardConnect(props, ref) {
+      return /*#__PURE__*/React.createElement(Connect, _extends({}, props, {
         forwardedRef: ref
       }));
     });
