@@ -42,14 +42,14 @@ export interface LazyStoreModules {
 export interface Modules {
     [p: string]: StoreModule;
 }
-export declare type ActionRecord = {
+export declare type MiddlewareActionRecord = {
     moduleName: string;
     actionName: string;
     state: ReturnType<Action>;
 };
-export declare type Next = (record: ActionRecord) => ReturnType<Action>;
+export declare type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 export declare type MiddlewareParams<StoreType extends InjectStoreModules> = {
-    setState: Next;
+    setState: MiddlewareNext;
     getState: () => State;
     getMaps: () => InjectMaps | undefined;
     dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
@@ -58,10 +58,25 @@ export declare type GlobalResetStatesOption<MN extends string = string> = {
     include?: Array<MN | RegExp>;
     exclude?: Array<MN | RegExp>;
 };
-export declare type ModuleName = string;
+export declare type ModuleName<M, LM> = keyof M | keyof LM;
 export declare type Middleware<StoreType extends {
     [k: string]: InjectStoreModule;
-}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: Next) => Next;
+}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: MiddlewareNext) => MiddlewareNext;
+export declare type FilterActionRecord = {
+    moduleName: string;
+    actionName: string;
+    actionArgs: Parameters<Action>;
+};
+export declare type FilterNext = (record: FilterActionRecord) => ReturnType<Action>;
+export declare type FilterParams<StoreType extends InjectStoreModules> = {
+    setState: MiddlewareNext;
+    getState: () => State;
+    getMaps: () => InjectMaps | undefined;
+    dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+};
+export declare type Filter<StoreType extends {
+    [k: string]: InjectStoreModule;
+}> = (filterParams: FilterParams<StoreType>) => (next: FilterNext) => FilterNext;
 declare type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;
 declare type ActionArg<Action extends AnyFun> = Parameters<Action>;
 /**
@@ -125,6 +140,8 @@ export declare type PromiseModuleType<PM extends () => Promise<StoreModuleWithMa
 };
 /**
  * 生成StoreType
+ * key是模块和懒加载模块的名字
+ * value是模块和懒加载模块对应的{state, actions, maps}对象
  */
 export declare type GenerateStoreType<MS extends {
     [m: string]: StoreModuleWithMaps | StoreModuleWithoutMaps;
@@ -140,18 +157,21 @@ export declare type AllStates<M extends Modules, LM extends LazyStoreModules> = 
 } & {
     [KM in keyof LM]?: PromiseModuleType<LM[KM]>['state'];
 };
+/**
+ * 生成store类型
+ */
 export interface Store<M extends Modules, LM extends LazyStoreModules, StoreType extends InjectStoreModules = GenerateStoreType<M, LM>, AOST extends Modules = (M & {
     [k in keyof LM]: PickPromiseType<LM[k]>;
 }), S = AllStates<M, LM>> {
     getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
     setModule: <MN extends keyof AOST>(moduleName: MN, storeModule: AOST[MN]) => Store<M, LM>;
-    removeModule: (moduleName: ModuleName) => Store<M, LM>;
-    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store<M, LM>;
-    removeLazyModule: (moduleName: ModuleName) => Store<M, LM>;
-    hasModule: (moduleName: ModuleName) => boolean;
-    loadModule: <MN extends keyof StoreType>(moduleName: MN) => Promise<StoreType[MN]>;
+    removeModule: (moduleName: ModuleName<M, LM>) => Store<M, LM>;
+    setLazyModule: (moduleName: ModuleName<M, LM>, lazyModule: () => Promise<StoreModule>) => Store<M, LM>;
+    removeLazyModule: (moduleName: ModuleName<M, LM>) => Store<M, LM>;
+    hasModule: (moduleName: ModuleName<M, LM>) => boolean;
+    loadModule: <MN extends keyof LM>(moduleName: MN) => Promise<PromiseModuleType<LM[MN]>>;
     getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
-    getLazyModule: (moduleName: ModuleName) => () => Promise<StoreModule>;
+    getLazyModule: (moduleName: ModuleName<{}, LM>) => () => Promise<StoreModule>;
     subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
     getAllModuleName: () => (keyof StoreType)[];
     destory: () => void;
@@ -162,6 +182,3 @@ export interface Store<M extends Modules, LM extends LazyStoreModules, StoreType
     type: StoreType;
 }
 export {};
-/**
- * 生成store类型
- */

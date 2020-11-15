@@ -8,7 +8,7 @@
 import React from 'react';
 import hoistStatics from 'hoist-non-react-statics'
 import {
-	ModuleName,
+	// ModuleName,
 	Store,
 	Modules,
 	InjectStoreModules, LazyStoreModules, GenerateStoreType
@@ -17,6 +17,7 @@ import {isEqualWithDepthLimit} from './utils';
 import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
 
 type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+type ModuleName = string;
 type ModuleNames = ModuleName[];
 
 let Loading: TReactComponent<{}> = () => null;

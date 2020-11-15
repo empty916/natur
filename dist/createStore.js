@@ -27,7 +27,9 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       _ref$initStates = _ref.initStates,
       initStates = _ref$initStates === void 0 ? {} : _ref$initStates,
       _ref$middlewares = _ref.middlewares,
-      middlewares = _ref$middlewares === void 0 ? [] : _ref$middlewares;
+      middlewares = _ref$middlewares === void 0 ? [] : _ref$middlewares,
+      _ref$filters = _ref.filters,
+      filters = _ref$filters === void 0 ? [] : _ref$filters;
 
   /**
    * 存放store实例
@@ -75,6 +77,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
    */
 
   var currentMiddlewares = [].concat(middlewares);
+  var currentFilters = [].concat(filters);
   /**
    * 这是一个缓存，用于存放，每个模块对应的setState代理
    * 在每个模块生成对应的action代理时，会产生一个setState的方法，
@@ -93,14 +96,6 @@ var createStore = function createStore(modules, lazyModules, _temp) {
    */
 
   var actionsProxyCache = {};
-  /**
-   * maps的缓存，在调用getModule时，会产生对应的maps计算结果
-   * 如果再次getModule时，判断state没有发生变化则使用上次生成的maps缓存，以此达到性能优化的目的
-   * 值得注意的是mapsCache第一层的key是模块名，第二层的key是模块对应的maps中的key
-   * 注意，这里的缓存使用的是MapCache这个对象的实例，
-   * MapCache主要用于maps的计算，和判断map的值是否需要重新计算还是使用缓存
-   */
-
   var mapsCache = {};
   /**
    * 与mapsCache一样是maps的缓存
@@ -160,7 +155,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
 
 
   var clearActionsProxyCache = function clearActionsProxyCache(moduleName) {
-    return delete actionsProxyCache[moduleName];
+    delete actionsProxyCache[moduleName];
   };
   /**
    * 删除一个模块的map proxy缓存
@@ -578,9 +573,20 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       return getModule(moduleName);
     });
   };
+
+  var runAcion = function runAcion(_ref4) {
+    var _targetModule$actions;
+
+    var moduleName = _ref4.moduleName,
+        actionName = _ref4.actionName,
+        actionArgs = _ref4.actionArgs;
+    checkModuleIsValid(moduleName);
+    var targetModule = currentModules[moduleName];
+    return (_targetModule$actions = targetModule.actions)[actionName].apply(_targetModule$actions, actionArgs);
+  };
   /**
    * 创建dispath
-   * 这里是拼接action，middleware，setState的地方
+   * 这里是拼接filter，action，middleware，setState的地方
    * @param moduleName
    */
 
@@ -597,27 +603,30 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       },
       dispatch: dispatch
     };
-    var chain = currentMiddlewares.map(function (middleware) {
+    var middlewareChain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);
     });
-    var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setState);
-    setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
-    return function (type) {
-      var _targetModule$actions;
-
-      checkModuleIsValid(moduleName);
-      var newState;
-      var targetModule = currentModules[moduleName];
-
-      for (var _len3 = arguments.length, data = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-        data[_key3 - 1] = arguments[_key3];
-      }
-
-      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data);
+    var setStateProxyWithMiddleware = compose.apply(void 0, middlewareChain)(setState);
+    var filterChain = currentFilters.map(function (middleware) {
+      return middleware(middlewareParams);
+    });
+    var runActionProxyWithFilters = compose.apply(void 0, filterChain)(function (filterRecord) {
       return setStateProxyWithMiddleware({
         moduleName: moduleName,
-        actionName: type,
-        state: newState
+        actionName: filterRecord.actionName,
+        state: runAcion(filterRecord)
+      });
+    });
+    setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
+    return function (actionName) {
+      for (var _len3 = arguments.length, actionArgs = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        actionArgs[_key3 - 1] = arguments[_key3];
+      }
+
+      return runActionProxyWithFilters({
+        moduleName: moduleName,
+        actionName: actionName,
+        actionArgs: actionArgs
       });
     };
   };
@@ -654,6 +663,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
     listeners = {};
     allModuleNames = undefined;
     currentMiddlewares = [];
+    currentFilters = [];
   };
   /**
    * 初始化store
