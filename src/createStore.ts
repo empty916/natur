@@ -446,12 +446,6 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		let proxyMaps: { [p: string]: any } = {};
 		for (let key in maps) {
 			if (maps.hasOwnProperty(key)) {
-				if (mapsCache[moduleName] === undefined) {
-					mapsCache[moduleName] = {} as any;
-				}
-				if (mapsCacheList[moduleName] === undefined) {
-					mapsCacheList[moduleName] = [] as any;
-				}
 				if (mapsCache[moduleName]![key] === undefined) {
 					const targetMap = maps[key];
 					let mapCacheSecondParam: (string | Function)[] = [];
@@ -577,7 +571,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	}
 	/**
 	 * 创建dispath
-	 * 这里是拼接action，middleware，setState的地方
+	 * 这里是拼接filter，action，middleware，setState的地方
 	 * @param moduleName 
 	 */
 	const createDispatch = (moduleName: ModuleName): Action => {

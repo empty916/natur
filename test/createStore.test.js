@@ -11,7 +11,7 @@ import {
 
 let countMapCallTimes = 0;
 let store;
-const count = {
+export const count = {
 	state: {
 		count: 0,
 		name: 'count',
@@ -91,7 +91,7 @@ const count = {
 		],
 	}
 }
-const countWithoutMaps = {
+export const countWithoutMaps = {
 	state: {
 		count: 0,
 		name: 'count',
@@ -102,7 +102,7 @@ const countWithoutMaps = {
 		dec: state => ({ ...state, count: state.count - 1 }),
 	},
 }
-const name = {
+export const name = {
 	state: {
 		name: 'test',
 	},
@@ -110,7 +110,7 @@ const name = {
 		updateName: name => ({ name }),
 	},
 }
-const nameWithMaps = {
+export const nameWithMaps = {
 	state: {
 		name: 'test',
 	},
@@ -1201,3 +1201,45 @@ describe('globalResetStates', () => {
 
 
 });
+
+
+describe('getAllStates', () => {
+	const initCount = 1;
+	beforeEach(() => {
+		store = createStore({ name, count }, {}, {
+			middlewares: [
+				thunkMiddleware,
+				promiseMiddleware
+			],
+			initStates: {
+				count: {
+					...count.state,
+					count: initCount,
+				}
+			}
+		});
+	})
+	test('get all states after create store', () => {
+		expect(store.getAllStates()).toEqual({
+			name: name.state,
+			count: {
+				...count.state,
+				count: initCount,
+			}
+		});
+	});
+	test('get all states after state change', () => {
+		store.dispatch('name', 'updateName', 'new name');
+		store.dispatch('count', '_inc');
+		expect(store.getAllStates()).toEqual({
+			name: {
+				...name.state,
+				name: 'new name',
+			},
+			count: {
+				...count.state,
+				count: initCount + 1,
+			}
+		});
+	});
+})
