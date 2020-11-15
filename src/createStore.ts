@@ -602,22 +602,21 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		);
 		const runActionProxyWithFilters = (compose(...filterChain) as ReturnType<
 			Filter<StoreType>
-		>)(runAcion);
+		>)(filterRecord => {
+			return setStateProxyWithMiddleware({
+				moduleName,
+				actionName: filterRecord.actionName,
+				state: runAcion(filterRecord),
+			});
+		});
 		
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 
-		return (actionName: string, ...actionArgs: any[]) => {
-			const newState = runActionProxyWithFilters({
-				moduleName,
-				actionName,
-				actionArgs,
-			});
-			return setStateProxyWithMiddleware({
-				moduleName,
-				actionName,
-				state: newState,
-			});
-		};
+		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithFilters({
+			moduleName,
+			actionName,
+			actionArgs
+		});
 	};
 	/**
 	 * 监听某个模块
