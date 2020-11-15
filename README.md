@@ -24,6 +24,7 @@
 - [组件只监听部分数据的变更](#partial-listener)
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
+- [拦截器](#interceptor)
 - [中间件](#middleware)
 - [跨模块的交互的复杂业务场景](#complex-business-scenarios-of-cross-module-interaction)
 - [懒加载模块，加载中，占位组件配置](#loading-component)
@@ -431,11 +432,69 @@ export default store;
 ---
 
 
+## <a id='interceptor'>拦截器</a>
+
+**在模块调用action或者store.dispatch时会先经过interceptor，因此拦截器可以应用于，控制action是否执行，以及action的入参控制等场景**
+
+````jsx
+
+import {
+  createStore,
+  Interceptor
+  InterceptorActionRecord,
+  InterceptorNext,
+  InterceptorParams,
+} from 'natur';
+
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+
+/*
+
+type InterceptorActionRecord = {
+  moduleName: String,
+  actionName: String,
+  actionArgs: any[],
+}
+
+type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
+
+InterceptorParams类型于MiddlewareParams类型相同
+
+InterceptorParams: {
+  setState: MiddlewareNext, 
+  getState: () => State,
+  getMaps: () => InjectMaps,
+  dispatch: (action, ...arg: any[]) => ReturnType<Action>,
+};
+
+*/
+const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+  console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
+  return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
+};
+const store = createStore(
+  { app }, 
+  {},
+  {
+    interceptors: [LogInterceptor, /* ...moreInterceptor */]
+  }
+);
+
+export default store;
+
+````
 
 ## <a id='middleware'>中间件</a>
-
+**中间件的执行发生在action执行之后，更新state之前。可以接收action的返回值，一般可以应用于action返回值的加工，state更新的控制等行为**
 ```jsx
-
 
 import { createStore, MiddleWare, MiddlewareNext, MiddlewareActionRecord } from 'natur';
 const app = {

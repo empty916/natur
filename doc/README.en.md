@@ -23,6 +23,7 @@
 - [The component only listens to changes in some data](#partial-listener)
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
+- [interceptor](#interceptor)
 - [middleware](#middleware)
 - [complex business scenarios of cross-module interaction](#complex-business-scenarios-of-cross-module-interaction)
 - [set loading component](#loading-component)
@@ -432,9 +433,68 @@ export default store;
 ---
 
 
+## <a id='interceptor'>interceptor</a>
+
+**When the module calls action or store.dispatch, it will pass the interceptor first, so the interceptor can be applied to control whether the action is executed, and the input parameter control of the action**
+
+````jsx
+
+import {
+  createStore,
+  Interceptor
+  InterceptorActionRecord,
+  InterceptorNext,
+  InterceptorParams,
+} from 'natur';
+
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+
+/*
+
+type InterceptorActionRecord = {
+  moduleName: String,
+  actionName: String,
+  actionArgs: any[],
+}
+
+type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
+
+The InterceptorParams type is the same as the MiddlewareParams type
+
+InterceptorParams: {
+  setState: MiddlewareNext, 
+  getState: () => State,
+  getMaps: () => InjectMaps,
+  dispatch: (action, ...arg: any[]) => ReturnType<Action>,
+};
+
+*/
+const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+  console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
+  return next(record); // You should return, only then will you have the return value when you call the action on the page
+};
+const store = createStore(
+  { app }, 
+  {},
+  {
+    interceptors: [LogInterceptor, /* ...moreInterceptor */]
+  }
+);
+
+export default store;
+
+````
 
 ### <a id='middleware'>MiddleWare</a>
-
+**The execution of the middleware occurs after the action is executed and before the state is updated. Can receive the return value of the action, generally can be applied to the processing of the return value of the action, the control of state update, etc.**
 ```jsx
 
 
