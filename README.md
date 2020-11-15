@@ -52,6 +52,7 @@
     - [destory](#store.destory)
     - [globalSetStates全局设置state](#store.globalSetStates)
     - [globalResetStates全局初始化state](#store.globalResetStates)
+    - [获取所有state](#store.getAllStatas)
   - [inject api](#inject.api)
     - [createInject](#inject.createInject)
     - [inject](#inject.self)
@@ -1072,6 +1073,13 @@ store.globalResetStates({
   exclude: Arrary<string|RegExp>;
   include: Arrary<string|RegExp>,
 })
+````
+
+
+#### <a id='store.getAllStates'>获取所有state</a>
+
+````ts
+store.getAllStates();
 ````
 
 
