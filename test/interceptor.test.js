@@ -122,7 +122,10 @@ describe('filter', () => {
 		});
         expect(store.dispatch('count', 'updateState2', '123')).toBe(undefined);
         expect(store.getModule('count').state).toBe('abc');
-        store.dispatch('count', 'updateState1', '123');
+        expect(store.dispatch('count', 'updateState1', '123')).toBe('123');
         expect(store.getModule('count').state).toBe('123');
+
+        expect(store.getModule('count').actions.updateState1('222')).toBe('222');
+        
     });
 })
