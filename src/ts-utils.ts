@@ -81,24 +81,24 @@ export type Middleware<StoreType extends {
 
 
 
-export type FilterActionRecord = {
+export type InterceptorActionRecord = {
 	moduleName: string, 
 	actionName: string, 
 	actionArgs: Parameters<Action>
 };
 
-export type FilterNext = (record: FilterActionRecord) => ReturnType<Action>;
+export type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
 
-export type FilterParams<StoreType extends InjectStoreModules> = {
+export type InterceptorParams<StoreType extends InjectStoreModules> = {
 	setState: MiddlewareNext,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 
-export type Filter<StoreType extends {
+export type Interceptor<StoreType extends {
 	[k: string]: InjectStoreModule
-}> = (filterParams: FilterParams<StoreType>) => (next: FilterNext) => FilterNext;
+}> = (filterParams: InterceptorParams<StoreType>) => (next: InterceptorNext) => InterceptorNext;
 
 
 type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;

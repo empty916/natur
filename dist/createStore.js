@@ -28,8 +28,8 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       initStates = _ref$initStates === void 0 ? {} : _ref$initStates,
       _ref$middlewares = _ref.middlewares,
       middlewares = _ref$middlewares === void 0 ? [] : _ref$middlewares,
-      _ref$filters = _ref.filters,
-      filters = _ref$filters === void 0 ? [] : _ref$filters;
+      _ref$interceptors = _ref.interceptors,
+      interceptors = _ref$interceptors === void 0 ? [] : _ref$interceptors;
 
   /**
    * 存放store实例
@@ -77,7 +77,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
    */
 
   var currentMiddlewares = [].concat(middlewares);
-  var currentFilters = [].concat(filters);
+  var currentInterceptors = [].concat(interceptors);
   /**
    * 这是一个缓存，用于存放，每个模块对应的setState代理
    * 在每个模块生成对应的action代理时，会产生一个setState的方法，
@@ -607,10 +607,10 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       return middleware(middlewareParams);
     });
     var setStateProxyWithMiddleware = compose.apply(void 0, middlewareChain)(setState);
-    var filterChain = currentFilters.map(function (middleware) {
+    var filterChain = currentInterceptors.map(function (middleware) {
       return middleware(middlewareParams);
     });
-    var runActionProxyWithFilters = compose.apply(void 0, filterChain)(function (filterRecord) {
+    var runActionProxyWithInterceptors = compose.apply(void 0, filterChain)(function (filterRecord) {
       return setStateProxyWithMiddleware({
         moduleName: moduleName,
         actionName: filterRecord.actionName,
@@ -623,7 +623,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
         actionArgs[_key3 - 1] = arguments[_key3];
       }
 
-      return runActionProxyWithFilters({
+      return runActionProxyWithInterceptors({
         moduleName: moduleName,
         actionName: actionName,
         actionArgs: actionArgs
@@ -663,7 +663,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
     listeners = {};
     allModuleNames = undefined;
     currentMiddlewares = [];
-    currentFilters = [];
+    currentInterceptors = [];
   };
   /**
    * 初始化store

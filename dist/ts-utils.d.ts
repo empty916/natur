@@ -62,21 +62,21 @@ export declare type ModuleName<M, LM> = keyof M | keyof LM;
 export declare type Middleware<StoreType extends {
     [k: string]: InjectStoreModule;
 }> = (middlewareParams: MiddlewareParams<StoreType>) => (next: MiddlewareNext) => MiddlewareNext;
-export declare type FilterActionRecord = {
+export declare type InterceptorActionRecord = {
     moduleName: string;
     actionName: string;
     actionArgs: Parameters<Action>;
 };
-export declare type FilterNext = (record: FilterActionRecord) => ReturnType<Action>;
-export declare type FilterParams<StoreType extends InjectStoreModules> = {
+export declare type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
+export declare type InterceptorParams<StoreType extends InjectStoreModules> = {
     setState: MiddlewareNext;
     getState: () => State;
     getMaps: () => InjectMaps | undefined;
     dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
-export declare type Filter<StoreType extends {
+export declare type Interceptor<StoreType extends {
     [k: string]: InjectStoreModule;
-}> = (filterParams: FilterParams<StoreType>) => (next: FilterNext) => FilterNext;
+}> = (filterParams: InterceptorParams<StoreType>) => (next: InterceptorNext) => InterceptorNext;
 declare type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;
 declare type ActionArg<Action extends AnyFun> = Parameters<Action>;
 /**

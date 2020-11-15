@@ -438,7 +438,7 @@ export default store;
 ```jsx
 
 
-import { createStore, MiddleWare, MiddlewareNext, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, MiddlewareActionRecord } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -450,13 +450,13 @@ const app = {
 };
 /*
 
-type Record = {
+type MiddlewareActionRecord = {
   moduleName: String,
   actionName: String,
   state: ReturnType<Action>,
 }
 
-type MiddlewareNext = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
 middlewareParams: {
   setState: MiddlewareNext, 
@@ -466,7 +466,7 @@ middlewareParams: {
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // You should return, only then will you have a return value when the page calls the action
   // return middlewareParams.setState(record); // You should return, only then will you have a return value when the page calls the action
@@ -528,7 +528,7 @@ const state = {a: 1, b:2};
 const action = () => ({a: 1, b:2}) // Same as the old state, do not update the view
 ```
 
-- filterUndefinedMiddleware: Filter actions that return undefined
+- filterUndefinedMiddleware: Interceptor actions that return undefined
 ```typescript
 const action = () => undefined; // The return of this action will not be used as the new state
 ```
@@ -592,7 +592,7 @@ const store = createStore(
       promiseMiddleware, // action supports asynchronous operations
       fillObjectRestDataMiddleware, // Incremental state update / overwrite update
       shallowEqualMiddleware, // Shallow contrast optimization between old and new state
-      filterUndefinedMiddleware, // Filter actions with no return value
+      filterUndefinedMiddleware, // Interceptor actions with no return value
       devTool,
     ]
   },
@@ -880,6 +880,7 @@ createStore(
   options?: {
     initStates?: States,
     middlewares?: Middleware[],
+    interceptors?: Interceptor[],
   }
 ) => Store;
 ````

@@ -49,7 +49,7 @@ describe('filter', () => {
 				thunkMiddleware,
 				promiseMiddleware
             ],
-            filters: [
+            interceptors: [
                 filter1,
             ],
 			initStates: {
@@ -85,7 +85,7 @@ describe('filter', () => {
                 }
             },
         }, {}, {
-            filters: [
+            interceptors: [
                 filter1,
                 filter2,
             ],
@@ -116,7 +116,7 @@ describe('filter', () => {
                 }
             },
         }, {}, {
-            filters: [
+            interceptors: [
                 filter,
             ],
 		});

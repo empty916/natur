@@ -437,7 +437,7 @@ export default store;
 ```jsx
 
 
-import { createStore, MiddleWare, MiddlewareNext, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, MiddlewareActionRecord } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -449,13 +449,13 @@ const app = {
 };
 /*
 
-type Record = {
+type MiddlewareActionRecord = {
   moduleName: String,
   actionName: String,
   state: ReturnType<Action>,
 }
 
-type MiddlewareNext = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
 middlewareParams: {
   setState: MiddlewareNext, 
@@ -465,7 +465,7 @@ middlewareParams: {
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
   // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
@@ -895,6 +895,7 @@ createStore(
   options?: {
     initStates?: States,
     middlewares?: Middleware[],
+    interceptors?: Interceptor[],
   }
 ) => Store;
 ````

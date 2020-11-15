@@ -26,7 +26,7 @@ import {
 	Action,
 	PromiseModuleType,
 	AllStates,
-	Filter,
+	Interceptor,
 } from "./ts-utils";
 
 import MapCache from "./MapCache";
@@ -37,7 +37,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	{
 		initStates = {},
 		middlewares = [],
-		filters = [],
+		interceptors = [],
 	}: {
 		initStates?: Partial<
 			{
@@ -48,7 +48,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			}
 		>,
 		middlewares?: Middleware<GenerateStoreType<M, LM>>[],
-		filters?: Filter<GenerateStoreType<M, LM>>[]
+		interceptors?: Interceptor<GenerateStoreType<M, LM>>[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -109,7 +109,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	 * 存放createStore中传入的middlewares配置
 	 */
 	let currentMiddlewares = [...middlewares];
-	let currentFilters = [...filters];
+	let currentInterceptors = [...interceptors];
 	/**
 	 * 这是一个缓存，用于存放，每个模块对应的setState代理
 	 * 在每个模块生成对应的action代理时，会产生一个setState的方法，
@@ -590,12 +590,12 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			Middleware<StoreType>
 		>)(setState);
 
-		const filterChain = currentFilters.map(
-			(middleware: Filter<StoreType>) =>
+		const filterChain = currentInterceptors.map(
+			(middleware: Interceptor<StoreType>) =>
 				middleware(middlewareParams as any)
 		);
-		const runActionProxyWithFilters = (compose(...filterChain) as ReturnType<
-			Filter<StoreType>
+		const runActionProxyWithInterceptors = (compose(...filterChain) as ReturnType<
+			Interceptor<StoreType>
 		>)(filterRecord => {
 			return setStateProxyWithMiddleware({
 				moduleName,
@@ -606,7 +606,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 
-		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithFilters({
+		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithInterceptors({
 			moduleName,
 			actionName,
 			actionArgs
@@ -640,7 +640,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		listeners = {};
 		allModuleNames = undefined;
 		currentMiddlewares = [];
-		currentFilters = [];
+		currentInterceptors = [];
 	};
 	/**
 	 * 初始化store
