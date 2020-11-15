@@ -20,19 +20,19 @@ export default () => {
 		{
 			lazyCount: () => Promise.resolve(countModule),
 		},
-		{},
-		[
-			thunkMiddleware,
-			promiseMiddleware, 
-			fillObjectRestDataMiddleware,
-			shallowEqualMiddleware, 
-			// filterUndefinedMiddleware,
-			devTool,
-			// LogMiddleware,
-			// LogMiddleware2
-		],
+		{
+			middlewares: [
+				thunkMiddleware,
+				promiseMiddleware, 
+				fillObjectRestDataMiddleware,
+				shallowEqualMiddleware, 
+				// filterUndefinedMiddleware,
+				devTool,
+				// LogMiddleware,
+				// LogMiddleware2
+			]
+		},
 	);
-
 	const LogMiddleware: Middleware<typeof store.type> = ({setState, dispatch}) => next => record => {
 		console.log(`${record.moduleName}: ${record.actionName}`, record.state);
 		return next(record);

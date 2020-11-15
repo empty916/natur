@@ -26,12 +26,19 @@ export {
 	InjectStoreModules,
 	LazyStoreModules,
 	Modules,
-	ActionRecord,
-	Next,
-	MiddlewareParams,
 	GlobalResetStatesOption,
 	ModuleName,
+	
+	MiddlewareActionRecord,
+	MiddlewareNext,
+	MiddlewareParams,
 	Middleware,
+
+	InterceptorActionRecord,
+	InterceptorNext,
+	InterceptorParams,
+	Interceptor,
+
 	Store,
 	ModuleType,
 	GenMapsType,

@@ -23,6 +23,7 @@
 - [The component only listens to changes in some data](#partial-listener)
 - [config lazy module](#config-lazy-module)
 - [init state](#init-with-state)
+- [interceptor](#interceptor)
 - [middleware](#middleware)
 - [complex business scenarios of cross-module interaction](#complex-business-scenarios-of-cross-module-interaction)
 - [set loading component](#loading-component)
@@ -250,15 +251,17 @@ const otherModules = {
 };
 
 // 创建store实例
-const store = createStore({ app, ...otherModules }, {}, undefined, [
-  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
-  thunkMiddleware,
-  promiseMiddleware,
-  fillObjectRestDataMiddleware,
-  shallowEqualMiddleware,
-  filterUndefinedMiddleware,
-  devtool
-]);
+const store = createStore({ app, ...otherModules }, {}, {
+  middlewares: [
+    // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+    thunkMiddleware,
+    promiseMiddleware,
+    fillObjectRestDataMiddleware,
+    shallowEqualMiddleware,
+    filterUndefinedMiddleware,
+    devtool
+  ]
+});
 export const inject = createInject({
   storeGetter: () => store,
 })
@@ -416,7 +419,9 @@ const store = createStore(
   { app }, 
   {},
   { 
-    app: {name: 'jerry'} // Initialize the state of the app module
+    initStates: {
+      app: {name: 'jerry'} // Initialize the state of the app module
+    }
   }
 );
 
@@ -428,13 +433,72 @@ export default store;
 ---
 
 
+## <a id='interceptor'>interceptor</a>
+
+**When the module calls action or store.dispatch, it will pass the interceptor first, so the interceptor can be applied to control whether the action is executed, and the input parameter control of the action**
+
+````jsx
+
+import {
+  createStore,
+  Interceptor
+  InterceptorActionRecord,
+  InterceptorNext,
+  InterceptorParams,
+} from 'natur';
+
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+
+/*
+
+type InterceptorActionRecord = {
+  moduleName: String,
+  actionName: String,
+  actionArgs: any[],
+}
+
+type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
+
+The InterceptorParams type is the same as the MiddlewareParams type
+
+InterceptorParams: {
+  setState: MiddlewareNext, 
+  getState: () => State,
+  getMaps: () => InjectMaps,
+  dispatch: (action, ...arg: any[]) => ReturnType<Action>,
+};
+
+*/
+const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+  console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
+  return next(record); // You should return, only then will you have the return value when you call the action on the page
+};
+const store = createStore(
+  { app }, 
+  {},
+  {
+    interceptors: [LogInterceptor, /* ...moreInterceptor */]
+  }
+);
+
+export default store;
+
+````
 
 ### <a id='middleware'>MiddleWare</a>
-
+**The execution of the middleware occurs after the action is executed and before the state is updated. Can receive the return value of the action, generally can be applied to the processing of the return value of the action, the control of state update, etc.**
 ```jsx
 
 
-import { createStore, MiddleWare, Next, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, MiddlewareActionRecord } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -446,31 +510,33 @@ const app = {
 };
 /*
 
-type Record = {
+type MiddlewareActionRecord = {
   moduleName: String,
   actionName: String,
   state: ReturnType<Action>,
 }
 
-type Next = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
 middlewareParams: {
-  setState: Next, 
+  setState: MiddlewareNext, 
   getState: () => State,
   getMaps: () => InjectMaps,
   dispatch: (action, ...arg: any[]) => ReturnType<Action>,
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // You should return, only then will you have a return value when the page calls the action
   // return middlewareParams.setState(record); // You should return, only then will you have a return value when the page calls the action
 const store = createStore(
   { app }, 
   {},
-  {},
-  [LogMiddleware, /* ...moreMiddleware */]
+  {
+    middlewares:[LogMiddleware, /* ...moreMiddleware */]
+  },
+  
 );
 
 export default store;
@@ -522,7 +588,7 @@ const state = {a: 1, b:2};
 const action = () => ({a: 1, b:2}) // Same as the old state, do not update the view
 ```
 
-- filterUndefinedMiddleware: Filter actions that return undefined
+- filterUndefinedMiddleware: Interceptor actions that return undefined
 ```typescript
 const action = () => undefined; // The return of this action will not be used as the new state
 ```
@@ -580,15 +646,16 @@ import devTool from 'redux.devtool.middleware';
 const store = createStore(
   modules,
   {},
-  undefined,
-  [
-    thunkMiddleware, // Action supports returning functions and getting the latest data
-    promiseMiddleware, // action supports asynchronous operations
-    fillObjectRestDataMiddleware, // Incremental state update / overwrite update
-    shallowEqualMiddleware, // Shallow contrast optimization between old and new state
-    filterUndefinedMiddleware, // Filter actions with no return value
-    devTool,
-  ],
+  {
+    middlewares: [
+      thunkMiddleware, // Action supports returning functions and getting the latest data
+      promiseMiddleware, // action supports asynchronous operations
+      fillObjectRestDataMiddleware, // Incremental state update / overwrite update
+      shallowEqualMiddleware, // Shallow contrast optimization between old and new state
+      filterUndefinedMiddleware, // Interceptor actions with no return value
+      devTool,
+    ]
+  },
 );
 ```
 
@@ -870,8 +937,11 @@ const App = inject('count', 'name')(_App);
 createStore(
   modules?: Modules,
   lazyModules?: LazyStoreModules,
-  initStates?: States,
-  middlewares?: Middleware[],
+  options?: {
+    initStates?: States,
+    middlewares?: Middleware[],
+    interceptors?: Interceptor[],
+  }
 ) => Store;
 ````
 ### <a id='store.api'>store api</a>

@@ -14,7 +14,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 import { compose, isStoreModule } from "./utils";
 import MapCache from "./MapCache";
 
-var createStore = function createStore(modules, lazyModules, initStates, middlewares) {
+var createStore = function createStore(modules, lazyModules, _temp) {
   if (modules === void 0) {
     modules = {};
   }
@@ -23,30 +23,92 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     lazyModules = {};
   }
 
-  if (initStates === void 0) {
-    initStates = {};
-  }
+  var _ref = _temp === void 0 ? {} : _temp,
+      _ref$initStates = _ref.initStates,
+      initStates = _ref$initStates === void 0 ? {} : _ref$initStates,
+      _ref$middlewares = _ref.middlewares,
+      middlewares = _ref$middlewares === void 0 ? [] : _ref$middlewares,
+      _ref$interceptors = _ref.interceptors,
+      interceptors = _ref$interceptors === void 0 ? [] : _ref$interceptors;
 
-  if (middlewares === void 0) {
-    middlewares = [];
-  }
-
+  /**
+   * 存放store实例
+   */
   var currentStoreInstance;
+  /**
+   * 存放createStore构造函数传入的全局初始化state
+   */
 
   var currentInitStates = _objectSpread({}, initStates);
+  /**
+   * 存放着每个模块最初的state数据
+   * 用于globalResetStates方法重置store中的所有state
+   */
+
 
   var resetStateData = {};
+  /**
+   * 主要存放，已经加载的store的state，maps，actions
+   * 这里存放的是原始的maps，actions，并非经过代理后的maps和actions，或者说并非是natur使用者获取的maps和actions
+   */
+
   var currentModules = {};
+  /**
+   * 懒加载模块配置
+   */
 
   var currentLazyModules = _objectSpread({}, lazyModules);
+  /**
+   * 监听器对象
+   * key是模块的名字
+   * value是存放该模块对应的监听器的数组
+   * 在模块的state变更，模块的删除，初始化时，会通知对应的监听器
+   */
+
 
   var listeners = {};
+  /**
+   * 存放所有模块的名字
+   */
+
   var allModuleNames;
+  /**
+   * 存放createStore中传入的middlewares配置
+   */
+
   var currentMiddlewares = [].concat(middlewares);
+  var currentInterceptors = [].concat(interceptors);
+  /**
+   * 这是一个缓存，用于存放，每个模块对应的setState代理
+   * 在每个模块生成对应的action代理时，会产生一个setState的方法，
+   * 这个setState是用于改变对应模块的state的
+   * 同时这个setState会使用洋葱模型包装好middlewares，所以在调用setState时，会先调用middlewares
+   */
+
   var setStateProxyWithMiddlewareCache = {};
+  /**
+   * 存放每个模块对应的actions代理缓存
+   * natur使用者获取的action并非原始的action，而是代理的action
+   * 代理action调用后可以经过中间件，然后将返回值作为新的state更新，并通知对应的监听器
+   * 在getModule中生成action代理是有性能消耗的，所以需要加一个缓存
+   * 那么保证action代理生成后，下一次getModule可以一直使用上一次生成过的action代理
+   * 所以你获取的action代理会一直相同，这在react的性能优化时也同样有用
+   */
+
   var actionsProxyCache = {};
   var mapsCache = {};
+  /**
+   * 与mapsCache一样是maps的缓存
+   * 但是数据结构不同，mapsCache第二层的key是模块对应的maps中的key，这里则是一个数组，方便做循环遍历使用
+   */
+
   var mapsCacheList = {};
+  /**
+   * 此方法使用在setModule中，
+   * 使用createStore中的初始化的state，来替换待加载模块的state数据
+   * @param moduleName 模块名
+   * @param storeModule 待加载模块的原始数据
+   */
 
   var replaceModule = function replaceModule(moduleName, storeModule) {
     var res; // 缓存每个模块的初始化状态，供globalResetStates使用
@@ -63,12 +125,21 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     }
 
     return res;
-  }; // 查看module是否存在
+  };
+  /**
+   * 查看该模块是否已经加载
+   * @param moduleName 模块名
+   */
 
 
   var hasModule = function hasModule(moduleName) {
     return !!currentModules[moduleName];
   };
+  /**
+   * 查看该模块是否已经加载，如果没有则报错
+   * @param moduleName 模块名
+   */
+
 
   var checkModuleIsValid = function checkModuleIsValid(moduleName) {
     if (!hasModule(moduleName)) {
@@ -77,10 +148,20 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       throw new Error(errMsg);
     }
   };
+  /**
+   * 删除一个模块的action proxy缓存
+   * @param moduleName 模块名
+   */
+
 
   var clearActionsProxyCache = function clearActionsProxyCache(moduleName) {
-    return delete actionsProxyCache[moduleName];
+    delete actionsProxyCache[moduleName];
   };
+  /**
+   * 删除一个模块的map proxy缓存
+   * @param moduleName 模块名
+   */
+
 
   var clearMapsProxyCache = function clearMapsProxyCache(moduleName) {
     delete mapsCache[moduleName];
@@ -89,17 +170,42 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     });
     delete mapsCacheList[moduleName];
   };
+  /**
+   * 当模块对应的state更新时，需要通知该模块的maps缓存，state已经改变
+   * 所以在下一次获取maps的值时，应该先看看maps的依赖有没有变化，
+   * @param moduleName
+   */
+
 
   var mapsCacheShouldCheckForValid = function mapsCacheShouldCheckForValid(moduleName) {
     mapsCacheList[moduleName].forEach(function (i) {
       return i.shouldCheckCache();
     });
   };
+  /**
+   * 清除setStateProxyWithMiddlewareCache对应模块的缓存
+   * @param moduleName
+   */
+
+
+  var clearSetStateProxyWithMiddlewareCache = function clearSetStateProxyWithMiddlewareCache(moduleName) {
+    delete setStateProxyWithMiddlewareCache[moduleName];
+  };
+  /**
+   * 清除模块对应的一切缓存
+   * @param moduleName 模块名
+   */
+
 
   var clearAllCache = function clearAllCache(moduleName) {
     clearMapsProxyCache(moduleName);
     clearActionsProxyCache(moduleName);
+    clearSetStateProxyWithMiddlewareCache(moduleName);
   };
+  /**
+   * 获取所有模块的名字，包括懒加载模块的名字
+   */
+
 
   var getAllModuleName = function getAllModuleName() {
     if (!allModuleNames) {
@@ -108,17 +214,31 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     return allModuleNames;
   };
+  /**
+   * 模块发生变动，通知对应的监听器
+   * @param moduleName
+   * @param me 模块变动的详情
+   */
+
 
   var runListeners = function runListeners(moduleName, me) {
     return Array.isArray(listeners[moduleName]) && listeners[moduleName].forEach(function (listener) {
       return listener(me);
     });
   };
+  /**
+   * 用于更新模块对应的state，并发出通知
+   * 通知模块监听器
+   * 通知模块中的maps缓存state更新了
+   * 如果新的state全等于旧的state则不会触发更新
+   * @param param0
+   */
 
-  var setState = function setState(_ref) {
-    var moduleName = _ref.moduleName,
-        newState = _ref.state,
-        actionName = _ref.actionName;
+
+  var setState = function setState(_ref2) {
+    var moduleName = _ref2.moduleName,
+        newState = _ref2.state,
+        actionName = _ref2.actionName;
     var stateHasNoChange = currentModules[moduleName].state === newState;
 
     if (stateHasNoChange) {
@@ -133,6 +253,13 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     });
     return currentModules[moduleName].state;
   };
+  /**
+   * 全局统一设置state
+   * 主要的应用场景是，异步加载所有的state配置时，需要更新到对应的模块中
+   * 更新会走中间件，中间中的actionName参数是'globalSetStates'
+   * @param states
+   */
+
 
   var globalSetStates = function globalSetStates(states) {
     Object.keys(states).forEach(function (moduleName) {
@@ -151,11 +278,21 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       }
     });
   };
+  /**
+   * 全局统一重置state
+   * 主要的应用场景是，ssr不需要重新createStore只需要重置一下state就行，或者在业务中退出登录后需要清空数据
+   * 更新会走中间件，中间中的actionName参数是'globalResetStates'
+   * 可以配置include：只重置哪些模块
+   * 可以配置exclude：不重置哪些模块
+   * exclude优先级大于include
+   * @param states
+   */
 
-  var globalResetStates = function globalResetStates(_temp) {
-    var _ref2 = _temp === void 0 ? {} : _temp,
-        include = _ref2.include,
-        exclude = _ref2.exclude;
+
+  var globalResetStates = function globalResetStates(_temp2) {
+    var _ref3 = _temp2 === void 0 ? {} : _temp2,
+        include = _ref3.include,
+        exclude = _ref3.exclude;
 
     var shouldResetModuleNames = Object.keys(resetStateData).filter(hasModule);
 
@@ -200,7 +337,14 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
         state: resetStateData[mn]
       });
     });
-  }; // 修改module
+  };
+  /**
+   * 设置模块
+   * 如果该模块已经存在，则覆盖旧的模块，并清空就模块的缓存
+   * 最后通知监听器
+   * @param moduleName 模块名
+   * @param storeModule 模块的原始数据
+   */
 
 
   var setModule = function setModule(moduleName, storeModule) {
@@ -231,6 +375,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     });
     return currentStoreInstance;
   };
+  /**
+   * 销毁模块，清空缓存以及对应的原始数据
+   * @param moduleName
+   */
+
 
   var destoryModule = function destoryModule(moduleName) {
     delete currentModules[moduleName];
@@ -238,6 +387,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     allModuleNames = undefined;
     clearAllCache(moduleName);
   };
+  /**
+   * 移除模块，会调用destoryModule，并发送通知
+   * @param moduleName
+   */
+
 
   var removeModule = function removeModule(moduleName) {
     destoryModule(moduleName);
@@ -246,18 +400,34 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     });
     return currentStoreInstance;
   };
+  /**
+   * 设置懒加载模块
+   * @param moduleName
+   * @param lazyModule
+   */
+
 
   var setLazyModule = function setLazyModule(moduleName, lazyModule) {
     allModuleNames = undefined;
     currentLazyModules[moduleName] = lazyModule;
     return currentStoreInstance;
   };
+  /**
+   * 移除懒加载模块
+   * @param moduleName
+   */
+
 
   var removeLazyModule = function removeLazyModule(moduleName) {
     allModuleNames = undefined;
     delete currentLazyModules[moduleName];
     return currentStoreInstance;
   };
+  /**
+   * 计算maps的值，如果首次获取maps则会先建立缓存对象
+   * @param moduleName
+   */
+
 
   var createMapsProxy = function createMapsProxy(moduleName) {
     var maps = currentModules[moduleName].maps;
@@ -299,6 +469,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
 
     return proxyMaps;
   };
+  /**
+   * 创建action代理
+   * @param moduleName
+   */
+
 
   var createActionsProxy = function createActionsProxy(moduleName) {
     if (!!actionsProxyCache[moduleName]) {
@@ -319,7 +494,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     });
     actionsProxyCache[moduleName] = actionsProxy;
     return actionsProxy;
-  }; // 获取module
+  };
+  /**
+   * 获取module
+   * @param moduleName
+   */
 
 
   var getModule = function getModule(moduleName) {
@@ -332,9 +511,9 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     return proxyModule;
   };
   /**
-   *
-   * @param moduleName count
-   * @param actionName inc
+   * 执行对应模块对应的action
+   * @param moduleName
+   * @param actionName
    */
 
 
@@ -352,13 +531,22 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     }
 
     return moduleProxyActions[actionName].apply(moduleProxyActions, arg);
-  }; // 获取原本的module
+  };
+  /**
+   * 获取原始的module数据
+   * @param moduleName
+   */
 
 
   var getOriginModule = function getOriginModule(moduleName) {
     checkModuleIsValid(moduleName);
     return currentModules[moduleName];
   };
+  /**
+   * 获取某个懒加载模块
+   * @param moduleName
+   */
+
 
   var getLazyModule = function getLazyModule(moduleName) {
     if (!!currentLazyModules[moduleName]) {
@@ -369,6 +557,11 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     console.error(errMsg);
     throw new Error(errMsg);
   };
+  /**
+   * 加载某个懒加载模块，如果已经加载就返回以及加载的模块
+   * @param moduleName
+   */
+
 
   var loadModule = function loadModule(moduleName) {
     if (hasModule(moduleName)) {
@@ -380,6 +573,23 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       return getModule(moduleName);
     });
   };
+
+  var runAcion = function runAcion(_ref4) {
+    var _targetModule$actions;
+
+    var moduleName = _ref4.moduleName,
+        actionName = _ref4.actionName,
+        actionArgs = _ref4.actionArgs;
+    checkModuleIsValid(moduleName);
+    var targetModule = currentModules[moduleName];
+    return (_targetModule$actions = targetModule.actions)[actionName].apply(_targetModule$actions, actionArgs);
+  };
+  /**
+   * 创建dispath
+   * 这里是拼接filter，action，middleware，setState的地方
+   * @param moduleName
+   */
+
 
   var createDispatch = function createDispatch(moduleName) {
     checkModuleIsValid(moduleName);
@@ -393,30 +603,39 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       },
       dispatch: dispatch
     };
-    var chain = currentMiddlewares.map(function (middleware) {
+    var middlewareChain = currentMiddlewares.map(function (middleware) {
       return middleware(middlewareParams);
     });
-    var setStateProxyWithMiddleware = compose.apply(void 0, chain)(setState);
-    setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
-    return function (type) {
-      var _targetModule$actions;
-
-      checkModuleIsValid(moduleName);
-      var newState;
-      var targetModule = currentModules[moduleName];
-
-      for (var _len3 = arguments.length, data = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-        data[_key3 - 1] = arguments[_key3];
-      }
-
-      newState = (_targetModule$actions = targetModule.actions)[type].apply(_targetModule$actions, data);
+    var setStateProxyWithMiddleware = compose.apply(void 0, middlewareChain)(setState);
+    var filterChain = currentInterceptors.map(function (middleware) {
+      return middleware(middlewareParams);
+    });
+    var runActionProxyWithInterceptors = compose.apply(void 0, filterChain)(function (filterRecord) {
       return setStateProxyWithMiddleware({
         moduleName: moduleName,
-        actionName: type,
-        state: newState
+        actionName: filterRecord.actionName,
+        state: runAcion(filterRecord)
+      });
+    });
+    setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
+    return function (actionName) {
+      for (var _len3 = arguments.length, actionArgs = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        actionArgs[_key3 - 1] = arguments[_key3];
+      }
+
+      return runActionProxyWithInterceptors({
+        moduleName: moduleName,
+        actionName: actionName,
+        actionArgs: actionArgs
       });
     };
   };
+  /**
+   * 监听某个模块
+   * @param moduleName
+   * @param listener
+   */
+
 
   var subscribe = function subscribe(moduleName, listener) {
     if (!listeners[moduleName]) {
@@ -432,6 +651,10 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
       }
     };
   };
+  /**
+   * 销毁store
+   */
+
 
   var destory = function destory() {
     Object.keys(currentModules).forEach(destoryModule);
@@ -440,12 +663,30 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     listeners = {};
     allModuleNames = undefined;
     currentMiddlewares = [];
+    currentInterceptors = [];
   };
+  /**
+   * 初始化store
+   */
+
 
   var init = function init() {
     Object.keys(modules).forEach(function (moduleName) {
       setModule(moduleName, modules[moduleName]);
     });
+  };
+  /**
+   * 获取所有state
+   * key是模块名
+   * value是模块对应的值
+   */
+
+
+  var getAllStates = function getAllStates() {
+    return Object.keys(currentModules).reduce(function (as, key) {
+      as[key] = currentModules[key].state;
+      return as;
+    }, {});
   };
 
   init();
@@ -465,6 +706,7 @@ var createStore = function createStore(modules, lazyModules, initStates, middlew
     dispatch: dispatch,
     globalSetStates: globalSetStates,
     globalResetStates: globalResetStates,
+    getAllStates: getAllStates,
     type: null
   };
   return currentStoreInstance;

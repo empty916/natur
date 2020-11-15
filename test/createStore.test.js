@@ -11,7 +11,7 @@ import {
 
 let countMapCallTimes = 0;
 let store;
-const count = {
+export const count = {
 	state: {
 		count: 0,
 		name: 'count',
@@ -91,7 +91,7 @@ const count = {
 		],
 	}
 }
-const countWithoutMaps = {
+export const countWithoutMaps = {
 	state: {
 		count: 0,
 		name: 'count',
@@ -102,7 +102,7 @@ const countWithoutMaps = {
 		dec: state => ({ ...state, count: state.count - 1 }),
 	},
 }
-const name = {
+export const name = {
 	state: {
 		name: 'test',
 	},
@@ -110,7 +110,7 @@ const name = {
 		updateName: name => ({ name }),
 	},
 }
-const nameWithMaps = {
+export const nameWithMaps = {
 	state: {
 		name: 'test',
 	},
@@ -264,8 +264,10 @@ describe('init', () => {
 	beforeEach(() => {
 		store = createStore(
 			{ count, countWithoutMaps },
-			{},{},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			{},
+			{
+				middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			},
 		);
 	});
 	test('createStore with illegal module', () => {
@@ -329,6 +331,7 @@ describe('init', () => {
 			'dispatch',
 			'globalSetStates',
 			'globalResetStates',
+			'getAllStates',
 			'type'
 		]);
 	});
@@ -367,11 +370,13 @@ describe('destory', () => {
 
 describe('setModule', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [
-			promiseMiddleware,
-			filterNonObjectMiddleware,
-			shallowEqualMiddleware
-		]);
+		store = createStore({ name }, {}, {
+			middlewares: [
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+				shallowEqualMiddleware
+			]
+		});
 		store.setModule('count', name);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
@@ -467,7 +472,9 @@ describe('removeModule', () => {
 
 describe('setModule then removeModule', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]);
+		store = createStore({ name }, {}, {
+			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		});
 		store.setModule('count', count);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('nameWithMaps');
@@ -484,9 +491,9 @@ describe('setModule then removeModule', () => {
 
 describe('removeModule then setModule', () => {
 	beforeEach(() => {
-		store = createStore({ count }, {}, {},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
-		);
+		store = createStore({ count }, {}, {
+			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		});
 		store.removeModule('count');
 		store.setModule('count', count);
 		store.setModule('name', name);
@@ -673,26 +680,29 @@ describe('actions', () => {
 	beforeEach(() => {
 		let recordCache = null;
 		store = createStore({ name, count }, {}, {
-			count: {
-				...count.state,
-				count: 1,
-			}
-		}, [
-			thunkMiddleware,
-			({getState}) => next => record => {
-				expect(getState()).toBe(store.getModule('count').state);
-				recordCache = {...record};
-				return next(recordCache)
+			initStates: {
+				count: {
+					...count.state,
+					count: 1,
+				}
 			},
-			() => next => record => {
-				expect(record).toBe(recordCache);
-				return next(record)
-			},
-			promiseMiddleware,
-			shallowEqualMiddleware,
-			filterNonObjectMiddleware,
-			filterUndefinedMiddleware
-		]);
+			middlewares: [
+				thunkMiddleware,
+				({getState}) => next => record => {
+					expect(getState()).toBe(store.getModule('count').state);
+					recordCache = {...record};
+					return next(recordCache)
+				},
+				() => next => record => {
+					expect(record).toBe(recordCache);
+					return next(record)
+				},
+				promiseMiddleware,
+				shallowEqualMiddleware,
+				filterNonObjectMiddleware,
+				filterUndefinedMiddleware
+			]
+		});
 	});
 	test('dispatch', () => {
 		const countModule = store.getModule('count');
@@ -1191,3 +1201,45 @@ describe('globalResetStates', () => {
 
 
 });
+
+
+describe('getAllStates', () => {
+	const initCount = 1;
+	beforeEach(() => {
+		store = createStore({ name, count }, {}, {
+			middlewares: [
+				thunkMiddleware,
+				promiseMiddleware
+			],
+			initStates: {
+				count: {
+					...count.state,
+					count: initCount,
+				}
+			}
+		});
+	})
+	test('get all states after create store', () => {
+		expect(store.getAllStates()).toEqual({
+			name: name.state,
+			count: {
+				...count.state,
+				count: initCount,
+			}
+		});
+	});
+	test('get all states after state change', () => {
+		store.dispatch('name', 'updateName', 'new name');
+		store.dispatch('count', '_inc');
+		expect(store.getAllStates()).toEqual({
+			name: {
+				...name.state,
+				name: 'new name',
+			},
+			count: {
+				...count.state,
+				count: initCount + 1,
+			}
+		});
+	});
+})

@@ -24,6 +24,7 @@
 - [组件只监听部分数据的变更](#partial-listener)
 - [配置懒加载模块](#config-lazy-module)
 - [初始化state](#init-with-state)
+- [拦截器](#interceptor)
 - [中间件](#middleware)
 - [跨模块的交互的复杂业务场景](#complex-business-scenarios-of-cross-module-interaction)
 - [懒加载模块，加载中，占位组件配置](#loading-component)
@@ -245,15 +246,17 @@ const otherModules = {
 };
 
 // 创建store实例
-const store = createStore({ app, ...otherModules }, {}, undefined, [
-  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
-  thunkMiddleware,
-  promiseMiddleware,
-  fillObjectRestDataMiddleware,
-  shallowEqualMiddleware,
-  filterUndefinedMiddleware,
-  devtool
-]);
+const store = createStore({ app, ...otherModules }, {}, {
+  middlewares: [
+    // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+    thunkMiddleware,
+    promiseMiddleware,
+    fillObjectRestDataMiddleware,
+    shallowEqualMiddleware,
+    filterUndefinedMiddleware,
+    devtool
+  ]
+});
 
 export const inject = createInject({
   storeGetter: () => store,
@@ -415,7 +418,9 @@ const store = createStore(
   { app }, 
   {},
   { 
-    app: {name: 'jerry'} // 初始化app 模块的state
+    initStates: {
+      app: {name: 'jerry'} // 初始化app 模块的state
+    }
   }
 );
 
@@ -427,13 +432,71 @@ export default store;
 ---
 
 
+## <a id='interceptor'>拦截器</a>
+
+**在模块调用action或者store.dispatch时会先经过interceptor，因此拦截器可以应用于，控制action是否执行，以及action的入参控制等场景**
+
+````jsx
+
+import {
+  createStore,
+  Interceptor
+  InterceptorActionRecord,
+  InterceptorNext,
+  InterceptorParams,
+} from 'natur';
+
+const app = {
+  state: {
+    name: 'tom',
+  },
+  actions: {
+    changeName: newName => ({ name: newName }),
+    asyncChangeName: newName => Promise.resolve({ name: newName }),
+  },
+};
+
+/*
+
+type InterceptorActionRecord = {
+  moduleName: String,
+  actionName: String,
+  actionArgs: any[],
+}
+
+type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
+
+InterceptorParams类型于MiddlewareParams类型相同
+
+InterceptorParams: {
+  setState: MiddlewareNext, 
+  getState: () => State,
+  getMaps: () => InjectMaps,
+  dispatch: (action, ...arg: any[]) => ReturnType<Action>,
+};
+
+*/
+const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+  console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
+  return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
+};
+const store = createStore(
+  { app }, 
+  {},
+  {
+    interceptors: [LogInterceptor, /* ...moreInterceptor */]
+  }
+);
+
+export default store;
+
+````
 
 ## <a id='middleware'>中间件</a>
-
+**中间件的执行发生在action执行之后，更新state之前。可以接收action的返回值，一般可以应用于action返回值的加工，state更新的控制等行为**
 ```jsx
 
-
-import { createStore, MiddleWare, Next, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, MiddlewareActionRecord } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -445,23 +508,23 @@ const app = {
 };
 /*
 
-type Record = {
+type MiddlewareActionRecord = {
   moduleName: String,
   actionName: String,
   state: ReturnType<Action>,
 }
 
-type Next = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
 middlewareParams: {
-  setState: Next, 
+  setState: MiddlewareNext, 
   getState: () => State,
   getMaps: () => InjectMaps,
   dispatch: (action, ...arg: any[]) => ReturnType<Action>,
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
   // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
@@ -469,8 +532,9 @@ const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record:
 const store = createStore(
   { app }, 
   {},
-  {},
-  [LogMiddleware, /* ...moreMiddleware */]
+  {
+    middlewares: [LogMiddleware, /* ...moreMiddleware */]
+  }
 );
 
 export default store;
@@ -577,15 +641,17 @@ import devTool from 'redux.devtool.middleware';
 const store = createStore(
   modules,
   {},
-  undefined,
-  [
-    thunkMiddleware, // action支持返回函数，并获取最新数据
-    promiseMiddleware, // action支持异步操作
-    fillObjectRestDataMiddleware, // 增量更新/覆盖更新
-    shallowEqualMiddleware, // 新旧state浅层对比优化
-    filterUndefinedMiddleware, // 过滤无返回值的action
-    devTool, // 开发工具
-  ],
+  {
+    middlewares: [
+      thunkMiddleware, // action支持返回函数，并获取最新数据
+      promiseMiddleware, // action支持异步操作
+      fillObjectRestDataMiddleware, // 增量更新/覆盖更新
+      shallowEqualMiddleware, // 新旧state浅层对比优化
+      filterUndefinedMiddleware, // 过滤无返回值的action
+      devTool, // 开发工具
+    ],
+  }
+  
 );
 ```
 
@@ -885,8 +951,11 @@ const App = @inject('count', 'name')(_App);
 createStore(
   modules?: Modules,
   lazyModules?: LazyStoreModules,
-  initStates?: States,
-  middlewares?: Middleware[],
+  options?: {
+    initStates?: States,
+    middlewares?: Middleware[],
+    interceptors?: Interceptor[],
+  }
 ) => Store;
 ````
 ### <a id='store.api'>store api</a>

@@ -64,10 +64,12 @@ describe('actions', () => {
         // ]);
 	});
 	test('thunkMiddleware', () => {
-        store = createStore({ count, count2 }, {}, {}, [
-            thunkMiddleware,
-            filterUndefinedMiddleware,
-        ]);
+        store = createStore({ count, count2 }, {}, {
+            middlewares: [
+                thunkMiddleware,
+                filterUndefinedMiddleware,
+            ]
+        });
         const countModule = store.getModule('count');
         
 		expect(countModule.maps.isOdd).toBe(false);
@@ -78,9 +80,11 @@ describe('actions', () => {
         // expect(countModule.actions.thunkInc2()).toBe(true);
     });
     test('promiseMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
-            promiseMiddleware,
-        ]);
+        store = createStore({ count }, {}, {
+            middlewares: [
+                promiseMiddleware,
+            ]
+        });
         let countModule = store.getModule('count');
         return countModule.actions.asyncInc(countModule.state)
             .then(state => {
@@ -88,35 +92,43 @@ describe('actions', () => {
             })
     });
     test('fillObjectRestDataMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
-            fillObjectRestDataMiddleware,
-        ]);
+        store = createStore({ count }, {}, {
+            middlewares: [
+                fillObjectRestDataMiddleware,
+            ]
+        });
         let countModule = store.getModule('count');
 		expect(countModule.actions.updateName().name).toBe('tom');
 		expect(countModule.actions.updateName().count).toBe(0);
     });
     test('shallowEqualMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
-            shallowEqualMiddleware,
-        ]);
+        store = createStore({ count }, {}, {
+            middlewares: [
+                shallowEqualMiddleware,
+            ]
+        });
         let countModule = store.getModule('count');
         countModule.actions.returnGet({...countModule.state})
         let newCountModule = store.getModule('count');
 		expect(newCountModule.state).toBe(countModule.state);
     });
     test('filterNonObjectMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
-            filterNonObjectMiddleware,
-        ]);
+        store = createStore({ count }, {}, {
+            middlewares: [
+                filterNonObjectMiddleware,
+            ]
+        });
         let countModule = store.getModule('count');
         expect(countModule.actions.returnGet(null)).toBe(null);
         let newCountModule = store.getModule('count');
 		expect(newCountModule.state).toBe(countModule.state);
     });
     test('filterUndefinedMiddleware', () => {
-        store = createStore({ count }, {}, {}, [
-            filterUndefinedMiddleware,
-        ]);
+        store = createStore({ count }, {}, {
+            middlewares: [
+                filterUndefinedMiddleware,
+            ]
+        });
         let countModule = store.getModule('count');
         expect(countModule.actions.returnGet(undefined)).toBe(undefined);
         let newCountModule = store.getModule('count');
