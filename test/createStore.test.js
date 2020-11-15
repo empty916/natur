@@ -264,8 +264,10 @@ describe('init', () => {
 	beforeEach(() => {
 		store = createStore(
 			{ count, countWithoutMaps },
-			{},{},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			{},
+			{
+				middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			},
 		);
 	});
 	test('createStore with illegal module', () => {
@@ -329,6 +331,7 @@ describe('init', () => {
 			'dispatch',
 			'globalSetStates',
 			'globalResetStates',
+			'getAllStates',
 			'type'
 		]);
 	});
@@ -367,11 +370,13 @@ describe('destory', () => {
 
 describe('setModule', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [
-			promiseMiddleware,
-			filterNonObjectMiddleware,
-			shallowEqualMiddleware
-		]);
+		store = createStore({ name }, {}, {
+			middlewares: [
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+				shallowEqualMiddleware
+			]
+		});
 		store.setModule('count', name);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
@@ -467,7 +472,9 @@ describe('removeModule', () => {
 
 describe('setModule then removeModule', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]);
+		store = createStore({ name }, {}, {
+			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		});
 		store.setModule('count', count);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('nameWithMaps');
@@ -484,9 +491,9 @@ describe('setModule then removeModule', () => {
 
 describe('removeModule then setModule', () => {
 	beforeEach(() => {
-		store = createStore({ count }, {}, {},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
-		);
+		store = createStore({ count }, {}, {
+			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+		});
 		store.removeModule('count');
 		store.setModule('count', count);
 		store.setModule('name', name);
@@ -673,26 +680,29 @@ describe('actions', () => {
 	beforeEach(() => {
 		let recordCache = null;
 		store = createStore({ name, count }, {}, {
-			count: {
-				...count.state,
-				count: 1,
-			}
-		}, [
-			thunkMiddleware,
-			({getState}) => next => record => {
-				expect(getState()).toBe(store.getModule('count').state);
-				recordCache = {...record};
-				return next(recordCache)
+			initStates: {
+				count: {
+					...count.state,
+					count: 1,
+				}
 			},
-			() => next => record => {
-				expect(record).toBe(recordCache);
-				return next(record)
-			},
-			promiseMiddleware,
-			shallowEqualMiddleware,
-			filterNonObjectMiddleware,
-			filterUndefinedMiddleware
-		]);
+			middlewares: [
+				thunkMiddleware,
+				({getState}) => next => record => {
+					expect(getState()).toBe(store.getModule('count').state);
+					recordCache = {...record};
+					return next(recordCache)
+				},
+				() => next => record => {
+					expect(record).toBe(recordCache);
+					return next(record)
+				},
+				promiseMiddleware,
+				shallowEqualMiddleware,
+				filterNonObjectMiddleware,
+				filterUndefinedMiddleware
+			]
+		});
 	});
 	test('dispatch', () => {
 		const countModule = store.getModule('count');

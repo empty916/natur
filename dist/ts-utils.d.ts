@@ -135,16 +135,19 @@ export declare type GenerateStoreType<MS extends {
 } & {
     [k in keyof PMS]: PromiseModuleType<PMS[k]>;
 };
-export interface _Store<StoreType extends InjectStoreModules, AOST extends Modules, S extends Partial<{
-    [k in keyof StoreType]: Partial<StoreType[k]['state']>;
-}> = Partial<{
-    [k in keyof StoreType]: Partial<StoreType[k]['state']>;
-}>> {
+export declare type AllStates<M extends Modules, LM extends LazyStoreModules> = {
+    [KM in keyof M]: M[KM]['state'];
+} & {
+    [KM in keyof LM]?: PromiseModuleType<LM[KM]>['state'];
+};
+export interface Store<M extends Modules, LM extends LazyStoreModules, StoreType extends InjectStoreModules = GenerateStoreType<M, LM>, AOST extends Modules = (M & {
+    [k in keyof LM]: PickPromiseType<LM[k]>;
+}), S = AllStates<M, LM>> {
     getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
-    setModule: <MN extends keyof AOST>(moduleName: MN, storeModule: AOST[MN]) => _Store<StoreType, AOST>;
-    removeModule: (moduleName: ModuleName) => _Store<StoreType, AOST>;
-    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => _Store<StoreType, AOST>;
-    removeLazyModule: (moduleName: ModuleName) => _Store<StoreType, AOST>;
+    setModule: <MN extends keyof AOST>(moduleName: MN, storeModule: AOST[MN]) => Store<M, LM>;
+    removeModule: (moduleName: ModuleName) => Store<M, LM>;
+    setLazyModule: (moduleName: ModuleName, lazyModule: () => Promise<StoreModule>) => Store<M, LM>;
+    removeLazyModule: (moduleName: ModuleName) => Store<M, LM>;
     hasModule: (moduleName: ModuleName) => boolean;
     loadModule: <MN extends keyof StoreType>(moduleName: MN) => Promise<StoreType[MN]>;
     getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
@@ -155,12 +158,10 @@ export interface _Store<StoreType extends InjectStoreModules, AOST extends Modul
     dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
     globalSetStates: (s: S) => void;
     globalResetStates: <MN extends keyof StoreType>(option?: GlobalResetStatesOption<Extract<MN, string>>) => void;
+    getAllStates: () => AllStates<M, LM>;
     type: StoreType;
 }
+export {};
 /**
  * 生成store类型
  */
-export declare type Store<M extends Modules, LM extends LazyStoreModules> = _Store<GenerateStoreType<M, LM>, M & {
-    [k in keyof LM]: PickPromiseType<LM[k]>;
-}>;
-export {};

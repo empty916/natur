@@ -250,15 +250,17 @@ const otherModules = {
 };
 
 // 创建store实例
-const store = createStore({ app, ...otherModules }, {}, undefined, [
-  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
-  thunkMiddleware,
-  promiseMiddleware,
-  fillObjectRestDataMiddleware,
-  shallowEqualMiddleware,
-  filterUndefinedMiddleware,
-  devtool
-]);
+const store = createStore({ app, ...otherModules }, {}, {
+  middlewares: [
+    // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+    thunkMiddleware,
+    promiseMiddleware,
+    fillObjectRestDataMiddleware,
+    shallowEqualMiddleware,
+    filterUndefinedMiddleware,
+    devtool
+  ]
+});
 export const inject = createInject({
   storeGetter: () => store,
 })
@@ -416,7 +418,9 @@ const store = createStore(
   { app }, 
   {},
   { 
-    app: {name: 'jerry'} // Initialize the state of the app module
+    initStates: {
+      app: {name: 'jerry'} // Initialize the state of the app module
+    }
   }
 );
 
@@ -434,7 +438,7 @@ export default store;
 ```jsx
 
 
-import { createStore, MiddleWare, Next, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, Record } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -452,25 +456,27 @@ type Record = {
   state: ReturnType<Action>,
 }
 
-type Next = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: Record) => ReturnType<Action>;
 
 middlewareParams: {
-  setState: Next, 
+  setState: MiddlewareNext, 
   getState: () => State,
   getMaps: () => InjectMaps,
   dispatch: (action, ...arg: any[]) => ReturnType<Action>,
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: Record) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // You should return, only then will you have a return value when the page calls the action
   // return middlewareParams.setState(record); // You should return, only then will you have a return value when the page calls the action
 const store = createStore(
   { app }, 
   {},
-  {},
-  [LogMiddleware, /* ...moreMiddleware */]
+  {
+    middlewares:[LogMiddleware, /* ...moreMiddleware */]
+  },
+  
 );
 
 export default store;
@@ -580,15 +586,16 @@ import devTool from 'redux.devtool.middleware';
 const store = createStore(
   modules,
   {},
-  undefined,
-  [
-    thunkMiddleware, // Action supports returning functions and getting the latest data
-    promiseMiddleware, // action supports asynchronous operations
-    fillObjectRestDataMiddleware, // Incremental state update / overwrite update
-    shallowEqualMiddleware, // Shallow contrast optimization between old and new state
-    filterUndefinedMiddleware, // Filter actions with no return value
-    devTool,
-  ],
+  {
+    middlewares: [
+      thunkMiddleware, // Action supports returning functions and getting the latest data
+      promiseMiddleware, // action supports asynchronous operations
+      fillObjectRestDataMiddleware, // Incremental state update / overwrite update
+      shallowEqualMiddleware, // Shallow contrast optimization between old and new state
+      filterUndefinedMiddleware, // Filter actions with no return value
+      devTool,
+    ]
+  },
 );
 ```
 
@@ -870,8 +877,10 @@ const App = inject('count', 'name')(_App);
 createStore(
   modules?: Modules,
   lazyModules?: LazyStoreModules,
-  initStates?: States,
-  middlewares?: Middleware[],
+  options?: {
+    initStates?: States,
+    middlewares?: Middleware[],
+  }
 ) => Store;
 ````
 ### <a id='store.api'>store api</a>

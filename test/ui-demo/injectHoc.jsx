@@ -44,13 +44,14 @@ export const store = createStore(
 		}),
 		lazyLoadError: () => Promise.reject(lazyName),
 	},
-	{},
-	[
-		promiseMiddleware, 
-		filterNonObjectMiddleware, 
-		fillObjectRestDataMiddleware,
-		shallowEqualMiddleware,
-	]
+	{
+		middlewares: [
+			promiseMiddleware, 
+			filterNonObjectMiddleware, 
+			fillObjectRestDataMiddleware,
+			shallowEqualMiddleware,
+		]
+	}
 );
 const Inject = createInject({
 	storeGetter: () => store,

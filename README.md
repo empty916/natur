@@ -245,15 +245,17 @@ const otherModules = {
 };
 
 // 创建store实例
-const store = createStore({ app, ...otherModules }, {}, undefined, [
-  // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
-  thunkMiddleware,
-  promiseMiddleware,
-  fillObjectRestDataMiddleware,
-  shallowEqualMiddleware,
-  filterUndefinedMiddleware,
-  devtool
-]);
+const store = createStore({ app, ...otherModules }, {}, {
+  middlewares: [
+    // 这个是推荐的中间件配置，顺序也有要求，详细请查看中间件篇
+    thunkMiddleware,
+    promiseMiddleware,
+    fillObjectRestDataMiddleware,
+    shallowEqualMiddleware,
+    filterUndefinedMiddleware,
+    devtool
+  ]
+});
 
 export const inject = createInject({
   storeGetter: () => store,
@@ -415,7 +417,9 @@ const store = createStore(
   { app }, 
   {},
   { 
-    app: {name: 'jerry'} // 初始化app 模块的state
+    initStates: {
+      app: {name: 'jerry'} // 初始化app 模块的state
+    }
   }
 );
 
@@ -433,7 +437,7 @@ export default store;
 ```jsx
 
 
-import { createStore, MiddleWare, Next, Record } from 'natur';
+import { createStore, MiddleWare, MiddlewareNext, Record } from 'natur';
 const app = {
   state: {
     name: 'tom',
@@ -451,17 +455,17 @@ type Record = {
   state: ReturnType<Action>,
 }
 
-type Next = (record: Record) => ReturnType<Action>;
+type MiddlewareNext = (record: Record) => ReturnType<Action>;
 
 middlewareParams: {
-  setState: Next, 
+  setState: MiddlewareNext, 
   getState: () => State,
   getMaps: () => InjectMaps,
   dispatch: (action, ...arg: any[]) => ReturnType<Action>,
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record: Record) => {
+const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: Record) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
   // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
@@ -469,8 +473,9 @@ const LogMiddleware: MiddleWare = (middlewareParams) => (next: Next) => (record:
 const store = createStore(
   { app }, 
   {},
-  {},
-  [LogMiddleware, /* ...moreMiddleware */]
+  {
+    middlewares: [LogMiddleware, /* ...moreMiddleware */]
+  }
 );
 
 export default store;
@@ -577,15 +582,17 @@ import devTool from 'redux.devtool.middleware';
 const store = createStore(
   modules,
   {},
-  undefined,
-  [
-    thunkMiddleware, // action支持返回函数，并获取最新数据
-    promiseMiddleware, // action支持异步操作
-    fillObjectRestDataMiddleware, // 增量更新/覆盖更新
-    shallowEqualMiddleware, // 新旧state浅层对比优化
-    filterUndefinedMiddleware, // 过滤无返回值的action
-    devTool, // 开发工具
-  ],
+  {
+    middlewares: [
+      thunkMiddleware, // action支持返回函数，并获取最新数据
+      promiseMiddleware, // action支持异步操作
+      fillObjectRestDataMiddleware, // 增量更新/覆盖更新
+      shallowEqualMiddleware, // 新旧state浅层对比优化
+      filterUndefinedMiddleware, // 过滤无返回值的action
+      devTool, // 开发工具
+    ],
+  }
+  
 );
 ```
 
@@ -885,8 +892,10 @@ const App = @inject('count', 'name')(_App);
 createStore(
   modules?: Modules,
   lazyModules?: LazyStoreModules,
-  initStates?: States,
-  middlewares?: Middleware[],
+  options?: {
+    initStates?: States,
+    middlewares?: Middleware[],
+  }
 ) => Store;
 ````
 ### <a id='store.api'>store api</a>
