@@ -6,7 +6,7 @@ export interface Listener<AN extends string = string> {
     (me: ModuleEvent<AN>): any;
 }
 export declare type State = any;
-declare type AnyFun = (...arg: any) => any;
+export declare type AnyFun = (...arg: any) => any;
 export interface States {
     [type: string]: State;
 }
@@ -66,6 +66,7 @@ export declare type InterceptorActionRecord = {
     moduleName: string;
     actionName: string;
     actionArgs: Parameters<Action>;
+    actionFunc: AnyFun;
 };
 export declare type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
 export declare type InterceptorParams<StoreType extends InjectStoreModules> = {

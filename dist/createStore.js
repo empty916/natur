@@ -626,7 +626,8 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       return runActionProxyWithInterceptors({
         moduleName: moduleName,
         actionName: actionName,
-        actionArgs: actionArgs
+        actionArgs: actionArgs,
+        actionFunc: currentModules[moduleName]['actions'][actionName]
       });
     };
   };
