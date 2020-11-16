@@ -478,7 +478,7 @@ InterceptorParams: {
 };
 
 */
-const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+const LogInterceptor: Interceptor<typeof store.type> = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
   return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
 };
@@ -526,7 +526,7 @@ middlewareParams: {
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
+const LogMiddleware: MiddleWare<typeof store.type> = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // 你应该return, 只有这样你在页面调用action的时候才会有返回值
   // return middlewareParams.setState(record); // 你应该return，只有这样你在页面调用action的时候才会有返回值
@@ -552,7 +552,12 @@ export default store;
 
 import { thunkMiddleware, ThunkParams } from 'natur/dist/middlewares'
 
-const actionExample = (myParams: any) => ({getState, setState, getMaps, dispatch}: ThunkParams) => {
+const actionExample = (myParams: any) => ({
+  getState,
+  setState,
+  getMaps,
+  dispatch
+}: ThunkParams<typeof stateOfThisModule, typeof mapsOfThisModule>) => {
   const currentState = getState(); // 最新的state
   const currentMaps = getMaps(); // 最新的maps
   // dispatch('otherActionNameOfThisModule', ...params)

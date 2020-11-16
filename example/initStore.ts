@@ -1,4 +1,4 @@
-import {createStore, Middleware} from '../src';
+import {createStore, Interceptor, Middleware} from '../src';
 // import { createStore, Middleware } from '../dist/rns';
 import {
   thunkMiddleware,

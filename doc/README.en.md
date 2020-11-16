@@ -479,7 +479,7 @@ InterceptorParams: {
 };
 
 */
-const LogInterceptor: Interceptor = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
+const LogInterceptor: Interceptor<typeof store.type> = (interceptorParams) => (next: InterceptorNext) => (record: InterceptorActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.actionArgs);
   return next(record); // You should return, only then will you have the return value when you call the action on the page
 };
@@ -528,7 +528,7 @@ middlewareParams: {
 };
 
 */
-const LogMiddleware: MiddleWare = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
+const LogMiddleware: MiddleWare<typeof store.type> = (middlewareParams) => (next: MiddlewareNext) => (record: MiddlewareActionRecord) => {
   console.log(`${record.moduleName}: ${record.actionName}`, record.state);
   return next(record); // You should return, only then will you have a return value when the page calls the action
   // return middlewareParams.setState(record); // You should return, only then will you have a return value when the page calls the action
@@ -552,14 +552,14 @@ export default store;
 
 ```typescript
 
-import { thunkMiddleware } from 'natur/dist/middlewares'
+import { thunkMiddleware, ThunkParams } from 'natur/dist/middlewares'
 
 const actionExample = (myParams: any) => ({
   getState, 
-  setState: (s: State) => State, 
-  getMaps: () => InjectMaps,
+  setState, 
+  getMaps,
   dispatch,
-}) => {
+}: ThunkParams<typeof stateOfThisModule, typeof mapsOfThisModule>) => {
   const currentState = getState(); // Latest state
   const currentMaps = getMaps(); // Latest maps
   // dispatch('otherActionNameOfThisModule', ...params)
