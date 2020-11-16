@@ -461,9 +461,10 @@ const app = {
 /*
 
 type InterceptorActionRecord = {
-  moduleName: String,
-  actionName: String,
-  actionArgs: any[],
+  moduleName: String;
+  actionName: String;
+  actionArgs: any[];
+  actionFunc: (...arg: any) => any; // The original action function
 }
 
 type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;

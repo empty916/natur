@@ -1,28 +1,21 @@
 import { createStore } from '../src';
-import { isObj } from '../src/utils';
 import {
-	promiseMiddleware,
-	filterNonObjectMiddleware,
-	fillObjectRestDataMiddleware,
-	filterUndefinedMiddleware,
-	shallowEqualMiddleware, 
+	promiseMiddleware, 
 	thunkMiddleware,
 } from '../src/middlewares'
 import {
     count,
-    countWithoutMaps,
     name,
-    nameWithMaps,
 } from './createStore.test';
 let store;
 
 
 
 
-describe('filter', () => {
+describe('interceptor', () => {
     const initCount = 1;
     
-	test('filter base', () => {
+	test('interceptor base', () => {
         const countInitState = {
             ...count.state,
             count: initCount,
@@ -31,18 +24,18 @@ describe('filter', () => {
             ...count.state,
             count: 12345,
         }
-        const filter1 = ({getState, setState, getMaps, dispatch}) => next => filterActionRecord => {
-            expect(filterActionRecord.actionArgs).toStrictEqual([store.getModule('count').state]);
+        const interceptor1 = ({getState, setState, getMaps, dispatch}) => next => interceptorActionRecord => {
+            expect(interceptorActionRecord.actionArgs).toStrictEqual([store.getModule('count').state]);
             expect(getState()).toBe(countInitState);
             expect(getMaps()).toStrictEqual(store.getModule('count').maps);
             setState({
-                moduleName: filterActionRecord.moduleName,
-                actionName: filterActionRecord.actionName,
+                moduleName: interceptorActionRecord.moduleName,
+                actionName: interceptorActionRecord.actionName,
                 state: countChangedState,
             });
             expect(getState()).toBe(countChangedState);
             expect(getMaps()).toStrictEqual(store.getModule('count').maps);
-            return next(filterActionRecord);
+            return next(interceptorActionRecord);
         }
 		store = createStore({ name, count }, {}, {
 			middlewares: [
@@ -50,7 +43,7 @@ describe('filter', () => {
 				promiseMiddleware
             ],
             interceptors: [
-                filter1,
+                interceptor1,
             ],
 			initStates: {
 				count: countInitState
@@ -59,47 +52,47 @@ describe('filter', () => {
         store.dispatch('count', 'updateName', store.getModule('count').state);
     });
 
-    test('one more filter add action arg', () => {
+    test('one more interceptor add action arg', () => {
         
-        const filter1 = () => next => filterActionRecord => {
+        const interceptor1 = () => next => interceptorActionRecord => {
             return next({
-                ...filterActionRecord,
-                actionArgs: [...filterActionRecord.actionArgs, 'filter1'],
+                ...interceptorActionRecord,
+                actionArgs: [...interceptorActionRecord.actionArgs, 'interceptor1'],
             });
         }
-        const filter2 = () => next => filterActionRecord => {
+        const interceptor2 = () => next => interceptorActionRecord => {
             return next({
-                ...filterActionRecord,
-                actionArgs: [...filterActionRecord.actionArgs, 'filter2'],
+                ...interceptorActionRecord,
+                actionArgs: [...interceptorActionRecord.actionArgs, 'interceptor2'],
             });
         }
 		store = createStore({ 
             count: {
                 state: 'abc',
                 actions: {
-                    updateState: (newState, filter1Str, filter2Str) => {
-                        expect(filter1Str).toBe('filter1');
-                        expect(filter2Str).toBe('filter2');
+                    updateState: (newState, interceptor1Str, interceptor2Str) => {
+                        expect(interceptor1Str).toBe('interceptor1');
+                        expect(interceptor2Str).toBe('interceptor2');
                         return newState;
                     }
                 }
             },
         }, {}, {
             interceptors: [
-                filter1,
-                filter2,
+                interceptor1,
+                interceptor2,
             ],
 		});
         store.dispatch('count', 'updateState', '123');
         expect(store.getModule('count').state).toBe('123');
     });
 
-    test('filter stop run action', () => {
-        const filter = () => next => filterActionRecord => {
-            if (filterActionRecord.actionName === 'updateState1') {
+    test('interceptor stop run action', () => {
+        const interceptor = () => next => interceptorActionRecord => {
+            if (interceptorActionRecord.actionName === 'updateState1') {
                 return next({
-                    ...filterActionRecord,
-                    actionArgs: [...filterActionRecord.actionArgs, 'filter2'],
+                    ...interceptorActionRecord,
+                    actionArgs: [...interceptorActionRecord.actionArgs, 'interceptor2'],
                 });
             }
         }
@@ -117,7 +110,7 @@ describe('filter', () => {
             },
         }, {}, {
             interceptors: [
-                filter,
+                interceptor,
             ],
 		});
         expect(store.dispatch('count', 'updateState2', '123')).toBe(undefined);
@@ -126,6 +119,31 @@ describe('filter', () => {
         expect(store.getModule('count').state).toBe('123');
 
         expect(store.getModule('count').actions.updateState1('222')).toBe('222');
+        
+    });
+
+
+    test('interceptor get origin action function', () => {
+        const action = (newState) => {
+            return newState;
+        };
+        const interceptor = () => next => interceptorActionRecord => {
+            expect(interceptorActionRecord.actionFunc).toBe(action);
+            return next(interceptorActionRecord);
+        }
+		store = createStore({ 
+            count: {
+                state: 'abc',
+                actions: {
+                    updateState: action,
+                }
+            },
+        }, {}, {
+            interceptors: [
+                interceptor,
+            ],
+		});
+        expect(store.getModule('count').actions.updateState('222')).toBe('222');
         
     });
 })

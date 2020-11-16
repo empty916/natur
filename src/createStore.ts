@@ -584,7 +584,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		};
 		const middlewareChain = currentMiddlewares.map(
 			(middleware: Middleware<StoreType>) =>
-				middleware(middlewareParams as any)
+				middleware(middlewareParams)
 		);
 		const setStateProxyWithMiddleware = (compose(...middlewareChain) as ReturnType<
 			Middleware<StoreType>
@@ -592,7 +592,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 
 		const filterChain = currentInterceptors.map(
 			(middleware: Interceptor<StoreType>) =>
-				middleware(middlewareParams as any)
+				middleware(middlewareParams)
 		);
 		const runActionProxyWithInterceptors = (compose(...filterChain) as ReturnType<
 			Interceptor<StoreType>
@@ -609,7 +609,8 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithInterceptors({
 			moduleName,
 			actionName,
-			actionArgs
+			actionArgs,
+			actionFunc: currentModules[moduleName]!['actions'][actionName],
 		});
 	};
 	/**

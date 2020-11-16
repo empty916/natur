@@ -9,7 +9,7 @@ export interface Listener<AN extends string = string> {
 
 export type State = any;
 
-type AnyFun = (...arg: any) => any;
+export type AnyFun = (...arg: any) => any;
 
 export interface States {
 	[type: string]: State,
@@ -84,7 +84,8 @@ export type Middleware<StoreType extends {
 export type InterceptorActionRecord = {
 	moduleName: string, 
 	actionName: string, 
-	actionArgs: Parameters<Action>
+	actionArgs: Parameters<Action>;
+	actionFunc: AnyFun;
 };
 
 export type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
