@@ -69,9 +69,9 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
  * (...args) => f(g(h(...args))).
  */
 
-export function compose(...funcs: anyFn[]) {
+export function compose<A extends any[], R extends any>(...funcs: anyFn[]): (...arg: A) => R {
   if (funcs.length === 0) {
-    return (arg: any) => arg
+    return ((arg: any) => arg) as any;
   }
 
   if (funcs.length === 1) {

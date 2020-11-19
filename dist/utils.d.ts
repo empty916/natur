@@ -28,7 +28,7 @@ export declare const isStoreModule: (obj: any) => obj is StoreModule;
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
  */
-export declare function compose(...funcs: anyFn[]): anyFn;
+export declare function compose<A extends any[], R extends any>(...funcs: anyFn[]): (...arg: A) => R;
 export declare function isEqualWithDepthLimit(objA: any, objB: any, depthLimit?: number, depth?: number): boolean;
 /**
  * @param obj State

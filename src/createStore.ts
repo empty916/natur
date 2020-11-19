@@ -27,6 +27,7 @@ import {
 	PromiseModuleType,
 	AllStates,
 	Interceptor,
+	InterceptorNext,
 } from "./ts-utils";
 
 import MapCache from "./MapCache";
@@ -586,23 +587,21 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			(middleware: Middleware<StoreType>) =>
 				middleware(middlewareParams)
 		);
-		const setStateProxyWithMiddleware = (compose(...middlewareChain) as ReturnType<
-			Middleware<StoreType>
-		>)(setState);
+		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
 
 		const filterChain = currentInterceptors.map(
 			(middleware: Interceptor<StoreType>) =>
 				middleware(middlewareParams)
 		);
-		const runActionProxyWithInterceptors = (compose(...filterChain) as ReturnType<
-			Interceptor<StoreType>
-		>)(filterRecord => {
-			return setStateProxyWithMiddleware({
-				moduleName,
-				actionName: filterRecord.actionName,
-				state: runAcion(filterRecord),
-			});
-		});
+		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
+			filterRecord => {
+				return setStateProxyWithMiddleware({
+					moduleName,
+					actionName: filterRecord.actionName,
+					state: runAcion(filterRecord),
+				});
+			}
+		);
 		
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 
