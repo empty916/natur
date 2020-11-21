@@ -13,14 +13,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  */
 import { compose, isStoreModule } from "./utils";
 import MapCache from "./MapCache";
+/**
+ *
+ * @param modules 同步模块, 你的store模块
+ * @param lazyModules 懒加载模块， 必填，如果没有可以传{}, 如果不填，那么ts的类型推断会有问题
+ * @param param2 选项配置，详情见文档
+ */
 
 var createStore = function createStore(modules, lazyModules, _temp) {
   if (modules === void 0) {
     modules = {};
-  }
-
-  if (lazyModules === void 0) {
-    lazyModules = {};
   }
 
   var _ref = _temp === void 0 ? {} : _temp,

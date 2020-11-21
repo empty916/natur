@@ -201,10 +201,10 @@ export type PromiseModuleType<
  */
 export type GenerateStoreType<
 	MS extends {
-		[m: string]: StoreModuleWithMaps|StoreModuleWithoutMaps
+		[m: string]: StoreModuleWithMaps | StoreModuleWithoutMaps
 	},
 	PMS extends {
-		[m: string]: () => Promise<StoreModuleWithMaps|StoreModuleWithoutMaps>
+		[m: string]: () => Promise<StoreModuleWithMaps | StoreModuleWithoutMaps>
 	}
 > = {
 	[k in keyof MS]: ModuleType<MS[k]>;

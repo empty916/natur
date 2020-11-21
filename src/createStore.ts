@@ -32,9 +32,15 @@ import {
 
 import MapCache from "./MapCache";
 
+/**
+ * 
+ * @param modules 同步模块, 你的store模块
+ * @param lazyModules 懒加载模块， 必填，如果没有可以传{}, 如果不填，那么ts的类型推断会有问题
+ * @param param2 选项配置，详情见文档
+ */
 const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	modules: M = {} as any,
-	lazyModules: LM = {} as any,
+	lazyModules: LM,
 	{
 		initStates = {},
 		middlewares = [],
@@ -397,7 +403,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	 */
 	const destoryModule = (moduleName: string) => {
 		delete currentModules[moduleName];
-		delete currentLazyModules[moduleName];
+		delete (currentLazyModules as LazyStoreModules)[moduleName];
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
 	};
@@ -420,7 +426,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		lazyModule: () => Promise<StoreModule>
 	) => {
 		allModuleNames = undefined;
-		currentLazyModules[moduleName] = lazyModule as any;
+		(currentLazyModules as LM)[moduleName] = lazyModule as any;
 		return currentStoreInstance;
 	};
 	/**
@@ -429,7 +435,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	 */
 	const removeLazyModule = (moduleName: string) => {
 		allModuleNames = undefined;
-		delete currentLazyModules[moduleName];
+		delete (currentLazyModules as LazyStoreModules)[moduleName];
 		return currentStoreInstance;
 	};
 
@@ -536,8 +542,8 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	 * @param moduleName 
 	 */
 	const getLazyModule = (moduleName: keyof LM) => {
-		if (!!currentLazyModules[moduleName]) {
-			return currentLazyModules[moduleName];
+		if (!!(currentLazyModules as LM)[moduleName]) {
+			return (currentLazyModules as LM)[moduleName];
 		}
 		const errMsg = `getLazyModule: ${moduleName} is not exist`;
 		console.error(errMsg);
