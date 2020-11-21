@@ -92,7 +92,7 @@ const count = {
 }
 
 // The step of creating the store needs to be completed before rendering the component, because in the component, you need to use the store you created
-const store = createStore({count});
+const store = createStore({count}, {});
 const inject = createInject({storeGetter: () => store});
 
 const injector = inject('count');
@@ -758,7 +758,7 @@ const count = {
   }
 }
 
-const store = createStore({count});
+const store = createStore({count}, {});
 
 const {actions, state} = store.getModule('count')
 
@@ -776,7 +776,7 @@ store.dispatch('count', 'inc', state.number);
 import { createStore } from 'natur';
 
 // When instantiating the store, no lazy loading module was imported
-export default createStore({/*...modules*/});
+export default createStore({/*...modules*/}, {});
 
 // ================================================
 // lazyloadPage.ts This is a lazy loaded page
@@ -938,7 +938,7 @@ const App = inject('count', 'name')(_App);
 ````typescript
 createStore(
   modules?: Modules,
-  lazyModules?: LazyStoreModules,
+  lazyModules: LazyStoreModules,
   options?: {
     initStates?: States,
     middlewares?: Middleware[],

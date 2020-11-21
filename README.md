@@ -91,7 +91,7 @@ const count = {
 }
 
 // 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
-const store = createStore({count});
+const store = createStore({count}, {});
 const inject = createInject({storeGetter: () => store});
 
 const injector = inject('count');
@@ -767,7 +767,7 @@ unsubscribe();
 import { createStore } from 'natur';
 
 // 在实例化store的时候，没有导入懒加载模块
-export default createStore({/*...modules*/});
+export default createStore({/*...modules*/}, {});
 
 // ================================================
 // lazyloadPage.ts 这是一个懒加载的页面
@@ -820,7 +820,7 @@ const count = {
 }
 
 // 创建store这一步需要在渲染组件之前完成，因为在组件中，需要用到你创建的store
-const store = createStore({count});
+const store = createStore({count}, {});
 
 const {actions, state} = store.getModule('count')
 
@@ -957,7 +957,7 @@ const App = @inject('count', 'name')(_App);
 ````typescript
 createStore(
   modules?: Modules,
-  lazyModules?: LazyStoreModules,
+  lazyModules: LazyStoreModules,
   options?: {
     initStates?: States,
     middlewares?: Middleware[],
