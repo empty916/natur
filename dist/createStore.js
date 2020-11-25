@@ -571,7 +571,12 @@ var createStore = function createStore(modules, lazyModules, _temp) {
     }
 
     return getLazyModule(moduleName)().then(function (loadedModule) {
-      setModule(moduleName, loadedModule);
+      if (isStoreModule(loadedModule)) {
+        setModule(moduleName, loadedModule);
+      } else if (isStoreModule(loadedModule["default"])) {
+        setModule(moduleName, loadedModule["default"]);
+      }
+
       return getModule(moduleName);
     });
   };

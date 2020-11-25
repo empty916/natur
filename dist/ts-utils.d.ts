@@ -37,8 +37,18 @@ export declare type InjectStoreModules = {
     [k: string]: InjectStoreModule;
 };
 export interface LazyStoreModules {
+    [p: string]: () => Promise<StoreModule | {
+        default: StoreModule;
+    }>;
+}
+export interface PickedLazyStoreModules {
     [p: string]: () => Promise<StoreModule>;
 }
+export declare type PickLazyStoreModules<LMS extends LazyStoreModules> = {
+    [p in keyof LMS]: LMS[p] extends () => Promise<infer V> ? V extends StoreModule ? V : V extends {
+        default: StoreModule;
+    } ? V['default'] : never : never;
+};
 export interface Modules {
     [p: string]: StoreModule;
 }
@@ -153,7 +163,7 @@ export declare type GenerateStoreType<MS extends {
 } & {
     [k in keyof PMS]: PromiseModuleType<PMS[k]>;
 };
-export declare type AllStates<M extends Modules, LM extends LazyStoreModules> = {
+export declare type AllStates<M extends Modules, _LM extends LazyStoreModules, LM extends PickedLazyStoreModules = PickLazyStoreModules<_LM>> = {
     [KM in keyof M]: M[KM]['state'];
 } & {
     [KM in keyof LM]?: PromiseModuleType<LM[KM]>['state'];
@@ -161,7 +171,7 @@ export declare type AllStates<M extends Modules, LM extends LazyStoreModules> = 
 /**
  * 生成store类型
  */
-export interface Store<M extends Modules, LM extends LazyStoreModules, StoreType extends InjectStoreModules = GenerateStoreType<M, LM>, AOST extends Modules = (M & {
+export interface Store<M extends Modules, _LM extends LazyStoreModules, LM extends PickedLazyStoreModules = PickLazyStoreModules<_LM>, StoreType extends InjectStoreModules = GenerateStoreType<M, LM>, AOST extends Modules = (M & {
     [k in keyof LM]: PickPromiseType<LM[k]>;
 }), S = AllStates<M, LM>> {
     getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];

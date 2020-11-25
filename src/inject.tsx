@@ -11,7 +11,7 @@ import {
 	// ModuleName,
 	Store,
 	Modules,
-	InjectStoreModules, LazyStoreModules, GenerateStoreType
+	InjectStoreModules, LazyStoreModules, GenerateStoreType, PickLazyStoreModules
 } from './ts-utils';
 import {isEqualWithDepthLimit} from './utils';
 import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
@@ -199,7 +199,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 const createInject = <
 	M extends Modules,
 	LM extends LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	ST extends InjectStoreModules = GenerateStoreType<M, PickLazyStoreModules<LM>>,
 >({
 	storeGetter,
 	loadingComponent = Loading,
