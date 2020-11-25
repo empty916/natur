@@ -525,7 +525,7 @@ describe('removeModule then setModule', () => {
 });
 
 describe('lazyModule', () => {
-	const lazyModule = () => Promise.resolve(count);
+	const lazyModule = () => Promise.resolve({default: count});
 	const lazyModuleWithoutMaps = () => Promise.resolve(countWithoutMaps);
 	beforeEach(() => {
 		store = createStore({ count, name }, {
@@ -546,7 +546,7 @@ describe('lazyModule', () => {
 });
 
 describe('loadModule', () => {
-	const lazyModule = () => Promise.resolve(count);
+	const lazyModule = () => Promise.resolve({default: count});
 	const lazyModuleWithoutMaps = () => Promise.resolve(countWithoutMaps);
 	beforeEach(() => {
 		store = createStore({ count, name }, {

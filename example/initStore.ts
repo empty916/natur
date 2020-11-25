@@ -19,6 +19,7 @@ export default () => {
 		},
 		{
 			lazyCount: () => Promise.resolve(countModule),
+			lazyName: () => import('./lazyName'),
 		},
 		{
 			middlewares: [

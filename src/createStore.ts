@@ -28,6 +28,8 @@ import {
 	AllStates,
 	Interceptor,
 	InterceptorNext,
+	PickedLazyStoreModules,
+	PickLazyStoreModules,
 } from "./ts-utils";
 
 import MapCache from "./MapCache";
@@ -38,7 +40,10 @@ import MapCache from "./MapCache";
  * @param lazyModules 懒加载模块， 必填，如果没有可以传{}, 如果不填，那么ts的类型推断会有问题
  * @param param2 选项配置，详情见文档
  */
-const createStore = <M extends Modules, LM extends LazyStoreModules>(
+const createStore = <
+M extends Modules,
+LM extends LazyStoreModules,
+>(
 	modules: M = {} as any,
 	lazyModules: LM,
 	{
@@ -48,14 +53,14 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	}: {
 		initStates?: Partial<
 			{
-				[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<
+				[k in keyof GenerateStoreType<M, PickLazyStoreModules<LM>>]: GenerateStoreType<
 					M,
-					LM
+					PickLazyStoreModules<LM>
 				>[k]["state"];
 			}
 		>,
-		middlewares?: Middleware<GenerateStoreType<M, LM>>[],
-		interceptors?: Interceptor<GenerateStoreType<M, LM>>[]
+		middlewares?: Middleware<GenerateStoreType<M, PickLazyStoreModules<LM>>>[],
+		interceptors?: Interceptor<GenerateStoreType<M, PickLazyStoreModules<LM>>>[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -64,7 +69,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		{
 			[k in keyof LM]: PickPromiseType<LM[k]>;
 		};
-	type StoreType = GenerateStoreType<M, LM>;
+	type StoreType = GenerateStoreType<M, PickLazyStoreModules<LM>>;
 	// type AS = Partial<{
 	// 	[k in keyof StoreType]: StoreType[k]['state']
 	// }>;
@@ -557,8 +562,12 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		if (hasModule(moduleName)) {
 			return Promise.resolve(getModule(moduleName));
 		}
-		return getLazyModule(moduleName)().then((loadedModule: StoreModule) => {
-			setModule(moduleName, loadedModule as AM[ModuleName]);
+		return getLazyModule(moduleName)().then((loadedModule) => {
+			if (isStoreModule(loadedModule)) {
+				setModule(moduleName, loadedModule);
+			} else if(isStoreModule(loadedModule.default)) {
+				setModule(moduleName, loadedModule.default);
+			}
 			return getModule(moduleName);
 		});
 	};
