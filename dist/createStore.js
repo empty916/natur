@@ -521,18 +521,20 @@ var createStore = function createStore(modules, lazyModules, _temp) {
 
   var dispatch = function dispatch(moduleName, actionName) {
     checkModuleIsValid(moduleName);
-    var moduleProxyActions = createActionsProxy(moduleName);
 
-    if (!(actionName in moduleProxyActions)) {
-      console.warn("dispatch: " + actionName + " is invalid!");
-      throw new Error("dispatch: " + actionName + " is invalid!");
+    if (hasModule(moduleName)) {
+      var moduleProxyActions = createActionsProxy(moduleName);
+
+      if (actionName in moduleProxyActions) {
+        for (var _len2 = arguments.length, arg = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+          arg[_key2 - 2] = arguments[_key2];
+        }
+
+        return moduleProxyActions[actionName].apply(moduleProxyActions, arg);
+      }
     }
 
-    for (var _len2 = arguments.length, arg = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-      arg[_key2 - 2] = arguments[_key2];
-    }
-
-    return moduleProxyActions[actionName].apply(moduleProxyActions, arg);
+    return undefined;
   };
   /**
    * 获取原始的module数据
