@@ -527,12 +527,13 @@ LM extends LazyStoreModules,
 		...arg: Parameters<StoreType[MN]["actions"][AN]>
 	): ReturnType<StoreType[MN]["actions"][AN]> => {
 		checkModuleIsValid(moduleName);
-		const moduleProxyActions = createActionsProxy(moduleName as string);
-		if (!(actionName in moduleProxyActions!)) {
-			console.warn(`dispatch: ${actionName} is invalid!`);
-			throw new Error(`dispatch: ${actionName} is invalid!`);
+		if (hasModule(moduleName)) {
+			const moduleProxyActions = createActionsProxy(moduleName as string);
+			if (actionName in moduleProxyActions!) {
+				return moduleProxyActions![actionName as string](...arg);
+			}
 		}
-		return moduleProxyActions![actionName as string](...arg);
+		return undefined as any;
 	};
 	/**
 	 * 获取原始的module数据
