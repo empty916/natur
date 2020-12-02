@@ -13,7 +13,7 @@ export declare type StoreGetter<M extends Modules, LM extends LazyStoreModules> 
 declare type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & {
     forwardedRef?: React.Ref<any>;
 }>;
-declare const createInject: <M extends Modules, LM extends LazyStoreModules, ST extends InjectStoreModules = GenerateStoreType<M, PickLazyStoreModules<LM>>>({ storeGetter, loadingComponent, }: {
+declare const createInject: <M extends Modules, LM extends LazyStoreModules, ST extends InjectStoreModules = GenerateStoreType<M, LM, PickLazyStoreModules<LM>>>({ storeGetter, loadingComponent, }: {
     storeGetter: StoreGetter<M, LM>;
     loadingComponent?: React.FC<{}> | React.ComponentClass<{}, any> | undefined;
 }) => {

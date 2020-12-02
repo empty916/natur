@@ -14,7 +14,7 @@ export declare const isModuleDepDec: (obj: any) => obj is ModuleDepDec<string, I
 export declare type Diff = {
     [m: string]: MapCache[];
 };
-export declare const initDiff: <M extends Modules, LM extends LazyStoreModules>(moduleDepDec: DepDecs, store: Store<M, LM, import("./ts-utils").PickLazyStoreModules<LM>, import("./ts-utils").GenerateStoreType<M, import("./ts-utils").PickLazyStoreModules<LM>>, M & { [k in keyof import("./ts-utils").PickLazyStoreModules<LM>]: import("./ts-utils").PickPromiseType<import("./ts-utils").PickLazyStoreModules<LM>[k]>; }, import("./ts-utils").AllStates<M, import("./ts-utils").PickLazyStoreModules<LM>, import("./ts-utils").PickLazyStoreModules<import("./ts-utils").PickLazyStoreModules<LM>>>>) => {
+export declare const initDiff: <M extends Modules, LM extends LazyStoreModules>(moduleDepDec: DepDecs, store: Store<M, LM, import("./ts-utils").GenerateStoreType<M, LM, import("./ts-utils").PickLazyStoreModules<LM>>, M & { [k in keyof LM]: import("./ts-utils").PickLazyStoreModules<LM>[k]; }, import("./ts-utils").AllStates<M, LM, import("./ts-utils").PickLazyStoreModules<LM>>>) => {
     diff: Diff;
     destroy: Function;
 };

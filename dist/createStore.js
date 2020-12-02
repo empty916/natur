@@ -33,9 +33,12 @@ var createStore = function createStore(modules, lazyModules, _temp) {
       _ref$interceptors = _ref.interceptors,
       interceptors = _ref$interceptors === void 0 ? [] : _ref$interceptors;
 
+  var t = _objectSpread(_objectSpread({}, modules), lazyModules);
   /**
    * 存放store实例
    */
+
+
   var currentStoreInstance;
   /**
    * 存放createStore构造函数传入的全局初始化state

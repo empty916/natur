@@ -53,23 +53,27 @@ LM extends LazyStoreModules,
 	}: {
 		initStates?: Partial<
 			{
-				[k in keyof GenerateStoreType<M, PickLazyStoreModules<LM>>]: GenerateStoreType<
+				[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<
 					M,
-					PickLazyStoreModules<LM>
+					LM
 				>[k]["state"];
 			}
 		>,
-		middlewares?: Middleware<GenerateStoreType<M, PickLazyStoreModules<LM>>>[],
-		interceptors?: Interceptor<GenerateStoreType<M, PickLazyStoreModules<LM>>>[]
+		middlewares?: Middleware<GenerateStoreType<M, LM>>[],
+		interceptors?: Interceptor<GenerateStoreType<M, LM>>[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
 	type ModuleName = string;
+	const t = ({
+		...modules,
+		...lazyModules,
+	})
 	type AM = M &
 		{
 			[k in keyof LM]: PickPromiseType<LM[k]>;
 		};
-	type StoreType = GenerateStoreType<M, PickLazyStoreModules<LM>>;
+	type StoreType = GenerateStoreType<M, LM>;
 	// type AS = Partial<{
 	// 	[k in keyof StoreType]: StoreType[k]['state']
 	// }>;

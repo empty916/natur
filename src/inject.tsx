@@ -199,7 +199,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 const createInject = <
 	M extends Modules,
 	LM extends LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, PickLazyStoreModules<LM>>,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 >({
 	storeGetter,
 	loadingComponent = Loading,
