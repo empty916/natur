@@ -49,7 +49,7 @@
     - [subscribe](#store.subscribe)
     - [getAllModuleName](#store.getAllModuleName)
     - [dispatch](#store.dispatch)
-    - [destory](#store.destory)
+    - [destroy](#store.destroy)
     - [globalSetStates全局设置state](#store.globalSetStates)
     - [globalResetStates全局初始化state](#store.globalResetStates)
     - [获取所有state](#store.getAllStatas)
@@ -1053,10 +1053,10 @@ store.getAllModuleName('moduleName') => string[];
 store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
-#### <a id='store.destory'>destory 销毁store</a>
+#### <a id='store.destroy'>destroy 销毁store</a>
 
 ````typescript
-store.destory() => void;
+store.destroy() => void;
 ````
 
 

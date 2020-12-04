@@ -48,7 +48,7 @@
     - [subscribe](#store.subscribe)
     - [getAllModuleName](#store.getAllModuleName)
     - [dispatch](#store.dispatch)
-    - [destory](#store.destory)
+    - [destroy](#store.destroy)
     - [globalSetStates](#store.globalSetStates)
     - [globalResetStates](#store.globalResetStates)
     - [get all states](#store.getAllStatas)
@@ -1035,10 +1035,10 @@ store.getAllModuleName('moduleName') => string[];
 store.dispatch(moduleName, actionName, ...actionArg: any[]) => ReturnType<Action>;
 ````
 
-#### <a id='store.destory'>destory 销毁store</a>
+#### <a id='store.destroy'>destroy 销毁store</a>
 
 ````typescript
-store.destory() => void;
+store.destroy() => void;
 ````
 
 

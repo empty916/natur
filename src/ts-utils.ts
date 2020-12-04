@@ -275,7 +275,7 @@ export interface Store<
 	getLazyModule: (moduleName: ModuleName<{}, LM>) => () => Promise<StoreModule>;
 	subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
 	getAllModuleName: () => (keyof StoreType)[];
-	destory: () => void;
+	destroy: () => void;
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 	globalSetStates: (s: Partial<S>) => void;
 	globalResetStates: <MN extends keyof StoreType>(option?: GlobalResetStatesOption<Extract<MN, string>>) => void;

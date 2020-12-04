@@ -327,7 +327,7 @@ describe('init', () => {
 			'setLazyModule',
 			'removeLazyModule',
 			'subscribe',
-			'destory',
+			'destroy',
 			'dispatch',
 			'globalSetStates',
 			'globalResetStates',
@@ -350,7 +350,7 @@ describe('init', () => {
 
 });
 
-describe('destory', () => {
+describe('destroy', () => {
 	beforeEach(() => {
 		store = createStore({ name }, {}, {}, [
 			promiseMiddleware,
@@ -361,9 +361,9 @@ describe('destory', () => {
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
 	});
-	test('destory', () => {
+	test('destroy', () => {
 		expect(store.hasModule('name')).toBe(true);
-		store.destory();
+		store.destroy();
 		expect(store.hasModule('name')).toBe(false);
 	})
 });
@@ -458,7 +458,7 @@ describe('removeModule', () => {
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('count');
 	});
-	test('module destory', () => {
+	test('module destroy', () => {
 		store.setModule('count', count);
 		countMapsCache();
 		store.removeModule('count', count);

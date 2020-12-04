@@ -653,7 +653,7 @@ LM extends LazyStoreModules,
 	/**
 	 * 销毁store
 	 */
-	const destory = () => {
+	const destroy = () => {
 		Object.keys(currentModules).forEach(destoryModule);
 		currentInitStates = {};
 		currentLazyModules = {} as any;
@@ -697,7 +697,7 @@ LM extends LazyStoreModules,
 		setLazyModule,
 		removeLazyModule,
 		subscribe,
-		destory,
+		destroy,
 		dispatch,
 		globalSetStates,
 		globalResetStates,

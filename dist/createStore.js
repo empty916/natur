@@ -669,7 +669,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
    */
 
 
-  var destory = function destory() {
+  var destroy = function destroy() {
     Object.keys(currentModules).forEach(destoryModule);
     currentInitStates = {};
     currentLazyModules = {};
@@ -715,7 +715,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
     setLazyModule: setLazyModule,
     removeLazyModule: removeLazyModule,
     subscribe: subscribe,
-    destory: destory,
+    destroy: destroy,
     dispatch: dispatch,
     globalSetStates: globalSetStates,
     globalResetStates: globalResetStates,
