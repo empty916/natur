@@ -410,18 +410,18 @@ LM extends LazyStoreModules,
 	 * 销毁模块，清空缓存以及对应的原始数据
 	 * @param moduleName 
 	 */
-	const destoryModule = (moduleName: string) => {
+	const destroyModule = (moduleName: string) => {
 		delete currentModules[moduleName];
 		delete (currentLazyModules as LazyStoreModules)[moduleName];
 		allModuleNames = undefined;
 		clearAllCache(moduleName);
 	};
 	/**
-	 * 移除模块，会调用destoryModule，并发送通知
+	 * 移除模块，会调用destroyModule，并发送通知
 	 * @param moduleName 
 	 */
 	const removeModule = (moduleName: string) => {
-		destoryModule(moduleName);
+		destroyModule(moduleName);
 		runListeners(moduleName, { type: "remove" });
 		return currentStoreInstance;
 	};
@@ -654,7 +654,7 @@ LM extends LazyStoreModules,
 	 * 销毁store
 	 */
 	const destroy = () => {
-		Object.keys(currentModules).forEach(destoryModule);
+		Object.keys(currentModules).forEach(destroyModule);
 		currentInitStates = {};
 		currentLazyModules = {} as any;
 		listeners = {};

@@ -48,7 +48,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		private unsubStore: () => void = () => { };
 		private LoadingComponent: TReactComponent<{}>;
 		private storeModuleDiff: Diff | undefined;
-		private destoryCache: Function = () => {};
+		private destroyCache: Function = () => {};
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -94,7 +94,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		initDiff(moduleDepDec: DepDecs = depDecs, store: Store<M, LM> = this.store):void {
 			const {diff, destroy} = initDiff(moduleDepDec, store);
 			this.storeModuleDiff = diff;
-			this.destoryCache = destroy;
+			this.destroyCache = destroy;
 		}
 		initStoreListner() {
 			const {
@@ -136,9 +136,9 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		}
 		componentWillUnmount() {
 			this.unsubStore();
-			this.destoryCache();
+			this.destroyCache();
 			this.unsubStore = () => {};
-			this.destoryCache = () => {};
+			this.destroyCache = () => {};
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
 			const propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 1);

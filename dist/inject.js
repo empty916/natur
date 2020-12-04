@@ -34,7 +34,7 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
 
       _this.unsubStore = function () {};
 
-      _this.destoryCache = function () {};
+      _this.destroyCache = function () {};
 
       _this.state = {
         storeStateChange: {},
@@ -104,7 +104,7 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
           destroy = _initDiff2.destroy;
 
       this.storeModuleDiff = diff;
-      this.destoryCache = destroy;
+      this.destroyCache = destroy;
     };
 
     _proto.initStoreListner = function initStoreListner() {
@@ -156,11 +156,11 @@ var connect = function connect(moduleNames, depDecs, storeGetter, WrappedCompone
 
     _proto.componentWillUnmount = function componentWillUnmount() {
       this.unsubStore();
-      this.destoryCache();
+      this.destroyCache();
 
       this.unsubStore = function () {};
 
-      this.destoryCache = function () {};
+      this.destroyCache = function () {};
     };
 
     _proto.shouldComponentUpdate = function shouldComponentUpdate(nextProps, nextState) {

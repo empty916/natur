@@ -386,20 +386,20 @@ var createStore = function createStore(modules, lazyModules, _temp) {
    */
 
 
-  var destoryModule = function destoryModule(moduleName) {
+  var destroyModule = function destroyModule(moduleName) {
     delete currentModules[moduleName];
     delete currentLazyModules[moduleName];
     allModuleNames = undefined;
     clearAllCache(moduleName);
   };
   /**
-   * 移除模块，会调用destoryModule，并发送通知
+   * 移除模块，会调用destroyModule，并发送通知
    * @param moduleName
    */
 
 
   var removeModule = function removeModule(moduleName) {
-    destoryModule(moduleName);
+    destroyModule(moduleName);
     runListeners(moduleName, {
       type: "remove"
     });
@@ -670,7 +670,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
 
 
   var destroy = function destroy() {
-    Object.keys(currentModules).forEach(destoryModule);
+    Object.keys(currentModules).forEach(destroyModule);
     currentInitStates = {};
     currentLazyModules = {};
     listeners = {};
