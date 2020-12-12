@@ -52,7 +52,7 @@
     - [destroy](#store.destroy)
     - [globalSetStates全局设置state](#store.globalSetStates)
     - [globalResetStates全局初始化state](#store.globalResetStates)
-    - [获取所有state](#store.getAllStatas)
+    - [获取所有state](#store.getAllStates)
   - [inject api](#inject.api)
     - [createInject](#inject.createInject)
     - [inject](#inject.self)

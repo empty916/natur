@@ -51,7 +51,7 @@
     - [destroy](#store.destroy)
     - [globalSetStates](#store.globalSetStates)
     - [globalResetStates](#store.globalResetStates)
-    - [get all states](#store.getAllStatas)
+    - [get all states](#store.getAllStates)
   - [inject api](#inject.api)
     - [createInject](#inject.createInject)
     - [inject](#inject.self)
