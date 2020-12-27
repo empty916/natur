@@ -866,9 +866,17 @@ describe('globalSetStates', () => {
 				count,
 				name,
 			},
+			{},
+			{
+				middlewares: () => next => record => {
+					if (record.moduleName === 'nameWithMaps') {
+						expect(record.actionName).toBe('globalSetStates');
+					}
+					return next(record);
+				}
+			}
 		);
 		store.setModule('countWithoutMaps', countWithoutMaps);
-		store.setModule('nameWithMaps', nameWithMaps);
 	});
 	test('base', () => {
 		const newStates = {
@@ -901,6 +909,9 @@ describe('globalSetStates', () => {
 			}
 		});
 		store.globalSetStates(newStates);
+		// lazy module
+		store.setModule('nameWithMaps', nameWithMaps);
+
 	})
 	test('setStates before set module manually', () => {
 		const newStates = {

@@ -95,6 +95,12 @@ LM extends LazyStoreModules,
 	 * 用于globalResetStates方法重置store中的所有state
 	 */
 	let resetStateData: PS = {};
+
+	/**
+	 * 用户调用globalSetStates时，有的模块可能是懒加载模块，还未加载好，
+	 * 所以需要缓存好懒加载模块的state，等到setModule初始化了该模块，则会立即调用globalSetStates更新该模块的数据
+	 */
+	let globalSetStateCache: PS = {};
 	/**
 	 * 主要存放，已经加载的store的state，maps，actions
 	 * 这里存放的是原始的maps，actions，并非经过代理后的maps和actions，或者说并非是natur使用者获取的maps和actions
@@ -294,7 +300,6 @@ LM extends LazyStoreModules,
 		});
 		return currentModules[moduleName]!.state;
 	};
-
 	/**
 	 * 全局统一设置state
 	 * 主要的应用场景是，异步加载所有的state配置时，需要更新到对应的模块中
@@ -313,7 +318,7 @@ LM extends LazyStoreModules,
 					state: states[moduleName],
 				});
 			} else {
-				currentInitStates[moduleName as keyof StoreType] =
+				globalSetStateCache[moduleName as keyof StoreType] =
 					states[moduleName];
 			}
 		});
@@ -404,6 +409,11 @@ LM extends LazyStoreModules,
 			mapsCacheList[moduleName] = [] as any;
 		}
 		runListeners(moduleName, { type: "init" });
+		if(moduleName in globalSetStateCache) {
+			globalSetStates({
+				[moduleName]: globalSetStateCache[moduleName],
+			} as PS);
+		}
 		return currentStoreInstance;
 	};
 	/**

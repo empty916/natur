@@ -31,7 +31,7 @@ export default () => {
 				devTool,
 				// LogMiddleware,
 				// LogMiddleware2
-			]
+			],
 		},
 	);
 	const LogMiddleware: Middleware<typeof store.type> = ({setState, dispatch}) => next => record => {

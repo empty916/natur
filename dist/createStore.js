@@ -53,6 +53,12 @@ var createStore = function createStore(modules, lazyModules, _temp) {
 
   var resetStateData = {};
   /**
+   * 用户调用globalSetStates时，有的模块可能是懒加载模块，还未加载好，
+   * 所以需要缓存好懒加载模块的state，等到setModule初始化了该模块，则会立即调用globalSetStates更新该模块的数据
+   */
+
+  var globalSetStateCache = {};
+  /**
    * 主要存放，已经加载的store的state，maps，actions
    * 这里存放的是原始的maps，actions，并非经过代理后的maps和actions，或者说并非是natur使用者获取的maps和actions
    */
@@ -279,7 +285,7 @@ var createStore = function createStore(modules, lazyModules, _temp) {
           state: states[moduleName]
         });
       } else {
-        currentInitStates[moduleName] = states[moduleName];
+        globalSetStateCache[moduleName] = states[moduleName];
       }
     });
   };
@@ -378,6 +384,13 @@ var createStore = function createStore(modules, lazyModules, _temp) {
     runListeners(moduleName, {
       type: "init"
     });
+
+    if (moduleName in globalSetStateCache) {
+      var _globalSetStates;
+
+      globalSetStates((_globalSetStates = {}, _globalSetStates[moduleName] = globalSetStateCache[moduleName], _globalSetStates));
+    }
+
     return currentStoreInstance;
   };
   /**
