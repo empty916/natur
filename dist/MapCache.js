@@ -1,93 +1,66 @@
-import { getValueFromObjByKeyPath, arrayIsEqual } from './utils';
-
-var MapCache = /*#__PURE__*/function () {
-  function MapCache(getState, map) {
-    var _this = this;
-
-    this.type = 'function';
-    this.mapDepends = [];
-    this.depCache = [];
-    this.dependKeys = {};
-    this.shouldCheckDependsCache = true;
-    this.getState = getState;
-    var copyMap = map.slice();
-    this.map = copyMap.pop();
-    copyMap.forEach(function (item) {
-      return _this.mapDepends.push(_this.createGetDepByKeyPath(item));
-    });
-  }
-
-  MapCache.resetMapDepParser = function resetMapDepParser() {
-    MapCache.getValueFromState = getValueFromObjByKeyPath;
-  };
-
-  MapCache.setMapDepParser = function setMapDepParser(parser) {
-    MapCache.getValueFromState = parser;
-  };
-
-  var _proto = MapCache.prototype;
-
-  _proto.createGetDepByKeyPath = function createGetDepByKeyPath(keyPath) {
-    if (typeof keyPath !== 'function') {
-      return function (s) {
-        return MapCache.getValueFromState(s, keyPath);
-      };
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var utils_1 = require("./utils");
+var MapCache = /** @class */ (function () {
+    function MapCache(getState, map) {
+        var _this = this;
+        this.type = 'function';
+        this.mapDepends = [];
+        this.depCache = [];
+        this.dependKeys = {};
+        this.shouldCheckDependsCache = true;
+        this.getState = getState;
+        var copyMap = map.slice();
+        this.map = copyMap.pop();
+        copyMap.forEach(function (item) { return _this.mapDepends.push(_this.createGetDepByKeyPath(item)); });
     }
-
-    return keyPath;
-  };
-
-  _proto.shouldCheckCache = function shouldCheckCache() {
-    this.shouldCheckDependsCache = true;
-  };
-
-  _proto.getDepsValue = function getDepsValue() {
-    var _this2 = this;
-
-    return this.mapDepends.map(function (dep) {
-      return dep(_this2.getState());
-    });
-  };
-
-  _proto.hasDepChanged = function hasDepChanged() {
-    if (this.shouldCheckDependsCache) {
-      var newDepCache = this.getDepsValue();
-      var depHasChanged = !arrayIsEqual(this.depCache, newDepCache);
-
-      if (depHasChanged) {
-        this.depCache = newDepCache;
-      }
-
-      this.shouldCheckDependsCache = false;
-      return depHasChanged;
-    }
-
-    return false;
-  };
-
-  _proto.getValue = function getValue() {
-    if (this.hasDepChanged()) {
-      this.value = this.map.apply(this, this.depCache);
-    }
-
-    return this.value;
-  };
-
-  _proto.destroy = function destroy() {
-    this.map = function () {};
-
-    this.mapDepends = [];
-    this.depCache = [];
-
-    this.getState = function () {
-      return {};
+    MapCache.resetMapDepParser = function () {
+        MapCache.getValueFromState = utils_1.getValueFromObjByKeyPath;
     };
-
-    this.dependKeys = {};
-  };
-
-  return MapCache;
-}();
-
-export { MapCache as default };
-MapCache.getValueFromState = getValueFromObjByKeyPath;
+    MapCache.setMapDepParser = function (parser) {
+        MapCache.getValueFromState = parser;
+    };
+    MapCache.prototype.createGetDepByKeyPath = function (keyPath) {
+        if (typeof keyPath !== 'function') {
+            return function (s) {
+                return MapCache.getValueFromState(s, keyPath);
+            };
+        }
+        return keyPath;
+    };
+    MapCache.prototype.shouldCheckCache = function () {
+        this.shouldCheckDependsCache = true;
+    };
+    MapCache.prototype.getDepsValue = function () {
+        var _this = this;
+        return this.mapDepends.map(function (dep) { return dep(_this.getState()); });
+    };
+    MapCache.prototype.hasDepChanged = function () {
+        if (this.shouldCheckDependsCache) {
+            var newDepCache = this.getDepsValue();
+            var depHasChanged = !utils_1.arrayIsEqual(this.depCache, newDepCache);
+            if (depHasChanged) {
+                this.depCache = newDepCache;
+            }
+            this.shouldCheckDependsCache = false;
+            return depHasChanged;
+        }
+        return false;
+    };
+    MapCache.prototype.getValue = function () {
+        if (this.hasDepChanged()) {
+            this.value = this.map.apply(this, this.depCache);
+        }
+        return this.value;
+    };
+    MapCache.prototype.destroy = function () {
+        this.map = function () { };
+        this.mapDepends = [];
+        this.depCache = [];
+        this.getState = function () { return ({}); };
+        this.dependKeys = {};
+    };
+    MapCache.getValueFromState = utils_1.getValueFromObjByKeyPath;
+    return MapCache;
+}());
+exports.default = MapCache;
