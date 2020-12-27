@@ -1,11 +1,12 @@
 {
 	"name": "natur",
-	"version": "2.1.1-beta1",
+	"version": "2.1.1-beta2",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "npm run build:ts && npm run build:js",
+		"build": "npm run build:ts",
+		"build1": "npm run build:ts && npm run build:js",
 		"build:ts": "rimraf dist && tsc",
 		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
 		"build:min": "npm run build:ts && rollup -c && npm run gzip",
