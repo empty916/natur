@@ -410,8 +410,10 @@ LM extends LazyStoreModules,
 		}
 		runListeners(moduleName, { type: "init" });
 		if(moduleName in globalSetStateCache) {
+			const s = globalSetStateCache[moduleName];
+			delete globalSetStateCache[moduleName];
 			globalSetStates({
-				[moduleName]: globalSetStateCache[moduleName],
+				[moduleName]: s,
 			} as PS);
 		}
 		return currentStoreInstance;

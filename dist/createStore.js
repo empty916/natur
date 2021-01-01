@@ -314,8 +314,10 @@ var createStore = function (modules, lazyModules, _a) {
         }
         runListeners(moduleName, { type: "init" });
         if (moduleName in globalSetStateCache) {
+            var s = globalSetStateCache[moduleName];
+            delete globalSetStateCache[moduleName];
             globalSetStates((_b = {},
-                _b[moduleName] = globalSetStateCache[moduleName],
+                _b[moduleName] = s,
                 _b));
         }
         return currentStoreInstance;
