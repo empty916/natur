@@ -42,7 +42,7 @@ const a4 = {
 
 describe('utils', () => {
 	test('is obj', () => {
-		function Person() {};
+		class Person {};
 
 		expect(isObj({})).toBe(true);
 		expect(isObj({a: 1})).toBe(true);
@@ -103,7 +103,7 @@ describe('utils', () => {
 
 	})
 	test('is store module', () => {
-		const cm = (maps = [() => {}], actions = () => {}) => ({
+		const cm = (maps: any = [() => {}], actions: any = () => {}) => ({
 			state: {a: 1},
 			actions: {a: actions},
 			maps: {a: maps},
@@ -121,7 +121,7 @@ describe('utils', () => {
 		const m3 = {
 			state: {a: 1},
 			actions: {ca: () => ({a: 2})},
-			maps: {a2s: [({a}) => `${a}`]},
+			maps: {a2s: [({a}: {a: number}) => `${a}`]},
 		}
 
 		expect(isStoreModule(m1)).toBe(false);
@@ -135,8 +135,8 @@ describe('utils', () => {
 	})
 
 	test('compose', () => {
-		const add1 = a => a + 1;
-		const add2 = a => a + 2;
+		const add1 = (a: number) => a + 1;
+		const add2 = (a: number) => a + 2;
 		expect(compose(add1)).toBe(add1);
 		expect(compose(add1, add2)(1)).toBe(4);
 	})
