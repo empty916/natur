@@ -57,7 +57,6 @@ const Inject = createInject({
 	loadingComponent: () => <>loading</>
 });
 
-const injectSome = Inject(['name', {}], 'lazyName');
 
 const appInjector = Inject(
 	['name', {
