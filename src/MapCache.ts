@@ -5,16 +5,13 @@ type MapDepParser = (s: State, p: any) => any;
 
 export default class MapCache {
 
-	private type: 'function' | 'array' = 'function';
 	private map: Function;
 	private mapDepends: Array<Function> = [];
 	private depCache: Array<any> = [];
 	private getState: () => State;
-	private dependKeys: {[key: string]: true} = {};
 	private shouldCheckDependsCache: boolean = true;
 	private value: any;
 
-	static runningMap: MapCache | undefined;
 	static getValueFromState: MapDepParser = getValueFromObjByKeyPath;
 
 	constructor(
