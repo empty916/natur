@@ -1,5 +1,4 @@
-import { createStore } from '../src';
-import { isObj } from '../src/utils';
+import { createStore, Store } from '../src';
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -7,27 +6,63 @@ import {
 	filterUndefinedMiddleware,
 	shallowEqualMiddleware, 
 	thunkMiddleware,
+	ThunkParams,
 } from '../src/middlewares'
 
 let countMapCallTimes = 0;
-let store;
+
+type M = {
+	count: typeof count,
+	countWithoutMaps: typeof countWithoutMaps,
+	name: typeof name,
+	nameWithMaps: typeof nameWithMaps,
+	name1: any;
+	name11: any;
+	count1: any;
+};
+let store: Store<M , {}>;
+
+const countState = {
+	count: 0,
+	name: 'count',
+	obj: [{
+		t: {
+			a: 1,
+		}
+	}, {
+		a: {
+			a: 2
+		},
+	}]
+};
+const countMaps = {
+	isOdd: ['count', (count: CountState['count']) => count % 2 !== 0],
+	isOdd2: ({count}: CountState) => count % 2 !== 0,
+	isTrue: () => true,
+	getSplitNameWhenCountIsOdd: ['count', 'name', (count: CountState['count'], name: CountState['name']) => {
+		countMapCallTimes ++;
+		if (count % 2 !== 0) {
+			return name && name.split('');
+		}
+		return count;
+	}],
+	a1: ['obj[0].t.a', (a: number) => a + 1],
+	a2: [
+		(state: CountState) => state.obj[1].a!.a,
+		(a: number) => a + 1
+	],
+};
+
+type CountState = typeof countState;
+type CountMaps = typeof countMaps;
+
+
 export const count = {
-	state: {
-		count: 0,
-		name: 'count',
-		obj: [{
-			t: {
-				a: 1,
-			}
-		}, {
-			a: {
-				a: 2
-			},
-		}]
-	},
+	state: countState,
+	maps: countMaps,
 	actions: {
-		inc: state => ({ ...state, count: state.count + 1 }),
-		_inc: () => ({getState, setState, getMaps}) => {
+		inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
+		_inc: () => ({getState, setState, getMaps}: ThunkParams<CountState, CountMaps>) => {
 			expect(getMaps()).toEqual({
 				isOdd: true,
 				isOdd2: true,
@@ -38,17 +73,17 @@ export const count = {
 			});
 			return setState({ ...getState(), count: getState().count + 1 });
 		},
-		updateName: state => ({ ...state, name: state.name + 1 }),
-		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
-		dec: state => ({ ...state, count: state.count - 1 }),
-		returnGet: state => state,
-		asyncReturnGet: state => Promise.resolve(state),
+		updateName: (state: CountState) => ({ ...state, name: state.name + 1 }),
+		asyncInc: (state: CountState) => Promise.resolve({ ...state, count: state.count + 1 }),
+		dec: (state: CountState) => ({ ...state, count: state.count - 1 }),
+		returnGet: (state: any) => state,
+		asyncReturnGet: (state: any) => Promise.resolve(state),
 
 		throwErrorAction: () => {
 			throw new Error('something error');
 		},
 		asyncThrowErrorAction: () => Promise.reject('async something error'),
-		addA1: state => ({
+		addA1: (state: CountState) => ({
 			...state,
 			obj: [{
 				t: {
@@ -60,7 +95,7 @@ export const count = {
 				},
 			}]
 		}),
-		addA2: state => ({
+		addA2: (state: CountState) => ({
 			...state,
 			obj: [{
 				t: {
@@ -73,33 +108,20 @@ export const count = {
 			}]
 		})
 	},
-	maps: {
-		isOdd: ['count', count => count % 2 !== 0],
-		isOdd2: ({count}) => count % 2 !== 0,
-		isTrue: () => true,
-		getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
-			countMapCallTimes ++;
-			if (count % 2 !== 0) {
-				return name && name.split('');
-			}
-			return count;
-		}],
-		a1: ['obj[0].t.a', a => a + 1],
-		a2: [
-			state => state.obj[1].a.a,
-			a => a + 1
-		],
-	}
 }
+
+const countWithoutMapsState = {
+	count: 0,
+	name: 'count',
+};
+type CountWithoutMapsState = typeof countWithoutMapsState;
+
 export const countWithoutMaps = {
-	state: {
-		count: 0,
-		name: 'count',
-	},
+	state: countWithoutMapsState,
 	actions: {
-		inc: state => ({ ...state, count: state.count + 1 }),
-		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
-		dec: state => ({ ...state, count: state.count - 1 }),
+		inc: (state: CountWithoutMapsState) => ({ ...state, count: state.count + 1 }),
+		asyncInc: (state: CountWithoutMapsState) => Promise.resolve({ ...state, count: state.count + 1 }),
+		dec: (state: CountWithoutMapsState) => ({ ...state, count: state.count - 1 }),
 	},
 }
 export const name = {
@@ -107,7 +129,7 @@ export const name = {
 		name: 'test',
 	},
 	actions: {
-		updateName: name => ({ name }),
+		updateName: (name: string) => ({ name }),
 	},
 }
 export const nameWithMaps = {
@@ -115,46 +137,48 @@ export const nameWithMaps = {
 		name: 'test',
 	},
 	actions: {
-		updateName: name => ({ name }),
+		updateName: (name: string) => ({ name }),
 	},
 	maps: {
-		splitName: ['name', name => name.split('')],
+		splitName: ['name', (name: string) => name.split('')],
 	}
 }
 
-const hasModule = (moduleName) => () => {
+const hasModule = (moduleName: keyof M) => () => {
 	expect(store.hasModule(moduleName)).toBe(true);
 }
-const hasNotModule = (notExistModuleName) => () => {
-	expect(store.hasModule(notExistModuleName)).toBe(false);
+const hasNotModule = (notExistModuleName: string) => () => {
+	expect(store.hasModule(notExistModuleName as any)).toBe(false);
 }
-const getModule = (moduleName, originModule) => () => {
-	const targetModule = store.getModule(moduleName);
+const getModule = <MN extends keyof M>(moduleName: MN, originModule: M[MN]) => () => {
+	const targetModule = store.getModule(moduleName as any);
 	expect(targetModule.state).toBe(originModule.state);
 	expect(targetModule.state).toEqual(originModule.state);
 	expect(targetModule.actions).not.toEqual(originModule.actions);
 	expect(Object.keys(targetModule.actions)).toEqual(Object.keys(originModule.actions));
 }
-const getOriginModule = (moduleName, originModule) => () => {
+const getOriginModule = <MN extends keyof M>(moduleName: MN, originModule: M[MN]) => () => {
 	const targetModule = store.getOriginModule(moduleName);
 	expect(targetModule.state).toBe(originModule.state);
 	expect(targetModule.state).toEqual(originModule.state);
 	expect(targetModule.actions).toBe(originModule.actions);
+	// @ts-ignore
 	expect(targetModule.maps).toBe(originModule.maps);
 }
-const getModuleNotExist = (moduleName) => () => {
-	expect(() => store.getModule(moduleName)).toThrowError(new RegExp(`module: ${moduleName} is not valid!`));
+const getModuleNotExist = (moduleName: string) => () => {
+	expect(() => store.getModule(moduleName as any)).toThrowError(new RegExp(`module: ${moduleName} is not valid!`));
 }
-const getModuleWithMaps = (moduleName, originModule) => () => {
+const getModuleWithMaps = <MN extends 'count'|'nameWithMaps'>(moduleName: MN, originModule: M[MN]) => () => {
 	const targetModule = store.getModule(moduleName);
 	expect(targetModule.maps).not.toBe(originModule.maps);
 	expect(Object.keys(targetModule.maps)).toEqual(Object.keys(originModule.maps));
 }
-const getModuleWithoutMaps = (moduleName, originModule) => () => {
+const getModuleWithoutMaps = <MN extends 'countWithoutMaps'|'name'>(moduleName: MN, originModule: M[MN]) => () => {
 	const targetModule = store.getModule(moduleName);
+	// @ts-ignore
 	expect(targetModule.maps).toBe(undefined);
 }
-const getAllModuleName = (expectAllModuleName) => () => {
+const getAllModuleName = (expectAllModuleName: string[]) => () => {
 	const amn = store.getAllModuleName();
 	const amn1 = store.getAllModuleName();
 	expect(amn).toEqual(expectAllModuleName);
@@ -262,57 +286,71 @@ const countMapsCache = () => {
 
 describe('init', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{ count, countWithoutMaps },
 			{},
 			{
-				middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+				middlewares: [
+					promiseMiddleware, 
+					filterNonObjectMiddleware, 
+					shallowEqualMiddleware
+				]
 			},
 		);
 	});
 	test('createStore with illegal module', () => {
+		let store: Store<{
+			count: {
+				state: any;
+				actions: any;
+				maps: any;
+			}
+		}, {}>;
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
+			// @ts-ignore
 			actions: {a: 1},
+			// @ts-ignore
 			maps: {a: 1}
-		} })).toThrow();
-
+		} }, {})).toThrow();
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
+			// @ts-ignore
 			actions: {a: 1},
-		}})).toThrow();
-
+		}}, {})).toThrow();
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: () => {}},
-		}})).not.toThrow();
-
+		}}, {})).not.toThrow();
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: [1],
 			actions: {a: () => {}},
-		}})).not.toThrow();
-
+		}}, {})).not.toThrow();
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: () => {},
 			actions: {a: () => {}},
-		}})).not.toThrow();
-
+		}}, {})).not.toThrow();
+		// @ts-ignore
 		expect(() => store = createStore({ count: {
 			state: new Date(),
 			actions: {a: () => {}},
-		}})).not.toThrow();
-
+		}}, {})).not.toThrow();
 		expect(() => store = createStore({ count: {
 			state: {a: 1},
 			actions: {a: () => {}},
 			maps: {a: () => {}}
-		}})).not.toThrow();
-
+		}}, {})).not.toThrow();
 		expect(() => store = createStore({ count: {
 			state: {},
 			actions: {},
 			maps: {}
-		}})).not.toThrow();
+		}}, {})).not.toThrow();
 	})
 	test('createStore', () => {
 		expect(Object.keys(store)).toEqual([
@@ -352,11 +390,15 @@ describe('init', () => {
 
 describe('destroy', () => {
 	beforeEach(() => {
-		store = createStore({ name }, {}, {}, [
-			promiseMiddleware,
-			filterNonObjectMiddleware,
-			shallowEqualMiddleware
-		]);
+		// @ts-ignore
+		store = createStore({ name }, {}, {
+			middlewares: [
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+				shallowEqualMiddleware
+			]
+		});
+		// @ts-ignore
 		store.setModule('count', name);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
@@ -370,6 +412,7 @@ describe('destroy', () => {
 
 describe('setModule', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore({ name }, {}, {
 			middlewares: [
 				promiseMiddleware,
@@ -377,6 +420,7 @@ describe('setModule', () => {
 				shallowEqualMiddleware
 			]
 		});
+		// @ts-ignore
 		store.setModule('count', name);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.setModule('count', count);
@@ -395,31 +439,26 @@ describe('setModule', () => {
 			actions: {a:() => {}},
 			maps: {a:1}
 		})).toThrow();
-
 		expect(() => store.setModule('name1', {
 			state: [{a:1}],
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).not.toThrow();
-
 		expect(() => store.setModule('name1', {
 			state: () => {},
 			actions: {a:() => {}},
 			maps: {a:() => {}}
 		})).not.toThrow();
-
 		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
 			maps: {a:[() => {}]}
 		})).not.toThrow();
-
 		expect(() => store.setModule('name11', {
 			state: {},
 			actions: {},
 			maps: {}
 		})).not.toThrow();
-
 		expect(store.getModule('name11').state).toEqual({});
 		expect(store.getModule('name11').actions).toEqual({});
 		expect(store.getModule('name11').maps).toEqual({});
@@ -439,6 +478,7 @@ describe('setModule', () => {
 	test('hasNotModule', () => {
 		hasNotModule('name1')()
 		store.setModule('name1', name);
+		// @ts-ignore
 		hasModule('name1')()
 	});
 	test('get module', getModule('name', name));
@@ -451,9 +491,11 @@ describe('setModule', () => {
 
 describe('removeModule', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
-			{ count, name }, {}, {},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			{ count, name }, {}, {
+				middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			},
 		);
 		store.setModule('nameWithMaps', nameWithMaps);
 		store.removeModule('count');
@@ -461,7 +503,7 @@ describe('removeModule', () => {
 	test('module destroy', () => {
 		store.setModule('count', count);
 		countMapsCache();
-		store.removeModule('count', count);
+		store.removeModule('count');
 	})
 	test('hasModule', hasModule('name'));
 	test('get module', getModule('name', name));
@@ -472,8 +514,13 @@ describe('removeModule', () => {
 
 describe('setModule then removeModule', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore({ name }, {}, {
-			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			middlewares: [
+				promiseMiddleware, 
+				filterNonObjectMiddleware,
+				shallowEqualMiddleware
+			]
 		});
 		store.setModule('count', count);
 		store.setModule('nameWithMaps', nameWithMaps);
@@ -491,8 +538,13 @@ describe('setModule then removeModule', () => {
 
 describe('removeModule then setModule', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore({ count }, {}, {
-			middlewares: [promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			middlewares: [
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+				shallowEqualMiddleware
+			]
 		});
 		store.removeModule('count');
 		store.setModule('count', count);
@@ -502,6 +554,7 @@ describe('removeModule then setModule', () => {
 	test('run actions', updateCountState);
 	test('maps cache', countMapsCache);
 	test('set module', () => {
+		// @ts-ignore
 		expect(store.setModule('name1', name)).toBe(store);
 	});
 
@@ -514,7 +567,9 @@ describe('removeModule then setModule', () => {
 	test('hasModule', hasModule('count'));
 	test('hasNotModule', () => {
 		hasNotModule('name1')()
+		// @ts-ignore
 		store.setModule('name1', name);
+		// @ts-ignore
 		hasModule('name1')()
 	});
 	test('get module', getModule('name', name));
@@ -527,8 +582,13 @@ describe('removeModule then setModule', () => {
 describe('lazyModule', () => {
 	const lazyModule = () => Promise.resolve({default: count});
 	const lazyModuleWithoutMaps = () => Promise.resolve(countWithoutMaps);
+
 	beforeEach(() => {
-		store = createStore({ count, name }, {
+		// @ts-ignore
+		store = createStore({
+			count,
+			name
+		}, {
 			lazyModule,
 			lazyModuleWithoutMaps,
 		});
@@ -536,8 +596,11 @@ describe('lazyModule', () => {
 	test('hasModule', hasModule('name'));
 	test('get module', getModule('name', name));
 	test('get lazy module', () => {
+		// @ts-ignore
 		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
+		// @ts-ignore
 		expect(() => store.getLazyModule('lazyModule111')).toThrow();
+		// @ts-ignore
 		expect(store.getLazyModule('lazyModuleWithoutMaps')).toBe(lazyModuleWithoutMaps);
 	});
 	test('hasNotModule', hasNotModule('lazyModule'));
@@ -548,24 +611,33 @@ describe('lazyModule', () => {
 describe('loadModule', () => {
 	const lazyModule = () => Promise.resolve({default: count});
 	const lazyModuleWithoutMaps = () => Promise.resolve(countWithoutMaps);
+
 	beforeEach(() => {
-		store = createStore({ count, name }, {
+		// @ts-ignore
+		store = createStore({
+			count,
+			name
+		}, {
 			lazyModule,
 			lazyModuleWithoutMaps,
 		});
 	});
 	test('load exist module', () => {
 		const countModule = store.getModule('count');
-	
+		// @ts-ignore
 		return store.loadModule('count')
 			.then(_countModule => {
+				// @ts-ignore
 				expect(countModule.actions).toBe(_countModule.actions);
 			})
 	});
 	test('load not exist module', () => {
+		// @ts-ignore
 		expect(store.hasModule('lazyModule')).toBe(false);
+		// @ts-ignore
 		return store.loadModule('lazyModule')
 			.then(() => {
+				// @ts-ignore
 				expect(store.hasModule('lazyModule')).toBe(true);
 			})
 	});
@@ -573,8 +645,15 @@ describe('loadModule', () => {
 
 describe('set lazy module', () => {
 	const lazyModule = () => Promise.resolve(count);
+	let store: Store<{
+		count: typeof count;
+		name: typeof name;
+	}, {
+		lazyModule: typeof lazyModule;
+	}>
 	beforeEach(() => {
-		store = createStore({ count, name });
+		// @ts-ignore
+		store = createStore({ count, name }, {});
 	});
 	test('set not exsit lazy module', () => {
 		store.setLazyModule('lazyModule', lazyModule);
@@ -591,6 +670,12 @@ describe('set lazy module', () => {
 
 describe('remove lazy module', () => {
 	const lazyModule = () => Promise.resolve(count);
+	let store: Store<{
+		count: typeof count;
+		name: typeof name;
+	}, {
+		lazyModule: typeof lazyModule;
+	}>
 	beforeEach(() => {
 		store = createStore({ count, name }, {
 			lazyModule,
@@ -605,10 +690,19 @@ describe('remove lazy module', () => {
 });
 
 describe('subscribe', () => {
+	let store: Store<{
+		count: typeof count;
+	}, {}>
 	beforeEach(() => {
 		store = createStore(
-			{ count }, {}, {},
-			[promiseMiddleware, filterNonObjectMiddleware, shallowEqualMiddleware]
+			{ count }, {},
+			{
+				middlewares: [
+					promiseMiddleware,
+					filterNonObjectMiddleware, 
+					shallowEqualMiddleware
+				]
+			},
 		);
 	});
 	test('subscribe listener get update module event', done => {
@@ -677,8 +771,12 @@ describe('subscribe', () => {
 });
 
 describe('actions', () => {
+	let store: Store<{
+		count: typeof count;
+		name: typeof name;
+	}, {}>
 	beforeEach(() => {
-		let recordCache = null;
+		let recordCache: any = null;
 		store = createStore({ name, count }, {}, {
 			initStates: {
 				count: {
@@ -707,36 +805,47 @@ describe('actions', () => {
 	test('dispatch', () => {
 		const countModule = store.getModule('count');
 		expect(store.dispatch('count', 'inc', countModule.state).count).toBe(countModule.state.count+1);
+		// @ts-ignore
 		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
 	});
 	test('dispatch error action', () => {
 		const countModule = store.getModule('count');
+		// @ts-ignore
 		expect(() => store.dispatch('count', 'inc2', countModule.state).count).toThrowError();
+		// @ts-ignore
 		expect(() => store.dispatch('count', 'inc/aa/22', countModule.state).count).toThrowError();
+		// @ts-ignore
 		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
 	});
 	test('return no change state', () => {
-		let recordCache = null;
+		let recordCache: any = null;
+		let store: Store<{
+			count: typeof count;
+			name: typeof name;
+		}, {}>
 		store = createStore({ name, count }, {}, {
-			count: {
-				...count.state,
-				count: 1,
-			}
-		}, [
-			thunkMiddleware,
-			({getState}) => next => record => {
-				expect(getState()).toBe(store.getModule('count').state);
-				recordCache = {...record};
-				return next(recordCache)
+			initStates: {
+				count: {
+					...count.state,
+					count: 1,
+				}
 			},
-			() => next => record => {
-				expect(record).toBe(recordCache);
-				// if (!isObj(record.state)) return record.state;
-				return next(record)
-			},
-			promiseMiddleware,
-			filterNonObjectMiddleware,
-		]);
+			middlewares: [
+				thunkMiddleware,
+				({getState}) => next => record => {
+					expect(getState()).toBe(store.getModule('count').state);
+					recordCache = {...record};
+					return next(recordCache)
+				},
+				() => next => record => {
+					expect(record).toBe(recordCache);
+					// if (!isObj(record.state)) return record.state;
+					return next(record)
+				},
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+			]
+		}, );
 		let countModule = store.getModule('count');
 		expect(countModule.actions.returnGet(countModule.state)).toBe(countModule.state);
 		expect(store.dispatch('count', 'returnGet', countModule.state)).toBe(countModule.state);
@@ -748,13 +857,14 @@ describe('actions', () => {
 	test('return invalid type', () => {
 		const countModule = store.getModule('count');
 
+
 		expect(countModule.actions.returnGet(0)).toBe(0);
 		expect(countModule.actions.returnGet('')).toBe('');
 		expect(countModule.actions.returnGet(false)).toBe(false);
 		expect(countModule.actions.returnGet(null)).toBe(null);
 		expect(countModule.actions.returnGet(undefined)).toBe(undefined);
 
-		function Person() {};
+		class Person {};
 		const now = new Date();
 		const p = new Person();
 		expect(countModule.actions.returnGet(now)).toBe(now);
@@ -809,6 +919,7 @@ describe('actions', () => {
 		const countModule = store.getModule('count');
 		const newKeyState = {...countModule.state, newKey: 1};
 		const deleteKeyState = { ...countModule.state };
+		// @ts-ignore
 		delete deleteKeyState.name;
 
 		expect(countModule.actions.returnGet(newKeyState).newKey).toBe(1);
@@ -828,17 +939,19 @@ describe('actions', () => {
 	});
 
 	test('unlimit state type', () => {
-		store = createStore({
-			unlimit: {
-				state: [1],
-				actions: {
-					changeState: a => a,
-				},
-				maps: {
-					firstAdd1: ['0', f => f + 1]
-				}
+		let _unlimit = {
+			state: [1],
+			actions: {
+				changeState: (a: any) => a,
+			},
+			maps: {
+				firstAdd1: ['0', (f: number) => f + 1]
 			}
-		});
+		};
+		let store: Store<{unlimit: typeof _unlimit}, {}>;
+		store = createStore({
+			unlimit: _unlimit
+		}, {});
 
 		let unlimit = store.getModule('unlimit');
 		expect(unlimit.maps.firstAdd1).toBe(2)
@@ -861,6 +974,7 @@ describe('actions', () => {
 
 describe('globalSetStates', () => {
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{
 				count,
@@ -868,12 +982,12 @@ describe('globalSetStates', () => {
 			},
 			{},
 			{
-				middlewares: () => next => record => {
+				middlewares: [() => next => record => {
 					if (record.moduleName === 'nameWithMaps') {
 						expect(record.actionName).toBe('globalSetStates');
 					}
 					return next(record);
-				}
+				}]
 			}
 		);
 		store.setModule('countWithoutMaps', countWithoutMaps);
@@ -951,6 +1065,7 @@ describe('globalSetStates', () => {
 		}
 		store.setLazyModule('count1', () => Promise.resolve(count));
 		store.globalSetStates(newStates);
+		// @ts-ignore
 		return store.loadModule('count1')
 			.then(() => {
 				expect(store.getModule('count1').state).toBe(newStates.count1);
@@ -960,7 +1075,14 @@ describe('globalSetStates', () => {
 
 
 describe('globalResetStates', () => {
+	let store: Store<M & {
+		aaaa: typeof count;
+		bbbb: typeof name;
+	}, {
+		lazyCount: () => Promise<typeof count>;
+	}>;
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{
 				count,
@@ -1217,6 +1339,7 @@ describe('globalResetStates', () => {
 describe('getAllStates', () => {
 	const initCount = 1;
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore({ name, count }, {}, {
 			middlewares: [
 				thunkMiddleware,

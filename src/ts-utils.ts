@@ -1,6 +1,6 @@
 export type ModuleEvent<AN extends string = string> = {
 	type: 'init' | 'update' | 'remove',
-	actionName?: AN,
+	actionName?: AN | 'globalSetStates' | 'globalResetStates',
 };
 
 export interface Listener<AN extends string = string> {
