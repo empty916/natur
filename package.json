@@ -1,6 +1,6 @@
 {
 	"name": "natur",
-	"version": "2.1.4",
+	"version": "2.1.5-beta1",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -16,6 +16,9 @@
 		"test:report": "jest --coverage",
 		"gzip": "gzip-size dist/natur.js"
 	},
+	"files": [
+		"dist"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/empty916/natur.git"
