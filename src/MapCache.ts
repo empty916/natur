@@ -67,6 +67,5 @@ export default class MapCache {
 		this.mapDepends = [];
 		this.depCache = [];
 		this.getState = () => ({});
-		this.dependKeys = {};
 	}
 }
