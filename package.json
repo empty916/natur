@@ -5,18 +5,12 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "npm run build:ts",
-		"build1": "npm run build:ts && npm run build:js",
-		"build:ts": "rimraf dist && tsc",
-		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
-		"build:min": "npm run build:ts && rollup -c && npm run gzip",
+		"build": "rimraf dist && tsc",
 		"pub": "yarn publish",
 		"pub:next": "yarn publish --tag next",
 		"prepublish": "yarn test && yarn build",
-		"dev": "webpack-dev-server --config ./example/webpack.config.js",
 		"test": "jest",
-		"test:report": "jest --coverage",
-		"gzip": "gzip-size dist/natur.js"
+		"test:report": "jest --coverage"
 	},
 	"files": [
 		"dist"
@@ -59,28 +53,14 @@
 		"@types/react": "^16.8.22",
 		"@types/react-dom": "^16.8.4",
 		"babel-jest": "^26.6.3",
-		"babel-loader": "^8.0.6",
 		"enzyme": "^3.10.0",
 		"enzyme-adapter-react-16": "^1.15.1",
-		"fork-ts-checker-webpack-plugin": "^1.5.0",
-		"gzip-size-cli": "^3.0.0",
-		"html-webpack-plugin": "3.2.0",
 		"jest": "^26.6.3",
 		"react": "^16.9.0",
 		"react-dom": "^16.9.0",
 		"redux": "^4.0.5",
 		"rimraf": "^2.6.3",
-		"rollup": "^1.10.1",
-		"rollup-plugin-babel": "^4.3.3",
-		"rollup-plugin-cleanup": "^3.1.1",
-		"rollup-plugin-license": "^0.8.1",
-		"rollup-plugin-node-resolve": "^5.2.0",
-		"rollup-plugin-terser": "^5.1.2",
-		"terser": "^4.1.2",
-		"typescript": "^4.0.2",
-		"webpack": "4.39.0",
-		"webpack-cli": "^3.3.2",
-		"webpack-dev-server": "^3.3.1"
+		"typescript": "^4.0.2"
 	},
 	"dependencies": {
 		"hoist-non-react-statics": "^3.3.0"
