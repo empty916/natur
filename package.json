@@ -1,6 +1,6 @@
 {
 	"name": "natur",
-	"version": "2.1.5-beta2",
+	"version": "2.1.5-beta3",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
