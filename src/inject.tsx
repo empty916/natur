@@ -171,7 +171,6 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 
 			if (!this.integralModulesName.length) {
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
-				console.warn(`${moduleNames.join()} 模块不存在!`);
 				return <WrappedComponent {...newProps} />;
 			}
 			if (this.state.modulesHasLoaded) {

@@ -811,11 +811,11 @@ describe('actions', () => {
 	test('dispatch error action', () => {
 		const countModule = store.getModule('count');
 		// @ts-ignore
-		expect(() => store.dispatch('count', 'inc2', countModule.state).count).toThrowError();
+		expect(store.dispatch('count', 'inc2', countModule.state)).toBe(undefined);
 		// @ts-ignore
-		expect(() => store.dispatch('count', 'inc/aa/22', countModule.state).count).toThrowError();
+		expect(store.dispatch('count', 'inc/aa/22', countModule.state)).toBe(undefined);
 		// @ts-ignore
-		expect(() => store.dispatch('inc', countModule.state).count).toThrowError();
+		expect(store.dispatch('inc', countModule.state)).toBe(undefined);
 	});
 	test('return no change state', () => {
 		let recordCache: any = null;

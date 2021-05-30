@@ -542,7 +542,6 @@ LM extends LazyStoreModules,
 		actionName: AN,
 		...arg: Parameters<StoreType[MN]["actions"][AN]>
 	): ReturnType<StoreType[MN]["actions"][AN]> => {
-		checkModuleIsValid(moduleName);
 		if (hasModule(moduleName)) {
 			const moduleProxyActions = createActionsProxy(moduleName as string);
 			if (actionName in moduleProxyActions!) {
