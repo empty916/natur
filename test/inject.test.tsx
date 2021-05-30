@@ -6,6 +6,7 @@ import {
 	App,
 	AppWithNoModule,
 	AppWithLoadErrorModule,
+// @ts-ignore
 } from './ui-demo/injectHoc';
 
 configure({ adapter: new Adapter() });

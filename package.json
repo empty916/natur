@@ -1,21 +1,20 @@
 {
 	"name": "natur",
-	"version": "2.1.4",
+	"version": "2.1.5",
 	"description": "react state management. support react 15.x, 16.x, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "npm run build:ts",
-		"build1": "npm run build:ts && npm run build:js",
-		"build:ts": "rimraf dist && tsc",
-		"build:js": "babel dist --out-dir dist && rimraf dist/inject.jsx",
-		"build:min": "npm run build:ts && rollup -c && npm run gzip",
-		"pub": "yarn test && yarn build && yarn publish",
-		"dev": "webpack-dev-server --config ./example/webpack.config.js",
+		"build": "rimraf dist && tsc",
+		"pub": "yarn publish",
+		"pub:next": "yarn publish --tag next",
+		"prepublish": "yarn test && yarn build",
 		"test": "jest",
-		"test:report": "jest --coverage",
-		"gzip": "gzip-size dist/natur.js"
+		"test:report": "jest --coverage"
 	},
+	"files": [
+		"dist"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/empty916/natur.git"
@@ -36,53 +35,29 @@
 		"@babel/cli": "^7.5.5",
 		"@babel/core": "^7.4.4",
 		"@babel/plugin-proposal-class-properties": "^7.4.4",
-		"@babel/plugin-proposal-decorators": "^7.4.4",
 		"@babel/plugin-proposal-export-default-from": "^7.2.0",
-		"@babel/plugin-proposal-function-bind": "^7.2.0",
-		"@babel/plugin-proposal-object-rest-spread": "^7.4.4",
 		"@babel/plugin-syntax-dynamic-import": "^7.2.0",
 		"@babel/plugin-transform-modules-commonjs": "^7.4.4",
-		"@babel/plugin-transform-react-jsx-self": "^7.2.0",
-		"@babel/plugin-transform-runtime": "^7.4.4",
 		"@babel/preset-env": "^7.4.4",
 		"@babel/preset-react": "^7.0.0",
 		"@babel/preset-typescript": "^7.3.3",
+		"@types/enzyme": "^3.10.8",
+		"@types/enzyme-adapter-react-16": "^1.0.6",
 		"@types/hoist-non-react-statics": "^3.3.1",
+		"@types/jest": "^26.0.23",
 		"@types/react": "^16.8.22",
 		"@types/react-dom": "^16.8.4",
-		"babel-loader": "^8.0.6",
+		"babel-jest": "^26.6.3",
 		"enzyme": "^3.10.0",
 		"enzyme-adapter-react-16": "^1.15.1",
-		"fork-ts-checker-webpack-plugin": "^1.5.0",
-		"gzip-size-cli": "^3.0.0",
-		"html-webpack-plugin": "3.2.0",
-		"jest": "^24.9.0",
+		"jest": "^26.6.3",
 		"react": "^16.9.0",
 		"react-dom": "^16.9.0",
 		"redux": "^4.0.5",
 		"rimraf": "^2.6.3",
-		"rollup": "^1.10.1",
-		"rollup-plugin-babel": "^4.3.3",
-		"rollup-plugin-cleanup": "^3.1.1",
-		"rollup-plugin-license": "^0.8.1",
-		"rollup-plugin-node-resolve": "^5.2.0",
-		"rollup-plugin-terser": "^5.1.2",
-		"terser": "^4.1.2",
-		"typescript": "^4.0.2",
-		"webpack": "4.39.0",
-		"webpack-cli": "^3.3.2",
-		"webpack-dev-server": "^3.3.1"
+		"typescript": "^4.0.2"
 	},
 	"dependencies": {
 		"hoist-non-react-statics": "^3.3.0"
-	},
-	"npmName": "natur",
-	"npmFileMap": [
-		{
-			"basePath": "/dist/",
-			"files": [
-				"*.js"
-			]
-		}
-	]
+	}
 }

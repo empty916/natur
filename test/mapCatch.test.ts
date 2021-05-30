@@ -2,31 +2,55 @@ import MapCache from '../src/MapCache'
 
 
 describe('map catch', () => {
-	let count = {};
-	let mapsCatche = {};
-	let proxyState;
-	let mapCallCount = 0;
-	beforeEach(() => {
-		count = {
-			state: {
-				count: 0,
-				name: 'count',
-				obj: [{
-					t: {
-						a: 1,
-					}
-				}, {
-					a: {
-						a: 2
-					},
-				}],
-				m: new Map([['m1', 1]])
-			},
+	const initCount = () => {
+		const state =  {
+			count: 0,
+			name: 'count',
+			obj: [{
+				t: {
+					a: 1,
+				}
+			}, {
+				a: {
+					a: 2
+				},
+			}],
+			m: new Map([['m1', 1]])
+		};
+		type CountState = typeof state;
+		const maps = {
+			isOdd: ['count', (count: CountState['count']) => {
+				mapCallCount ++;
+				return count % 2 !== 0;
+			}],
+			getSplitNameWhenCountIsOdd: ['count', 'name', (count: CountState['count'], name: CountState['name']) => {
+				mapCallCount ++;
+				if (count % 2 !== 0) {
+					return name;
+				}
+				return count;
+			}],
+			a1: ['obj[0].t.a', (a: number) => {
+				mapCallCount ++;
+				return a + 1
+			}],
+			a2: [
+				(state: CountState) => state.obj[1].a!.a,
+				(a: number) => {
+					mapCallCount ++;
+					return a + 1
+				}
+			],
+		};
+		type CountMaps = typeof maps;
+
+		return {
+			state,
 			actions: {
-				inc: state => ({ ...state, count: state.count + 1 }),
-				updateName: state => ({ ...state, name: state.name + 1 }),
-				dec: state => ({ ...state, count: state.count - 1 }),
-				addA1: state => ({
+				inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
+				updateName: (state: CountState) => ({ ...state, name: state.name + 1 }),
+				dec: (state: CountState) => ({ ...state, count: state.count - 1 }),
+				addA1: (state: CountState) => ({
 					...state,
 					obj: [{
 						t: {
@@ -38,7 +62,7 @@ describe('map catch', () => {
 						},
 					}]
 				}),
-				addA2: state => ({
+				addA2: (state: CountState) => ({
 					...state,
 					obj: [{
 						t: {
@@ -51,56 +75,30 @@ describe('map catch', () => {
 					}]
 				})
 			},
-			maps: {
-				isOdd: ['count', count => {
-					mapCallCount ++;
-					return count % 2 !== 0;
-				}],
-				getSplitNameWhenCountIsOdd: ['count', 'name', (count, name) => {
-					mapCallCount ++;
-					if (count % 2 !== 0) {
-						return name;
-					}
-					return count;
-				}],
-				a1: ['obj[0].t.a', a => {
-					mapCallCount ++;
-					return a + 1
-				}],
-				a2: [
-					state => state.obj[1].a.a,
-					a => {
-						mapCallCount ++;
-						return a + 1
-					}
-				],
-			}
-		}
-		proxyState = {};
-		for(let key in count.state) {
-			if (count.state.hasOwnProperty(key)) {
-				Object.defineProperty(proxyState, key, {
-					enumerable: true,
-					configurable: true,
-					get() {
-						if (MapCache.runningMap) {
-							MapCache.runningMap.addDependKey(key);
-						}
-						return count.state[key];
-					}
-				});
-			}
-		}
+			maps
+		};
+	};
+	let count = initCount();
+	type Count = typeof count;
+	type MapsCatche = {
+		[k in keyof Count['maps']]: MapCache;
+	}
+	let mapsCatche: MapsCatche = {} as any;
+
+	let mapCallCount = 0;
+	beforeEach(() => {
+		count = initCount();
+		
 		Object.keys(count.maps).forEach(mapKey => {
-			mapsCatche[mapKey] = new MapCache(
-				() => proxyState,
-				count.maps[mapKey],
+			mapsCatche[mapKey as keyof Count['maps']] = new MapCache(
+				() => count.state,
+				count.maps[mapKey as keyof Count['maps']],
 			)
 		})
 	})
 	const shouldCheckMapsDep = () => {
 		for(let i in mapsCatche) {
-			mapsCatche[i].shouldCheckCache();
+			mapsCatche[i as keyof MapsCatche].shouldCheckCache();
 		}
 	};
 	const inc = () => {
@@ -111,16 +109,16 @@ describe('map catch', () => {
 		count.state.count = count.state.count - 1;
 		shouldCheckMapsDep();
 	}
-	const updateName = (name) => {
+	const updateName = (name: Count['state']['name']) => {
 		count.state.name = name;
 		shouldCheckMapsDep();
 	}
-	const setA1 = a1 => {
-		count.state.obj[0].t.a = a1;
+	const setA1 = (a1: number) => {
+		count.state.obj[0].t!.a = a1;
 		shouldCheckMapsDep();
 	}
-	const setA2 = a2 => {
-		count.state.obj[1].a.a = a2;
+	const setA2 = (a2: number) => {
+		count.state.obj[1].a!.a = a2;
 		shouldCheckMapsDep();
 	}
 	test('map catch get value is correct', () => {
@@ -175,7 +173,7 @@ describe('map catch', () => {
 	});
 
 	test('map dep parser', () => {
-		const parser = (obj, keyPath) => {
+		const parser = (obj: any, keyPath: string): any => {
 			const formatKeyArr = keyPath.replace(/\[/g, '.').replace(/\]/g, '').split('.');
 			let value = obj;
 			for(let i = 0; i < formatKeyArr.length; i ++) {
@@ -192,40 +190,33 @@ describe('map catch', () => {
 			return value;
 		}
 		MapCache.setMapDepParser(parser);
-		count = {
-			state: {
-				count: 0,
-				m: new Map([['m1', 1]])
-			},
+		const countState = {
+			count: 0,
+			m: new Map([['m1', 1]])
+		};
+		type CountState = typeof countState;
+		const countMaps = {
+			mm1: [
+				'm.m1',
+				(mm1: number) => mm1 + 1
+			],
+		};
+		type CountMaps = typeof countMaps;
+		const count = {
+			state: countState,
 			actions: {
-				inc: state => ({ ...state, count: state.count + 1 }),
+				inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
 			},
-			maps: {
-				mm1: [
-					'm.m1',
-					mm1 => mm1 + 1
-				],
-			}
+			maps: countMaps,
 		}
-		proxyState = {};
-		for(let key in count.state) {
-			if (count.state.hasOwnProperty(key)) {
-				Object.defineProperty(proxyState, key, {
-					enumerable: true,
-					configurable: true,
-					get() {
-						if (MapCache.runningMap) {
-							MapCache.runningMap.addDependKey(key);
-						}
-						return count.state[key];
-					}
-				});
-			}
+		type MapsCatche = {
+			[k in keyof CountMaps]: MapCache;
 		}
+		let mapsCatche: MapsCatche = {} as any;
 		Object.keys(count.maps).forEach(mapKey => {
-			mapsCatche[mapKey] = new MapCache(
-				() => proxyState,
-				count.maps[mapKey],
+			mapsCatche[mapKey as keyof CountMaps] = new MapCache(
+				() => count.state,
+				count.maps[mapKey as keyof CountMaps],
 			)
 		})
 		expect(mapsCatche.mm1.getValue()).toBe(2);

@@ -1,6 +1,5 @@
 import { createStore } from '../src';
 import { isObj } from '../src/utils';
-import { getStoreInstance } from '../src/createStore';
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -8,63 +7,62 @@ import {
 	filterUndefinedMiddleware,
 	shallowEqualMiddleware, 
 	thunkMiddleware,
+    ThunkParams,
 } from '../src/middlewares'
 
-let store;
+let store: any;
+
+const countState = {
+    count: 0,
+    name: 'count',
+    obj: [1]
+};
+type CountState = typeof countState;
+
+const countMaps =  {
+    isOdd: ['count', (count: number) => count % 2 !== 0],
+};
+
+type CountMaps = typeof countMaps;
+
 const count = {
-	state: {
-		count: 0,
-		name: 'count',
-		obj: [1]
-	},
+	state: countState,
 	actions: {
-		inc: state => ({ ...state, count: state.count + 1 }),
-		thunkInc: () => ({getState, setState, getMaps, dispatch}) => {
+		inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
+		thunkInc: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
             dispatch('inc', getState());
             dispatch('count2/inc');
 
             return setState({ ...getState(), count: getState().count + 1 });
         },
-        thunkInc2: () => ({getState, setState, getMaps, dispatch}) => {
+        thunkInc2: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
             dispatch('inc', getState());
             dispatch('count2/inc');
             return { ...getState(), count: getState().count + 1 };
 		},
 		updateName: () => ({ name: 'tom' }),
-		asyncInc: state => Promise.resolve({ ...state, count: state.count + 1 }),
-		dec: state => ({ ...state, count: state.count - 1 }),
-		returnGet: state => state,
-		asyncReturnGet: state => Promise.resolve(state),
+		asyncInc: (state: CountState) => Promise.resolve({ ...state, count: state.count + 1 }),
+		dec: (state: CountState) => ({ ...state, count: state.count - 1 }),
+		returnGet: (state: CountState) => state,
+		asyncReturnGet: (state: CountState) => Promise.resolve(state),
 		throwErrorAction: () => {
 			throw new Error('something error');
 		},
 		asyncThrowErrorAction: () => Promise.reject('async something error'),
 	},
-	maps: {
-        isOdd: ['count', count => count % 2 !== 0],
-	}
+	maps: countMaps,
 }
 
 const count2 = {
     state: 0, 
     actions: {
-        inc: () => ({getState, setState}) => setState(getState() + 1),
+        inc: () => ({getState, setState}: ThunkParams<number>) => setState(getState() + 1),
     }
 }
+
 describe('actions', () => {
-	beforeEach(() => {
-        let recordCache = null;
-        // store = createStore({ count }, {}, {}, [
-        //     thunkMiddleware,
-        //     promiseMiddleware,
-        //     fillObjectRestDataMiddleware,
-        //     shallowEqualMiddleware,
-        //     filterNonObjectMiddleware,
-        //     filterUndefinedMiddleware,
-        // ]);
-	});
 	test('thunkMiddleware', () => {
-        store = createStore({ count, count2 }, {}, {
+        const store = createStore({ count, count2 }, {}, {
             middlewares: [
                 thunkMiddleware,
                 filterUndefinedMiddleware,
@@ -80,7 +78,7 @@ describe('actions', () => {
         // expect(countModule.actions.thunkInc2()).toBe(true);
     });
     test('promiseMiddleware', () => {
-        store = createStore({ count }, {}, {
+        const store = createStore({ count }, {}, {
             middlewares: [
                 promiseMiddleware,
             ]
@@ -92,7 +90,7 @@ describe('actions', () => {
             })
     });
     test('fillObjectRestDataMiddleware', () => {
-        store = createStore({ count }, {}, {
+        const store = createStore({ count }, {}, {
             middlewares: [
                 fillObjectRestDataMiddleware,
             ]
@@ -102,7 +100,7 @@ describe('actions', () => {
 		expect(countModule.actions.updateName().count).toBe(0);
     });
     test('shallowEqualMiddleware', () => {
-        store = createStore({ count }, {}, {
+        const store = createStore({ count }, {}, {
             middlewares: [
                 shallowEqualMiddleware,
             ]
@@ -113,24 +111,24 @@ describe('actions', () => {
 		expect(newCountModule.state).toBe(countModule.state);
     });
     test('filterNonObjectMiddleware', () => {
-        store = createStore({ count }, {}, {
+        const store = createStore({ count }, {}, {
             middlewares: [
                 filterNonObjectMiddleware,
             ]
         });
         let countModule = store.getModule('count');
-        expect(countModule.actions.returnGet(null)).toBe(null);
+        expect(countModule.actions.returnGet(null as any)).toBe(null);
         let newCountModule = store.getModule('count');
 		expect(newCountModule.state).toBe(countModule.state);
     });
     test('filterUndefinedMiddleware', () => {
-        store = createStore({ count }, {}, {
+        const store = createStore({ count }, {}, {
             middlewares: [
                 filterUndefinedMiddleware,
             ]
         });
         let countModule = store.getModule('count');
-        expect(countModule.actions.returnGet(undefined)).toBe(undefined);
+        expect(countModule.actions.returnGet(undefined as any)).toBe(undefined);
         let newCountModule = store.getModule('count');
 		expect(newCountModule.state).toBe(countModule.state);
     });

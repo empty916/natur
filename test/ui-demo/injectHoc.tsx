@@ -6,7 +6,6 @@ import {
 	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware
 } from '../../src/middlewares'
-import { resolvePlugin } from "@babel/core";
 
 const name = {
 	state: {
@@ -14,12 +13,12 @@ const name = {
 		count: 0,
 	},
 	actions: {
-		updateText: text => ({text}),
-		inc: count => ({count: count + 1}),
+		updateText: (text: string) => ({text}),
+		inc: (count: number) => ({count: count + 1}),
 	},
 	maps: {
-		textSplit: ['text', text => text.split('').join(',')],
-		firstChar: ['text', text => text[0]],
+		textSplit: ['text', (text: string) => text.split('').join(',')],
+		firstChar: ['text', (text: string) => text[0]],
 	}
 }
 const lazyName = {
@@ -27,17 +26,17 @@ const lazyName = {
 		text: 'name',
 	},
 	actions: {
-		updateText: text => ({text}),
+		updateText: (text: string) => ({text}),
 	},
 	maps: {
-		textSplit: ['text', text => text.split('').join(',')],
+		textSplit: ['text', (text: string) => text.split('').join(',')],
 	}
 }
 
 export const store = createStore(
 	{name},
 	{
-		lazyName: () => new Promise(res => {
+		lazyName: () => new Promise<typeof lazyName>(res => {
 			setTimeout(() => {
 				res(lazyName);
 			}, 500);
@@ -58,13 +57,17 @@ const Inject = createInject({
 	loadingComponent: () => <>loading</>
 });
 
-const injectSome = Inject(['name', {}], 'lazyName');
 
-const App = Inject(
-	['name', {state: ['text'], maps: [m => m.textSplit]}], 
+const appInjector = Inject(
+	['name', {
+		state: ['text'],
+		maps: ['textSplit']
+	}], 
 	'lazyName', 
-	'name1'
-)(({name, lazyName}) => {
+	'name1' as any
+);
+
+const App = appInjector(({name, lazyName}) => {
 	const { state, actions, maps } = name;
 	return (
 		<>
@@ -78,7 +81,9 @@ const App = Inject(
 	);
 });
 
-const AppWithNoModule = Inject('name1')(({name}) => {
+const name1Injector = Inject('name1' as any);
+
+const AppWithNoModule = name1Injector(({name}) => {
 	// const { state, actions, maps } = name;
 	return (
 		<>
