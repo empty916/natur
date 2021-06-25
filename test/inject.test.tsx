@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {StrictMode} from 'react';
 import {configure, mount} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import {
@@ -12,7 +12,11 @@ import {
 configure({ adapter: new Adapter() });
 
 test('Inject Hoc', () => {
-	let app = mount(<App />);
+	let app = mount((
+		<StrictMode>
+			<App />
+		</StrictMode>
+	));
 	let appWithoutModule = mount(<AppWithNoModule />);
 	let appWithLoadErrorModule = mount(<AppWithLoadErrorModule />);
 	expect(app.text()).toBe('loading');
@@ -24,6 +28,7 @@ test('Inject Hoc', () => {
 			expect(appWithLoadErrorModule.text()).toBe('loading');
 
 			app.update();
+			
 			expect(app.find('#lazy-name-input').props().value).toBe('name');
 
 			app.find('#lazy-name-input').simulate('change', {target: {value: 'name1'}});

@@ -74,5 +74,7 @@
 		"example",
 		"src/inject_hooks.tsx",
 		"test",
+		"dist",
+		"coverage"
 	]
 }

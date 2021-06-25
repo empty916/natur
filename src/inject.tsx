@@ -49,6 +49,8 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		private LoadingComponent: TReactComponent<{}>;
 		private storeModuleDiff: Diff | undefined;
 		private destroyCache: Function = () => {};
+		private isSubscribing = false;
+		private hasUnmounted = false;
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -66,6 +68,50 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 			this.LoadingComponent = LoadingComponent || Loading;
 			this.loadLazyModule();
+		}
+		loadLazyModule() {
+			const {
+				store,
+				unLoadedModules,
+			} = this;
+			const { modulesHasLoaded } = this.state;
+			
+			if (!modulesHasLoaded) {
+				Promise.all(
+					unLoadedModules.map(mn => store.loadModule(mn))
+				)
+				.then(() => {
+					if (this.hasUnmounted === false) {
+						this.setState({
+							modulesHasLoaded: true,
+						})
+					}
+				})
+				.catch(() => {
+					if (this.hasUnmounted === false) {
+						this.setState({
+							modulesHasLoaded: false,
+						})
+					}
+				});
+			}
+		}
+		subscribe() {
+			if (this.isSubscribing || this.state.modulesHasLoaded === false) {
+				return;
+			}
+			// 初始化store监听
+			this.initStoreListner();
+			this.initDiff();
+			this.isSubscribing = true;
+		}
+		unsubscribe() {
+			this.unsubStore();
+			this.destroyCache();
+			this.unsubStore = () => {};
+			this.destroyCache = () => {};
+			this.isSubscribing = false;
+			this.hasUnmounted = true;
 		}
 		setStoreStateChanged(moduleName: ModuleName) {
 			if (!depDecs[moduleName]) {
@@ -105,40 +151,8 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, () => setStoreStateChanged(mn)));
 			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 		}
-		loadLazyModule() {
-			const {
-				store,
-				unLoadedModules,
-			} = this;
-			const { modulesHasLoaded } = this.state;
-			
-			if (!modulesHasLoaded) {
-				Promise.all(
-					unLoadedModules.map(mn => store.loadModule(mn))
-				)
-				.then(() => {
-					this.initStoreListner();
-					this.initDiff();
-					this.setState({
-						modulesHasLoaded: true,
-					})
-				})
-				.catch(() => {
-					this.setState({
-						modulesHasLoaded: false,
-					})
-				});
-			} else {
-				// 初始化store监听
-				this.initStoreListner();
-				this.initDiff();
-			}
-		}
 		componentWillUnmount() {
-			this.unsubStore();
-			this.destroyCache();
-			this.unsubStore = () => {};
-			this.destroyCache = () => {};
+			this.unsubscribe();
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
 			const propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 1);
@@ -147,11 +161,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		}
 		init() {
 			const store = storeGetter();
-			// if (store === undefined) {
-			// 	const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
-			// 	console.error(errMsg);
-			// 	throw new Error(errMsg);
-			// }
+			
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块
 			const integralModulesName = moduleNames.filter(mn => {
@@ -164,6 +174,10 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			return { store, integralModulesName };
 		}
 		render() {
+			if (this.hasUnmounted) {
+				this.hasUnmounted = false;
+			}
+			this.subscribe();
 			const { forwardedRef, ...props } = this.props;
 			let newProps = Object.assign({}, props, {
 				ref: forwardedRef,
