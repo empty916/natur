@@ -197,17 +197,19 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
 				return <WrappedComponent {...newProps} />;
 			}
-			if (this.state.modulesHasLoaded) {
-				const { store, integralModulesName } = this;
-				this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => {
-					res[mn] = store.getModule(mn);
-					return res;
-				}, {} as Modules);
+			if (this.state.modulesHasLoaded === false) {
+				return <this.LoadingComponent />;
 			}
+			const { store, integralModulesName } = this;
+			
+			this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => {
+				res[mn] = store.getModule(mn);
+				return res;
+			}, {} as Modules);
+
 			Object.assign(newProps, this.injectModules)
 
-			const render = <WrappedComponent {...newProps} />;
-			return this.state.modulesHasLoaded ? render : <this.LoadingComponent />;
+			return <WrappedComponent {...newProps} />;
 		}
 	}
 	let FinalConnect:any = Connect;
