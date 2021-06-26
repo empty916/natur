@@ -1,6 +1,6 @@
 module.exports = {
 	verbose: true,
-	coveragePathIgnorePatterns: ["natur/example", "natur/test/ui-demo"],
+	coveragePathIgnorePatterns: ["/test/ui-demo"],
 	testPathIgnorePatterns: [
 		// "natur/test/hooks.test.js",
 		// "natur/test/inject.test.js",

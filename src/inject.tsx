@@ -50,7 +50,10 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		private storeModuleDiff: Diff | undefined;
 		private destroyCache: Function = () => {};
 		private isSubscribing = false;
-		private hasUnmounted = false;
+		/**
+		 * 组件还未渲染
+		 */
+		private isUnmounted = true;
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -81,22 +84,29 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 					unLoadedModules.map(mn => store.loadModule(mn))
 				)
 				.then(() => {
-					if (this.hasUnmounted === false) {
+					if (this.isUnmounted === false) {
 						this.setState({
 							modulesHasLoaded: true,
 						})
+					} else {
+						this.state.modulesHasLoaded = true;
 					}
 				})
 				.catch(() => {
-					if (this.hasUnmounted === false) {
+					if (this.isUnmounted === false) {
 						this.setState({
 							modulesHasLoaded: false,
 						})
+					} else {
+						this.state.modulesHasLoaded = true;
 					}
 				});
 			}
 		}
 		subscribe() {
+			/**
+			 * 如果组件已经订阅了，或者lazy模块还没加载完，就不用订阅了
+			 */
 			if (this.isSubscribing || this.state.modulesHasLoaded === false) {
 				return;
 			}
@@ -111,7 +121,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			this.unsubStore = () => {};
 			this.destroyCache = () => {};
 			this.isSubscribing = false;
-			this.hasUnmounted = true;
+			this.isUnmounted = true;
 		}
 		setStoreStateChanged(moduleName: ModuleName) {
 			if (!depDecs[moduleName]) {
@@ -174,8 +184,8 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			return { store, integralModulesName };
 		}
 		render() {
-			if (this.hasUnmounted) {
-				this.hasUnmounted = false;
+			if (this.isUnmounted) {
+				this.isUnmounted = false;
 			}
 			this.subscribe();
 			const { forwardedRef, ...props } = this.props;
