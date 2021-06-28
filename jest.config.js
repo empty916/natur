@@ -1,5 +1,5 @@
 module.exports = {
-	verbose: true,
+	verbose: false,
 	coveragePathIgnorePatterns: ["/test/ui-demo"],
 	testPathIgnorePatterns: [
 		// "natur/test/hooks.test.js",

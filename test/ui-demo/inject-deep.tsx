@@ -7,6 +7,9 @@ import {
 	shallowEqualMiddleware
 } from '../../src/middlewares'
 
+console.warn = () => {};
+
+
 const name = {
 	state: {
 		text: 'name',
