@@ -71,8 +71,9 @@
 	},
   	"exclude": [
 		"node_modules",
-		"example",
-		"src/inject_hooks.tsx",
 		"test",
+	],
+	"include": [
+		"src"
 	]
 }

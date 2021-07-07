@@ -39,7 +39,7 @@ export const store = createStore(
 		lazyName: () => new Promise<typeof lazyName>(res => {
 			setTimeout(() => {
 				res(lazyName);
-			}, 500);
+			}, 100);
 		}),
 		lazyLoadError: () => Promise.reject(lazyName),
 	},
@@ -52,13 +52,13 @@ export const store = createStore(
 		]
 	}
 );
-const Inject = createInject({
+const inject = createInject({
 	storeGetter: () => store,
-	loadingComponent: () => <>loading</>
+	loadingComponent: () => <div role='loading'>loading</div>
 });
 
 
-const appInjector = Inject(
+const appInjector = inject(
 	['name', {
 		state: ['text'],
 		maps: ['textSplit']
@@ -71,39 +71,16 @@ const App = appInjector(({name, lazyName}) => {
 	const { state, actions, maps } = name;
 	return (
 		<>
-			<input id='name-input' value={state.text} onChange={e => actions.updateText(e.target.value)} />
-			<input id='lazy-name-input' value={lazyName.state.text} onChange={e => lazyName.actions.updateText(e.target.value)} />
+			<input role='name-input' value={state.text} onChange={e => actions.updateText(e.target.value)} />
+			<input role='lazy-name-input' value={lazyName.state.text} onChange={e => lazyName.actions.updateText(e.target.value)} />
 			<br/>
-			<button onClick={() => actions.inc(state.count)}>+</button>
-			<span id='count'>{state.count + ''}</span>
-			<span id='textSplit'>{maps.textSplit}</span>
+			<button role='btn-inc' onClick={() => actions.inc(state.count)}>+</button>
+			<span role='count'>{state.count + ''}</span>
+			<span role='text-split'>{maps.textSplit}</span>
 		</>
 	);
 });
-
-const name1Injector = Inject('name1' as any);
-
-const AppWithNoModule = name1Injector(({name}) => {
-	// const { state, actions, maps } = name;
-	return (
-		<>
-			aaa
-		</>
-	);
-});
-
-const AppWithLoadErrorModule = Inject('lazyLoadError')(({lazyLoadError}) => {
-	return (
-		<>
-			aaa
-		</>
-	);
-});
-
-// Inject.setLoadingComponent()
 
 export {
 	App,
-	AppWithNoModule,
-	AppWithLoadErrorModule,
 };

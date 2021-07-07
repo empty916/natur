@@ -49,6 +49,11 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		private LoadingComponent: TReactComponent<{}>;
 		private storeModuleDiff: Diff | undefined;
 		private destroyCache: Function = () => {};
+		private isSubscribing = false;
+		/**
+		 * 组件还未渲染
+		 */
+		private isUnmounted = true;
 		state: Tstate = {
 			storeStateChange: {},
 			modulesHasLoaded: false,
@@ -66,6 +71,57 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
 			this.LoadingComponent = LoadingComponent || Loading;
 			this.loadLazyModule();
+		}
+		loadLazyModule() {
+			const {
+				store,
+				unLoadedModules,
+			} = this;
+			const { modulesHasLoaded } = this.state;
+			
+			if (!modulesHasLoaded) {
+				Promise.all(
+					unLoadedModules.map(mn => store.loadModule(mn))
+				)
+				.then(() => {
+					if (this.isUnmounted === false) {
+						this.setState({
+							modulesHasLoaded: true,
+						})
+					} else {
+						this.state.modulesHasLoaded = true;
+					}
+				})
+				.catch(() => {
+					if (this.isUnmounted === false) {
+						this.setState({
+							modulesHasLoaded: false,
+						})
+					} else {
+						this.state.modulesHasLoaded = true;
+					}
+				});
+			}
+		}
+		subscribe() {
+			/**
+			 * 如果组件已经订阅了，或者lazy模块还没加载完，就不用订阅了
+			 */
+			if (this.isSubscribing || this.state.modulesHasLoaded === false) {
+				return;
+			}
+			// 初始化store监听
+			this.initStoreListner();
+			this.initDiff();
+			this.isSubscribing = true;
+		}
+		unsubscribe() {
+			this.unsubStore();
+			this.destroyCache();
+			this.unsubStore = () => {};
+			this.destroyCache = () => {};
+			this.isSubscribing = false;
+			this.isUnmounted = true;
 		}
 		setStoreStateChanged(moduleName: ModuleName) {
 			if (!depDecs[moduleName]) {
@@ -105,40 +161,8 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			const unsubscribes = integralModulesName.map(mn => store.subscribe(mn, () => setStoreStateChanged(mn)));
 			this.unsubStore = () => unsubscribes.forEach(fn => fn());
 		}
-		loadLazyModule() {
-			const {
-				store,
-				unLoadedModules,
-			} = this;
-			const { modulesHasLoaded } = this.state;
-			
-			if (!modulesHasLoaded) {
-				Promise.all(
-					unLoadedModules.map(mn => store.loadModule(mn))
-				)
-				.then(() => {
-					this.initStoreListner();
-					this.initDiff();
-					this.setState({
-						modulesHasLoaded: true,
-					})
-				})
-				.catch(() => {
-					this.setState({
-						modulesHasLoaded: false,
-					})
-				});
-			} else {
-				// 初始化store监听
-				this.initStoreListner();
-				this.initDiff();
-			}
-		}
 		componentWillUnmount() {
-			this.unsubStore();
-			this.destroyCache();
-			this.unsubStore = () => {};
-			this.destroyCache = () => {};
+			this.unsubscribe();
 		}
 		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
 			const propsChanged = !isEqualWithDepthLimit(this.props, nextProps, 1);
@@ -147,11 +171,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 		}
 		init() {
 			const store = storeGetter();
-			// if (store === undefined) {
-			// 	const errMsg = '\n 请先创建store实例！\n Please create a store instance first.';
-			// 	console.error(errMsg);
-			// 	throw new Error(errMsg);
-			// }
+			
 			const allModuleNames = store.getAllModuleName();
 			// 获取store中存在的模块
 			const integralModulesName = moduleNames.filter(mn => {
@@ -164,6 +184,10 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			return { store, integralModulesName };
 		}
 		render() {
+			if (this.isUnmounted) {
+				this.isUnmounted = false;
+			}
+			this.subscribe();
 			const { forwardedRef, ...props } = this.props;
 			let newProps = Object.assign({}, props, {
 				ref: forwardedRef,
@@ -173,17 +197,19 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
 				return <WrappedComponent {...newProps} />;
 			}
-			if (this.state.modulesHasLoaded) {
-				const { store, integralModulesName } = this;
-				this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => {
-					res[mn] = store.getModule(mn);
-					return res;
-				}, {} as Modules);
+			if (this.state.modulesHasLoaded === false) {
+				return <this.LoadingComponent />;
 			}
+			const { store, integralModulesName } = this;
+			
+			this.injectModules = integralModulesName.reduce((res, mn: ModuleName) => {
+				res[mn] = store.getModule(mn);
+				return res;
+			}, {} as Modules);
+
 			Object.assign(newProps, this.injectModules)
 
-			const render = <WrappedComponent {...newProps} />;
-			return this.state.modulesHasLoaded ? render : <this.LoadingComponent />;
+			return <WrappedComponent {...newProps} />;
 		}
 	}
 	let FinalConnect:any = Connect;
