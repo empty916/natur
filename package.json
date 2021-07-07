@@ -9,8 +9,8 @@
 		"pub": "yarn publish",
 		"pub:next": "yarn publish --tag next",
 		"prepublish": "yarn test && yarn build",
-		"test": "jest",
-		"test:report": "jest --coverage"
+		"test": "jest --silent",
+		"test:report": "jest --coverage  --silent"
 	},
 	"files": [
 		"dist"
