@@ -3,8 +3,10 @@ import { Store, InjectStoreModules, Modules, LazyStoreModules } from "./ts-utils
 
 type Fun<P> = (p: P) => any;
 
-export type ModuleDepDec<MN extends string = string, ST extends InjectStoreModules = InjectStoreModules> = [MN, {
-	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
+export type ModuleDepDec<ST extends InjectStoreModules = InjectStoreModules, MN extends string = string> = [MN, {
+	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: 
+		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : 
+			k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
 }]
 
 export type DepDecs = {

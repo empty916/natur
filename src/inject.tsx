@@ -221,6 +221,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	return hoistStatics(FinalConnect, WrappedComponent);
 }
 
+
 const createInject = <
 	M extends Modules,
 	LM extends LazyStoreModules,
@@ -232,7 +233,33 @@ const createInject = <
 	storeGetter: StoreGetter<M, LM>
 	loadingComponent?: TReactComponent<{}>
 }) => {
-	function Inject<MNS extends Extract<keyof ST, string>>(...moduleDec: Array<MNS|ModuleDepDec<MNS, ST>>) {
+	function Inject<
+		MNS1 extends Extract<keyof ST, string>,
+		MNS2 extends Extract<keyof ST, string>,
+		MNS3 extends Extract<keyof ST, string>,
+		MNS4 extends Extract<keyof ST, string>,
+		MNS5 extends Extract<keyof ST, string>,
+		MNS6 extends Extract<keyof ST, string>,
+		MNS7 extends Extract<keyof ST, string>,
+		MNS8 extends Extract<keyof ST, string>,
+		MNS9 extends Extract<keyof ST, string>,
+		MNS10 extends Extract<keyof ST, string>,
+		MNS11 extends Extract<keyof ST, string>,
+	>(...moduleDec: Partial<
+		[
+			MNS1|ModuleDepDec<ST, MNS1>,
+			MNS2|ModuleDepDec<ST, MNS2>,
+			MNS3|ModuleDepDec<ST, MNS3>,
+			MNS4|ModuleDepDec<ST, MNS4>,
+			MNS5|ModuleDepDec<ST, MNS5>,
+			MNS6|ModuleDepDec<ST, MNS6>,
+			MNS7|ModuleDepDec<ST, MNS7>,
+			MNS8|ModuleDepDec<ST, MNS8>,
+			MNS9|ModuleDepDec<ST, MNS9>,
+			MNS10|ModuleDepDec<ST, MNS10>,
+			...Array<MNS11|ModuleDepDec<ST, MNS11>>
+		]
+	>) {
 		const depDecs: DepDecs = {};
 		const moduleNames = moduleDec.map(m => {
 			if (isModuleDepDec(m)) {
@@ -241,6 +268,17 @@ const createInject = <
 			}
 			return m as string;
 		});
+		type MNS = MNS1|
+					MNS2|
+					MNS3|
+					MNS4|
+					MNS5|
+					MNS6|
+					MNS7|
+					MNS8|
+					MNS9|
+					MNS10|
+					MNS11;
 		const connectHOC = <P extends Pick<ST, MNS>>(
 			WrappedComponent: TReactComponent<P>,
 			LoadingComponent: TReactComponent<{}> = loadingComponent
