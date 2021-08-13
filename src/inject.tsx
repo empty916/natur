@@ -244,7 +244,6 @@ const createInject = <
 		MNS8 extends Extract<keyof ST, string>,
 		MNS9 extends Extract<keyof ST, string>,
 		MNS10 extends Extract<keyof ST, string>,
-		MNS11 extends Extract<keyof ST, string>,
 	>(...moduleDec: Partial<
 		[
 			MNS1|ModuleDepDec<ST, MNS1>,
@@ -256,8 +255,7 @@ const createInject = <
 			MNS7|ModuleDepDec<ST, MNS7>,
 			MNS8|ModuleDepDec<ST, MNS8>,
 			MNS9|ModuleDepDec<ST, MNS9>,
-			MNS10|ModuleDepDec<ST, MNS10>,
-			...Array<MNS11|ModuleDepDec<ST, MNS11>>
+			...Array<MNS10|ModuleDepDec<ST, MNS1>>
 		]
 	>) {
 		const depDecs: DepDecs = {};
@@ -277,8 +275,7 @@ const createInject = <
 					MNS7|
 					MNS8|
 					MNS9|
-					MNS10|
-					MNS11;
+					MNS10;
 		const connectHOC = <P extends Pick<ST, MNS>>(
 			WrappedComponent: TReactComponent<P>,
 			LoadingComponent: TReactComponent<{}> = loadingComponent
