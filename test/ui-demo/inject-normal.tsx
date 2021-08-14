@@ -41,6 +41,11 @@ export const store = createStore(
 				res(lazyName);
 			}, 100);
 		}),
+		lazyName2: () => new Promise<typeof lazyName>(res => {
+			setTimeout(() => {
+				res(lazyName);
+			}, 100);
+		}),
 		lazyLoadError: () => Promise.reject(lazyName),
 	},
 	{
@@ -67,7 +72,14 @@ const appInjector = inject(
 	'name1' as any
 );
 
-const App = appInjector(({name, lazyName}) => {
+const appInjector2 = inject(
+	'name',
+	'lazyName', 
+	'lazyName2'
+)
+.watch('name', {state: ['text',], maps: ['textSplit']});
+
+const _App = ({name, lazyName}: typeof appInjector2.type) => {
 	const { state, actions, maps } = name;
 	return (
 		<>
@@ -79,8 +91,13 @@ const App = appInjector(({name, lazyName}) => {
 			<span role='text-split'>{maps.textSplit}</span>
 		</>
 	);
-});
+}
+
+const App = appInjector(_App);
+
+const App2 = appInjector2(_App);
 
 export {
 	App,
+	App2,
 };

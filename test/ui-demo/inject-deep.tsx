@@ -42,11 +42,9 @@ const inject = createInject({
 
 
 const injector = inject(
-	['name', {
-		state: ['text'],
-		maps: ['textSplit']
-	}],
-);
+	'name',
+)
+.watch('name', {state: ['text'], maps: ['textSplit']})
 
 const Son = injector(({name}) => {
 	React.useEffect(() => {
