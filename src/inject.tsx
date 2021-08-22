@@ -29,7 +29,7 @@ type Tstate = {
 
 export type StoreGetter<M extends Modules, LM extends LazyStoreModules> = () => Store<M, LM>;
 
-type connectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
+type ConnectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
 
 const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	moduleNames: Array<ModuleName>,
@@ -37,7 +37,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	storeGetter: StoreGetter<M, LM>,
 	WrappedComponent: TReactComponent<P>,
 	LoadingComponent?: TReactComponent<any>,
-): connectReturn<P, SP> => {
+): ConnectReturn<P, SP> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
 	class Connect extends React.Component<ConnectProps> {
@@ -221,6 +221,18 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	return hoistStatics(FinalConnect, WrappedComponent);
 }
 
+type ConnectFun<
+	ST extends InjectStoreModules,
+	MNS extends Extract<keyof ST, string>,
+> = {
+	<P extends Pick<ST, MNS>, SP = Pick<ST, MNS>>(
+		WC: TReactComponent<P>,
+		LC?: TReactComponent<{}>
+	): ConnectReturn<P, SP>;
+	type: Pick<ST, MNS>;
+	watch<MN extends MNS>(mn: MN, dep: ModuleDepDec<ST, MN>[1]): ConnectFun<ST, MNS>;
+};
+
 
 const createInject = <
 	M extends Modules,
@@ -234,30 +246,9 @@ const createInject = <
 	loadingComponent?: TReactComponent<{}>
 }) => {
 	function Inject<
-		MNS1 extends Extract<keyof ST, string>,
-		MNS2 extends Extract<keyof ST, string>,
-		MNS3 extends Extract<keyof ST, string>,
-		MNS4 extends Extract<keyof ST, string>,
-		MNS5 extends Extract<keyof ST, string>,
-		MNS6 extends Extract<keyof ST, string>,
-		MNS7 extends Extract<keyof ST, string>,
-		MNS8 extends Extract<keyof ST, string>,
-		MNS9 extends Extract<keyof ST, string>,
-		MNS10 extends Extract<keyof ST, string>,
-	>(...moduleDec: Partial<
-		[
-			MNS1|ModuleDepDec<ST, MNS1>,
-			MNS2|ModuleDepDec<ST, MNS2>,
-			MNS3|ModuleDepDec<ST, MNS3>,
-			MNS4|ModuleDepDec<ST, MNS4>,
-			MNS5|ModuleDepDec<ST, MNS5>,
-			MNS6|ModuleDepDec<ST, MNS6>,
-			MNS7|ModuleDepDec<ST, MNS7>,
-			MNS8|ModuleDepDec<ST, MNS8>,
-			MNS9|ModuleDepDec<ST, MNS9>,
-			...Array<MNS10|ModuleDepDec<ST, MNS1>>
-		]
-	>) {
+		MNS extends Extract<keyof ST, string>,
+	>(...moduleDec: Array<MNS|ModuleDepDec<ST, MNS>>
+	) {
 		const depDecs: DepDecs = {};
 		const moduleNames = moduleDec.map(m => {
 			if (isModuleDepDec(m)) {
@@ -266,16 +257,6 @@ const createInject = <
 			}
 			return m as string;
 		});
-		type MNS = MNS1|
-					MNS2|
-					MNS3|
-					MNS4|
-					MNS5|
-					MNS6|
-					MNS7|
-					MNS8|
-					MNS9|
-					MNS10;
 		const connectHOC = <P extends Pick<ST, MNS>>(
 			WrappedComponent: TReactComponent<P>,
 			LoadingComponent: TReactComponent<{}> = loadingComponent
@@ -283,6 +264,12 @@ const createInject = <
 
 		const type = null as any as Pick<ST, MNS>;
 		connectHOC.type = type;
+		connectHOC.watch = function watch<MN extends MNS>(mn: MN, dep: ModuleDepDec<ST, MN>[1]): ConnectFun<ST, MNS> {
+			if (moduleNames.includes(mn) && isModuleDepDec([mn, dep])) {
+				depDecs[mn] = dep;
+			}
+			return connectHOC as ConnectFun<ST, MNS>;
+		}
 		return connectHOC;
 	}
 
