@@ -13,10 +13,13 @@
 	 Modules,
 	 InjectStoreModules, LazyStoreModules, GenerateStoreType, PickLazyStoreModules
  } from './ts-utils';
- import {isEqualWithDepthLimit} from './utils';
+ import {isEqualWithDepthLimit, supportRef} from './utils';
  import {ModuleDepDec, isModuleDepDec, DepDecs, Diff, initDiff} from './injectCache';
  
- type TReactComponent<P> = React.FC<P> | React.ComponentClass<P>;
+
+ type RP<T> = {ref?: React.Ref<T>};
+
+ type TReactComponent<P extends RP<any>> = React.FC<P> | React.ComponentClass<P>;
  type ModuleName = string;
  type ModuleNames = ModuleName[];
  
@@ -29,16 +32,28 @@
  
  export type StoreGetter<M extends Modules, LM extends LazyStoreModules> = () => Store<M, LM>;
  
- type ConnectReturn<P, SP> = React.ComponentClass<Omit<P, keyof SP> & { forwardedRef?: React.Ref<any> }>
+ export type ConnectReturn<P extends RP<any>, SP, WC extends TReactComponent<P>> = WC extends React.FC ? 
+ React.FC<Omit<P, keyof SP> & {
+	forwardedRef?: React.Ref<P['ref']>;
+	ref?: React.Ref<P['ref']>;
+	// forwardedRef?: React.Ref<any>;
+	// ref?: React.Ref<any>;
+ }> :
+ React.ComponentClass<Omit<P, keyof SP> & {
+	forwardedRef?: React.Ref<P['ref']>;
+	ref?: React.Ref<P['ref']>;
+	// forwardedRef?: React.Ref<any>;
+	// ref?: React.Ref<any>;
+ }>;
  
- const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
+ const connect = <P extends RP<any>, SP, M extends Modules, LM extends LazyStoreModules>(
 	 moduleNames: Array<ModuleName>,
 	 depDecs: DepDecs,
 	 storeGetter: StoreGetter<M, LM>,
 	 WrappedComponent: TReactComponent<P>,
 	 LoadingComponent?: TReactComponent<any>,
- ): ConnectReturn<P, SP> => {
-	 type ConnectProps = P & { forwardedRef: React.Ref<any> };
+ ): ConnectReturn<P, SP, TReactComponent<P>> => {
+	 type ConnectProps = P & { forwardedRef: P['ref'] };
  
 	 class Connect extends React.Component<ConnectProps> {
 		 private store: Store<M, LM>;
@@ -190,7 +205,7 @@
 			 this.subscribe();
 			 const { forwardedRef, ...props } = this.props;
 			 let newProps = Object.assign({}, props, {
-				 ref: forwardedRef,
+				 ref:  supportRef(WrappedComponent) ? forwardedRef : undefined,
 			 }) as any as P;
  
 			 if (!this.integralModulesName.length) {
@@ -214,7 +229,7 @@
 	 }
 	 let FinalConnect:any = Connect;
 	 if (!!React.forwardRef) {
-		 FinalConnect = React.forwardRef<any, any>(
+		 FinalConnect = React.forwardRef<any, P>(
 			 function ForwardConnect(props: P, ref) {return <Connect {...props} forwardedRef={ref} />}
 		 );
 	 }
@@ -228,7 +243,7 @@
 	 <P extends Pick<ST, MNS>, SP = Pick<ST, MNS>>(
 		 WC: TReactComponent<P>,
 		 LC?: TReactComponent<{}>
-	 ): ConnectReturn<P, SP>;
+	 ): ConnectReturn<P, SP, TReactComponent<P>>;
 	 type: Pick<ST, MNS>;
 	 watch<MN extends MNS>(mn: MN, dep: ModuleDepDec<ST, MN>[1]): ConnectFun<ST, MNS>;
  };
@@ -393,7 +408,7 @@
 			 }
 			 return m as string;
 		 });
-		 const connectHOC = <P extends Pick<ST, MNS>>(
+		 const connectHOC = <P extends Pick<ST, MNS> & RP<any>>(
 			 WrappedComponent: TReactComponent<P>,
 			 LoadingComponent: TReactComponent<{}> = loadingComponent
 		 ) => connect<P, Pick<ST, MNS>, M, LM>(moduleNames, depDecs, storeGetter, WrappedComponent, LoadingComponent);
