@@ -1,7 +1,7 @@
 import React, { StrictMode } from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
-import { FnCompSupportRef, FnCompUnsupportRef, ClsComp } from "./ui-demo/ref";
+import { FnCompSupportRef, FnCompUnsupportRef, ClsComp, FnCompUnsupportRef2 } from "./ui-demo/ref";
 
 test("inject normal", async () => {
 	let refIns: {
@@ -15,6 +15,14 @@ test("inject normal", async () => {
 		<StrictMode>
 			{/* @ts-ignore */}
 			<FnCompUnsupportRef ref={getRef} />
+		</StrictMode>
+	);
+	expect(refIns).toBe(undefined);
+
+	render(
+		<StrictMode>
+			{/* @ts-ignore */}
+			<FnCompUnsupportRef2 ref={getRef} />
 		</StrictMode>
 	);
 	expect(refIns).toBe(undefined);

@@ -43,6 +43,11 @@ export const FnCompUnsupportRef = nameInjector(() => {
     return <div>1</div>
 })
 
+export const FnCompUnsupportRef2 = nameInjector(React.memo(() => {
+    return <div>1</div>
+}))
+
+
 export type RefIns = {
     log(): void;
     inc(): void;
