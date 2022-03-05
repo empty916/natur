@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useState } from 'react';
+import React, { ClassAttributes, ComponentClass, ForwardRefExoticComponent, useImperativeHandle, useState } from 'react';
 import { createInject, createStore } from "../../src";
 import {
 	promiseMiddleware,
@@ -49,7 +49,7 @@ export type RefIns = {
     dec(): void;
 }
 
-export const FnCompSupportRef = nameInjector(React.forwardRef<RefIns, NameInjector>((props, ref) => {
+export const forwordComp = React.forwardRef<RefIns, NameInjector>((props, ref) => {
     const [count, setCount] = useState(0);
     useImperativeHandle(
         ref,
@@ -61,7 +61,9 @@ export const FnCompSupportRef = nameInjector(React.forwardRef<RefIns, NameInject
         [],
     )
     return <div>{count}</div>;
-}))
+});
+
+export const FnCompSupportRef = nameInjector(forwordComp);
 
 class _ClsComp extends React.Component<NameInjector> {
     state = {
@@ -84,6 +86,7 @@ class _ClsComp extends React.Component<NameInjector> {
         return <div>{this.state.value}</div>
     }
 }
+
 const ClsComp = nameInjector(_ClsComp);
 
 export {

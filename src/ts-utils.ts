@@ -1,3 +1,6 @@
+import { NonReactStatics } from "hoist-non-react-statics";
+import { ClassAttributes, ComponentClass, ComponentType } from "react";
+
 export type ModuleEvent<AN extends string = string> = {
 	type: 'init' | 'update' | 'remove',
 	actionName?: AN | 'globalSetStates' | 'globalResetStates',
@@ -10,6 +13,36 @@ export interface Listener<AN extends string = string> {
 export type State = any;
 
 export type AnyFun = (...arg: any) => any;
+
+
+// Infers prop type from component C
+export type GetProps<C> = C extends ComponentType<infer P>
+  ? C extends ComponentClass<P>
+    ? ClassAttributes<InstanceType<C>> & P
+    : P
+  : never
+
+
+export type GetLibraryManagedProps<C> = JSX.LibraryManagedAttributes<
+  C,
+  GetProps<C>
+>;
+
+
+// Applies LibraryManagedAttributes (proper handling of defaultProps
+// and propTypes), as well as defines WrappedComponent.
+export type ConnectedComponent<
+  C extends ComponentType<any>,
+  P
+> = ComponentType<P & {
+	/*** if React version is too lower
+	 * and React dose not support React.forwardRef feature
+	 * you can use forwardedRef instead of
+	 */
+    forwardedRef?: GetLibraryManagedProps<C>['ref'];
+  }> &
+  NonReactStatics<C>
+
 
 export interface States {
 	[type: string]: State,

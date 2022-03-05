@@ -18,4 +18,19 @@ test("inject normal", async () => {
 		</StrictMode>
 	);
 	expect(refIns).toBe(undefined);
+
+	render(
+		<StrictMode>
+			<FnCompSupportRef ref={getRef}/>
+		</StrictMode>
+	);
+	expect(refIns).not.toBe(undefined);
+	refIns = undefined;
+
+	render(
+		<StrictMode>
+			<ClsComp ref={getRef}/>
+		</StrictMode>
+	);
+	expect(refIns).not.toBe(undefined);
 });
