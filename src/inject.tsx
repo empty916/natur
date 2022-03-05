@@ -6,16 +6,9 @@
  * @desc [description]
  */
 import React, {
-	ComponentClass,
-	FunctionComponent,
-	ClassAttributes,
 	ComponentType,
-	ForwardRefRenderFunction,
-	ForwardRefExoticComponent,
-	PropsWithoutRef,
-	RefAttributes,
 } from "react";
-import hoistStatics, { NonReactStatics } from "hoist-non-react-statics";
+import hoistStatics from "hoist-non-react-statics";
 import {
 	// ModuleName,
 	Store,
@@ -23,8 +16,6 @@ import {
 	InjectStoreModules,
 	LazyStoreModules,
 	GenerateStoreType,
-	PickLazyStoreModules,
-	GetProps,
 	ConnectedComponent,
 	GetLibraryManagedProps,
 } from "./ts-utils";
@@ -37,7 +28,6 @@ import {
 	initDiff,
 } from "./injectCache";
 
-//  type ComponentType<P = {}> = ComponentClass<P> | FunctionComponent<P>;
 type ModuleName = string;
 type ModuleNames = ModuleName[];
 
