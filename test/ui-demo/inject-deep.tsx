@@ -46,7 +46,9 @@ const injector = inject(
 )
 .watch('name', {state: ['text'], maps: ['textSplit']})
 
-const Son = injector(({name}) => {
+type NameProps = typeof injector.type;
+
+const Son = injector(({name}: NameProps) => {
 	React.useEffect(() => {
 		name.actions.updateText('son name');
 	}, []);
@@ -55,7 +57,7 @@ const Son = injector(({name}) => {
 	)
 })
 
-const App = injector(({name}) => {
+const App = injector(({name}: NameProps) => {
 	const { state, actions, maps } = name;
 	return (
 		<>

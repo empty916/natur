@@ -5,9 +5,7 @@
  * @modify date 2019-08-09 17:13:03
  * @desc [description]
  */
-import React, {
-	ComponentType,
-} from "react";
+import React, { ComponentType } from "react";
 import hoistStatics from "hoist-non-react-statics";
 import {
 	// ModuleName,
@@ -18,6 +16,7 @@ import {
 	GenerateStoreType,
 	ConnectedComponent,
 	GetLibraryManagedProps,
+	GetProps,
 } from "./ts-utils";
 import { isEqualWithDepthLimit, supportRef } from "./utils";
 import {
@@ -43,19 +42,22 @@ export type StoreGetter<
 	LM extends LazyStoreModules
 > = () => Store<M, LM>;
 
-export type ConnectReturn<P, SP> = ComponentType<
-	Omit<P, keyof SP> & {
-		forwardedRef?: React.Ref<any>;
-	}
->;
-
-const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
+type ConnectReturn<P, SP, C extends ComponentType<GetProps<C> & P>> = 
+	ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, keyof SP>>;
+ 
+const connect = <
+	P,
+	SP,
+	M extends Modules,
+	LM extends LazyStoreModules,
+	C extends ComponentType<GetProps<C> & P>
+>(
 	moduleNames: Array<ModuleName>,
 	depDecs: DepDecs,
 	storeGetter: StoreGetter<M, LM>,
-	WrappedComponent: ComponentType<P>,
+	WrappedComponent: C,
 	LoadingComponent?: ComponentType<any>
-): ConnectReturn<P, SP> => {
+): ConnectReturn<P, SP, C> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
 	class Connect extends React.Component<ConnectProps> {
@@ -213,7 +215,7 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 			const { forwardedRef, ...props } = this.props;
 			let newProps = Object.assign({}, props, {
 				ref: supportRef(WrappedComponent) ? forwardedRef : undefined,
-			}) as any as P;
+			}) as GetLibraryManagedProps<C>;
 
 			if (!this.integralModulesName.length) {
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
@@ -248,12 +250,14 @@ const connect = <P, SP, M extends Modules, LM extends LazyStoreModules>(
 	}
 	return hoistStatics(FinalConnect, WrappedComponent);
 };
+
+
 type ConnectFun<
 	ST extends InjectStoreModules,
 	MNS extends Extract<keyof ST, string>,
 	P = Pick<ST, MNS>
 > = {
-	<C extends ComponentType<P>>(
+	<C extends ComponentType<GetProps<C> & P>>(
 		WC: C,
 		LC?: ComponentType<{}>
 	): ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, MNS>>;
@@ -450,18 +454,18 @@ const createInject = <
 		});
 		function connectHOC<
 			P extends Pick<ST, MNS>,
-			C extends ComponentType<P>
+			C extends ComponentType<GetProps<C> & P>
 		>(
 			WrappedComponent: C,
 			LoadingComponent: ComponentType<{}> = loadingComponent
 		) {
-			return connect<P, Pick<ST, MNS>, M, LM>(
+			return connect<P, Pick<ST, MNS>, M, LM, C>(
 				moduleNames,
 				depDecs,
 				storeGetter,
 				WrappedComponent,
 				LoadingComponent
-			) as any;
+			);
 		}
 
 		const type = null as any as Pick<ST, MNS>;
