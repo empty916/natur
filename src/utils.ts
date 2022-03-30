@@ -6,6 +6,7 @@
  * @desc [description]
  */
 
+import { isMemo } from 'react-is';
 import { StoreModule, State } from './ts-utils'
 
 const hasOwn = Object.prototype.hasOwnProperty;
@@ -165,3 +166,25 @@ export function arrayIsEqual (arr1: Array<any>, arr2: Array<any>) {
 	return true;
 }
 
+
+
+export function supportRef(nodeOrComponent: any): boolean {
+	const type = isMemo(nodeOrComponent)
+	  ? nodeOrComponent.type.type
+	  : nodeOrComponent.type;
+  
+	// Function component node
+	if (typeof type === 'function' && !type.prototype?.render) {
+	  return false;
+	}
+  
+	// Class component
+	if (
+	  typeof nodeOrComponent === 'function' &&
+	  !nodeOrComponent.prototype?.render
+	) {
+	  return false;
+	}
+  
+	return true;
+}
