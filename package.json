@@ -6,6 +6,7 @@
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "rimraf dist && tsc",
+		"build:min": "rimraf dist && rollup -c",
 		"pub": "yarn publish",
 		"pub:next": "yarn publish --tag next",
 		"prepublish": "yarn test && yarn build",
@@ -56,10 +57,19 @@
 		"react-dom": "^16.9.0",
 		"redux": "^4.0.5",
 		"rimraf": "^2.6.3",
+		"rollup": "^1.10.1",
+		"rollup-plugin-babel": "^4.3.3",
+		"rollup-plugin-cleanup": "^3.1.1",
+		"rollup-plugin-commonjs": "^10.1.0",
+		"rollup-plugin-license": "^0.8.1",
+		"rollup-plugin-node-resolve": "^5.2.0",
+		"rollup-plugin-terser": "^5.1.2",
+		"terser": "^4.1.2",
 		"typescript": "^4.0.2"
 	},
 	"dependencies": {
 		"hoist-non-react-statics": "^3.3.0",
-		"react-is": "^17.0.2"
+		"react-is": "^17.0.2",
+		"rollup-plugin-typescript2": "^0.31.2"
 	}
 }
