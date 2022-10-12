@@ -45,7 +45,15 @@ export {
 	GenActionsType,
 	GenerateStoreType,
 } from './ts-utils';
-export {ThunkParams} from './middlewares';
+export {
+	ThunkParams,
+	thunkMiddleware,
+	promiseMiddleware,
+	filterNonObjectMiddleware,
+	shallowEqualMiddleware,
+	fillObjectRestDataMiddleware,
+	filterUndefinedMiddleware,
+} from './middlewares';
 export const setMapDepParser = MapCache.setMapDepParser;
 export const resetMapDepParser = MapCache.resetMapDepParser;
 

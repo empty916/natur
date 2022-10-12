@@ -4,6 +4,7 @@ import resolve from 'rollup-plugin-node-resolve'
 import ts from 'rollup-plugin-typescript2'
 import path from 'path'
 import commonjs from 'rollup-plugin-commonjs'
+import replace from 'rollup-plugin-replace'
 
 const getPath = _path => path.resolve(__dirname, _path)
 
@@ -26,14 +27,18 @@ export default {
         'react',
         'react-dom',
         // 'hoist-non-react-statics',
-        // 'react-is'
+        'react-is'
     ],
     output: [
         {
             file: "dist/natur.js",
-            format: "cjs",
+            format: "umd",
+            name: 'natur',
             esModule: false,
-            sourcemap: false
+            sourcemap: false,
+            globals: {
+                'react-is': 'ReactIs'
+            }
         },
     ],
     plugins: [
@@ -51,31 +56,8 @@ export default {
             extensions: ['.ts', '.tsx'],
         }),
         tsPlugin,
-        // babel({
-        //     babelrc: false,
-        //     exclude: '**/node_modules/**',
-        //     runtimeHelpers: true,
-        //     presets: [
-        //         [
-        //             '@babel/preset-env',
-        //             { 
-        //                 modules: false,
-        //                 // loose: true,
-        //             }
-        //         ],
-        //         ['@babel/preset-react'],
-        //         ['@babel/preset-typescript'],
-        //     ],
-        //     plugins: [
-        //         '@babel/plugin-syntax-dynamic-import',
-        //         '@babel/plugin-proposal-export-default-from',
-        //         // '@babel/plugin-transform-modules-commonjs',
-        //         // '@babel/plugin-proposal-object-rest-spread',
-        //         // '@babel/plugin-proposal-function-bind',
-        //         // ['@babel/plugin-proposal-decorators', { legacy: true }],
-        //         ['@babel/plugin-proposal-class-properties', { loose: true }],
-        //         // ['@babel/transform-runtime'],
-        //     ],
-        // }),
+        replace({
+            'process.env.NODE_ENV': JSON.stringify( 'production' )
+        })
     ]
 }
