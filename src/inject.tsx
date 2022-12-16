@@ -42,7 +42,7 @@ export type StoreGetter<
 	LM extends LazyStoreModules
 > = () => Store<M, LM>;
 
-type ConnectReturn<P, SP, C extends ComponentType<GetProps<C> & P>> = 
+export type ConnectReturn<P, SP, C extends ComponentType<GetProps<C> & P>> = 
 	ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, keyof SP>>;
  
 const connect = <
@@ -252,7 +252,7 @@ const connect = <
 };
 
 
-type ConnectFun<
+export type ConnectFun<
 	ST extends InjectStoreModules,
 	MNS extends Extract<keyof ST, string>,
 	P = Pick<ST, MNS>
