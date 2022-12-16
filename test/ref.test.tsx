@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import React, { StrictMode } from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
