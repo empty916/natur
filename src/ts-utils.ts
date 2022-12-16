@@ -1,5 +1,5 @@
 import { NonReactStatics } from "hoist-non-react-statics";
-import { ClassAttributes, ComponentClass, ComponentType } from "react";
+import { ClassAttributes, ComponentClass, ComponentType, FunctionComponent } from "react";
 
 export type ModuleEvent<AN extends string = string> = {
 	type: 'init' | 'update' | 'remove',
@@ -28,7 +28,6 @@ export type GetLibraryManagedProps<C> = JSX.LibraryManagedAttributes<
   GetProps<C>
 >;
 
-
 // Applies LibraryManagedAttributes (proper handling of defaultProps
 // and propTypes), as well as defines WrappedComponent.
 export type ConnectedComponent<
@@ -40,8 +39,7 @@ export type ConnectedComponent<
 	 * you can use forwardedRef instead of
 	 */
     forwardedRef?: GetLibraryManagedProps<C>['ref'];
-  }> &
-  NonReactStatics<C>
+  }> & NonReactStatics<C>;
 
 
 export interface States {

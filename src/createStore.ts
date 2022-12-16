@@ -208,7 +208,7 @@ LM extends LazyStoreModules,
 	 */
 	const checkModuleIsValid = (moduleName: keyof StoreType) => {
 		if (!hasModule(moduleName)) {
-			const errMsg = `module: ${moduleName} is not valid!`;
+			const errMsg = `module: ${moduleName as string} is not valid!`;
 			// console.error(errMsg);
 			throw new Error(errMsg);
 		}
@@ -566,7 +566,7 @@ LM extends LazyStoreModules,
 		if (!!(currentLazyModules as LM)[moduleName]) {
 			return (currentLazyModules as LM)[moduleName];
 		}
-		const errMsg = `getLazyModule: ${moduleName} is not exist`;
+		const errMsg = `getLazyModule: ${moduleName as string} is not exist`;
 		// console.error(errMsg);
 		throw new Error(errMsg);
 	};

@@ -42,9 +42,12 @@ export type StoreGetter<
 	LM extends LazyStoreModules
 > = () => Store<M, LM>;
 
-export type ConnectReturn<P, SP, C extends ComponentType<GetProps<C> & P>> = 
-	ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, keyof SP>>;
- 
+export type ConnectReturn<
+	P,
+	SP,
+	C extends ComponentType<GetProps<C> & P>
+> = ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, keyof SP>>;
+
 const connect = <
 	P,
 	SP,
@@ -219,6 +222,7 @@ const connect = <
 
 			if (!this.integralModulesName.length) {
 				console.warn(`modules: ${moduleNames.join()} is not exits!`);
+				// @ts-ignore
 				return <WrappedComponent {...newProps} />;
 			}
 			if (this.state.modulesHasLoaded === false) {
@@ -234,8 +238,8 @@ const connect = <
 				{} as Modules
 			);
 
-			Object.assign(newProps, this.injectModules);
-
+			Object.assign(newProps as {}, this.injectModules);
+			// @ts-ignore
 			return <WrappedComponent {...newProps} />;
 		}
 	}
@@ -250,7 +254,6 @@ const connect = <
 	}
 	return hoistStatics(FinalConnect, WrappedComponent);
 };
-
 
 export type ConnectFun<
 	ST extends InjectStoreModules,
