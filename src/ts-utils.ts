@@ -33,7 +33,7 @@ export type GetLibraryManagedProps<C> = JSX.LibraryManagedAttributes<
 export type ConnectedComponent<
   C extends ComponentType<any>,
   P
-> = ComponentClass<P & {
+> = ComponentType<P & {
 	/*** if React version is too lower
 	 * and React dose not support React.forwardRef feature
 	 * you can use forwardedRef instead of
