@@ -4,7 +4,7 @@
 import React, { StrictMode } from 'react'
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import { store, App } from './ui-demo/useInject-normal';
+import { store, App } from './ui-demo/use-inject-normal';
 import { getDepValue } from '../src/useInject';
 
 beforeEach(() => {

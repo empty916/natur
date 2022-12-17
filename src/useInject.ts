@@ -25,12 +25,9 @@ export function getDepValue<
     }
     if (dep.maps) {
         mapsDepGetter = dep.maps.map(keyPath => {
-            if (typeof keyPath !== 'function') {
-                return (s: any) => {
-                    return MapCache.getValueFromState(s, keyPath);
-                };
-            }
-            return keyPath;
+            return (s: any) => {
+                return MapCache.getValueFromState(s, keyPath);
+            };
         });
         res.push(...mapsDepGetter.map(i => i(sm.maps)));
     }
@@ -41,7 +38,6 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
 	storeInsGetter: () => Store<M, LM>
 ) => {
 	type ST = Store<M, LM>["type"];
-	const storeIns = storeInsGetter();
 	/**
 	 * natur hooks函数
 	 */
@@ -53,8 +49,8 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
 		const stateRef = useRef<ST[K]>();
         const [loading, setLoading] = useState<Partial<Record<K, boolean>>>({});
         const [error, setError] = useState<Partial<Record<K, Error>>>({});
-
-		const res = useSyncExternalStore(storeIns.subscribeAll, () => {
+        const storeIns = storeInsGetter();
+		const res = useSyncExternalStore(on => storeIns.subscribe(moduleName, on), () => {
             if (storeIns.hasModule(moduleName)) {
                 if (loading[moduleName]) {
                     setLoading(nl => ({
@@ -76,6 +72,9 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
                 }
                 return stateRef.current;
             } else {
+                if (error[moduleName]) {
+                    return;
+                }
                 if (!loading[moduleName]) {
                     setLoading(nl => ({
                         ...nl,
@@ -83,17 +82,19 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
                     }));
                 }
                 storeIns.loadModule(moduleName as keyof LM)
-                    .then(() => {
+                    .catch(err => {
+                        setError(e => ({
+                            ...e,
+                            [moduleName]: err,
+                        }))
+                    })
+                    .finally(() => {
                         setLoading(nl => ({
                             ...nl,
                             [moduleName]: false,
                         }));
-                    })
-                    .catch(err => setError(e => ({
-                        ...e,
-                        [moduleName]: err,
-                    })));
-                return undefined;
+                    });
+                return;
             }
 		});
         return [res, !!loading[moduleName], error[moduleName]] as R;
