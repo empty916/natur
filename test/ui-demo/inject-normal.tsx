@@ -1,4 +1,5 @@
-import React from "react";
+import { act } from "@testing-library/react";
+import React, { useState } from "react";
 import { createInject, createStore } from "../../src";
 import {
 	promiseMiddleware,
@@ -73,20 +74,19 @@ const appInjector = inject(
 );
 
 const appInjector2 = inject(
-	'name',
+	['name', {state: ['text',], maps: ['textSplit']}],
 	'lazyName', 
 	'lazyName2'
-)
-.watch('name', {state: ['text',], maps: ['textSplit']});
+);
 
 const _App = ({name, lazyName}: typeof appInjector2.type) => {
 	const { state, actions, maps } = name;
 	return (
 		<>
-			<input role='name-input' value={state.text} onChange={e => actions.updateText(e.target.value)} />
-			<input role='lazy-name-input' value={lazyName.state.text} onChange={e => lazyName.actions.updateText(e.target.value)} />
+			<input role='name-input' value={state.text} onChange={e => act(() => actions.updateText(e.target.value))} />
+			<input role='lazy-name-input' value={lazyName.state.text} onChange={e => act(() => lazyName.actions.updateText(e.target.value))} />
 			<br/>
-			<button role='btn-inc' onClick={() => actions.inc(state.count)}>+</button>
+			<button role='btn-inc' onClick={() => act(() => actions.inc(state.count))}>+</button>
 			<span role='count'>{state.count + ''}</span>
 			<span role='text-split'>{maps.textSplit}</span>
 		</>

@@ -31,6 +31,7 @@ import {
 	PickedLazyStoreModules,
 	PickLazyStoreModules,
 	AllListener,
+	InjectStoreModules,
 } from "./ts-utils";
 
 import MapCache from "./MapCache";
@@ -256,6 +257,7 @@ LM extends LazyStoreModules,
 		clearMapsProxyCache(moduleName);
 		clearActionsProxyCache(moduleName);
 		clearSetStateProxyWithMiddlewareCache(moduleName);
+		moduleCache[moduleName as keyof StoreType] = undefined;
 	};
 	/**
 	 * 获取所有模块的名字，包括懒加载模块的名字
@@ -513,6 +515,8 @@ LM extends LazyStoreModules,
 	 */
 	const createActionsProxy = (moduleName: ModuleName) => {
 		if (!!actionsProxyCache[moduleName]) {
+			// console.log('use action cache!');
+			
 			return actionsProxyCache[moduleName];
 		}
 		let actionsProxy = { ...currentModules[moduleName]!.actions };
@@ -524,17 +528,26 @@ LM extends LazyStoreModules,
 		actionsProxyCache[moduleName] = actionsProxy as any;
 		return actionsProxy;
 	};
+
+	let moduleCache: Partial<StoreType> = {};
 	/**
 	 * 获取module
 	 * @param moduleName 
 	 */
 	const getModule = <MN extends keyof StoreType>(moduleName: MN) => {
 		checkModuleIsValid(moduleName);
+		if (moduleCache[moduleName] &&
+			moduleCache[moduleName]?.state === currentModules[moduleName]?.state &&
+			moduleCache[moduleName]?.actions === createActionsProxy(moduleName as string)
+		) {
+			return moduleCache[moduleName] as StoreType[MN];
+		}
 		const proxyModule: StoreType[MN] = {
 			state: currentModules[moduleName]!.state,
 			actions: createActionsProxy(moduleName as string),
 			maps: createMapsProxy(moduleName as string),
 		} as any;
+		moduleCache[moduleName] = proxyModule;
 		return proxyModule;
 	};
 	/**

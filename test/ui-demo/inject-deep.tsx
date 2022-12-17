@@ -42,9 +42,8 @@ const inject = createInject({
 
 
 const injector = inject(
-	'name',
+	['name', {state: ['text'], maps: ['textSplit']}],
 )
-.watch('name', {state: ['text'], maps: ['textSplit']})
 
 type NameProps = typeof injector.type;
 

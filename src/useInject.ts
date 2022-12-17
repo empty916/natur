@@ -59,7 +59,7 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
                     }));
                 }
                 const m = storeIns.getModule(moduleName);
-                if (m.state !== stateRef.current?.state) {
+                if (m !== stateRef.current) {
                     if (stateRef.current && dep &&
                         arrayIsEqual(
                             getDepValue(stateRef.current, dep),
