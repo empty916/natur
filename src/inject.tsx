@@ -17,10 +17,10 @@ import {
 	ConnectedComponent,
 	GetLibraryManagedProps,
 	GetProps,
+	ModuleDepDec,
 } from "./ts-utils";
 import { isEqualWithDepthLimit, supportRef } from "./utils";
 import {
-	ModuleDepDec,
 	isModuleDepDec,
 	DepDecs,
 	Diff,

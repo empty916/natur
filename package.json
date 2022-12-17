@@ -1,6 +1,6 @@
 {
 	"name": "natur",
-	"version": "2.1.11",
+	"version": "2.2.0-beta1",
 	"description": "react state management. support react, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

@@ -81,19 +81,21 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
                         [moduleName]: true,
                     }));
                 }
-                storeIns.loadModule(moduleName as keyof LM)
-                    .catch(err => {
-                        setError(e => ({
-                            ...e,
-                            [moduleName]: err,
-                        }))
-                    })
-                    .finally(() => {
-                        setLoading(nl => ({
-                            ...nl,
-                            [moduleName]: false,
-                        }));
-                    });
+                if (storeIns.getAllModuleName().includes(moduleName)) {
+                    storeIns.loadModule(moduleName as keyof LM)
+                        .catch(err => {
+                            setError(e => ({
+                                ...e,
+                                [moduleName]: err,
+                            }))
+                        })
+                        .finally(() => {
+                            setLoading(nl => ({
+                                ...nl,
+                                [moduleName]: false,
+                            }));
+                        });
+                }
                 return;
             }
 		});
