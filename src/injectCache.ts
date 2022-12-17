@@ -1,14 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules, LazyStoreModules } from "./ts-utils";
-
-type Fun<P> = (p: P) => any;
-
-
-export type ModuleDepDec<ST extends InjectStoreModules = InjectStoreModules, MN extends keyof ST = string> = [MN, {
-	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: 
-		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : 
-			k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
-}];
+import { Store, InjectStoreModules, Modules, LazyStoreModules, ModuleDepDec } from "./ts-utils";
 
 export type DepDecs = {
 	[m: string]: ModuleDepDec[1];
@@ -72,4 +63,9 @@ export const initDiff = <M extends Modules, LM extends LazyStoreModules>(moduleD
 		diff,
 		destroy,
 	}
+}
+
+export type InitDiffReturnType = {
+	diff: Diff;
+	destroy: Function;
 }

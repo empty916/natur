@@ -6,8 +6,18 @@ export type ModuleEvent<AN extends string = string> = {
 	actionName?: AN | 'globalSetStates' | 'globalResetStates',
 };
 
+export type AllModuleEvent<AN extends string = string, MN extends string = string> = {
+	type: 'init' | 'update' | 'remove';
+	actionName?: AN | 'globalSetStates' | 'globalResetStates';
+	moduleName: MN;
+};
+
 export interface Listener<AN extends string = string> {
 	(me: ModuleEvent<AN>): any;
+}
+
+export interface AllListener<AN extends string = string, MN extends string = string> {
+	(me: AllModuleEvent<AN, MN>): any;
 }
 
 export type State = any;
@@ -305,6 +315,7 @@ export interface Store<
 	getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
 	getLazyModule: (moduleName: ModuleName<{}, LM>) => () => Promise<StoreModule>;
 	subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
+	subscribeAll: <MN extends keyof AOST>(listener: AllListener<Extract<keyof AOST[MN]['actions'], string>, Extract<MN, string>>) => () => void;
 	getAllModuleName: () => (keyof StoreType)[];
 	destroy: () => void;
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
@@ -313,3 +324,13 @@ export interface Store<
 	getAllStates: () => AllStates<M, LM>;
 	type: StoreType;
 }
+
+
+export type Fun<P> = (p: P) => any;
+
+
+export type ModuleDepDec<ST extends InjectStoreModules = InjectStoreModules, MN extends keyof ST = string> = [MN, {
+	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: 
+		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : 
+			k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
+}];

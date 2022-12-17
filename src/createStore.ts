@@ -30,6 +30,7 @@ import {
 	InterceptorNext,
 	PickedLazyStoreModules,
 	PickLazyStoreModules,
+	AllListener,
 } from "./ts-utils";
 
 import MapCache from "./MapCache";
@@ -123,6 +124,7 @@ LM extends LazyStoreModules,
 	let listeners: {
 		[p: string]: Listener[]
 	} = {};
+	let allListeners: AllListener[] = [];
 	/**
 	 * 存放所有模块的名字
 	 */
@@ -272,9 +274,15 @@ LM extends LazyStoreModules,
 	 * @param moduleName 
 	 * @param me 模块变动的详情
 	 */
-	const runListeners = (moduleName: ModuleName, me: ModuleEvent) =>
-		Array.isArray(listeners[moduleName]) &&
-		listeners[moduleName]!.forEach((listener) => listener(me));
+	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => {
+		if (Array.isArray(listeners[moduleName])) {
+			listeners[moduleName]!.forEach((listener) => listener(me))
+		}
+		allListeners.forEach((listener) => listener({
+			...me,
+			moduleName,
+		}))
+	};
 	
 	/**
 	 * 用于更新模块对应的state，并发出通知
@@ -662,6 +670,19 @@ LM extends LazyStoreModules,
 		};
 	};
 	/**
+	 * 监听所有模块
+	 * @param moduleName 
+	 * @param listener 
+	 */
+	const subscribeAll = (listener: AllListener) => {
+		allListeners.push(listener);
+		return () => {
+			if (Array.isArray(allListeners)) {
+				allListeners = allListeners.filter((lis) => listener !== lis);
+			}
+		};
+	};
+	/**
 	 * 销毁store
 	 */
 	const destroy = () => {
@@ -708,6 +729,7 @@ LM extends LazyStoreModules,
 		setLazyModule,
 		removeLazyModule,
 		subscribe,
+		subscribeAll,
 		destroy,
 		dispatch,
 		globalSetStates,

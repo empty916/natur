@@ -10,6 +10,7 @@
 		"pub:next": "yarn publish --tag next",
 		"prepublish": "yarn test && yarn build",
 		"test": "jest --silent",
+		"dev:test": "jest",
 		"test:report": "jest --coverage  --silent"
 	},
 	"files": [
