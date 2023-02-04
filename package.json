@@ -6,8 +6,8 @@
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "rimraf dist && tsc",
-		"pub": "yarn publish",
-		"pub:next": "yarn publish --tag next",
+		"pub": "yarn publish --tag next",
+		"pub:release": "yarn publish",
 		"prepublish": "yarn test && yarn build",
 		"test": "jest --silent",
 		"dev:test": "jest",
