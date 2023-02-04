@@ -102,14 +102,29 @@ export type MiddlewareActionRecord = {
 
 export type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
-export type MiddlewareParams<StoreType extends InjectStoreModules> = {
+export type MiddlewareParams<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+> = {
 	setState: MiddlewareNext,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
-	getStore: () => Store<any, any>,
+	getStore: () => Store<M, LM>,
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 
+export type InterceptorParams<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+> = {
+	setState: MiddlewareNext,
+	getState: () => State,
+	getMaps: () => InjectMaps | undefined,
+	getStore: () => Store<M, LM>,
+	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+};
 
 export type GlobalResetStatesOption<MN extends string = string> = {
 	include?: Array<MN|RegExp>;
@@ -118,10 +133,10 @@ export type GlobalResetStatesOption<MN extends string = string> = {
 
 export type ModuleName<M, LM> = keyof M | keyof LM;
 
-export type Middleware<StoreType extends {
-	[k: string]: InjectStoreModule
-}> = (middlewareParams: MiddlewareParams<StoreType>) => (next: MiddlewareNext) => MiddlewareNext;
-
+export type Middleware<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+> = (middlewareParams: MiddlewareParams<M, LM>) => (next: MiddlewareNext) => MiddlewareNext;
 
 
 export type InterceptorActionRecord = {
@@ -133,17 +148,10 @@ export type InterceptorActionRecord = {
 
 export type InterceptorNext = (record: InterceptorActionRecord) => ReturnType<Action>;
 
-export type InterceptorParams<StoreType extends InjectStoreModules> = {
-	setState: MiddlewareNext,
-	getState: () => State,
-	getMaps: () => InjectMaps | undefined,
-	getStore: () => Store<any, any>,
-	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
-};
-
-export type Interceptor<StoreType extends {
-	[k: string]: InjectStoreModule
-}> = (filterParams: InterceptorParams<StoreType>) => (next: InterceptorNext) => InterceptorNext;
+export type Interceptor<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules
+> = (filterParams: InterceptorParams<M, LM>) => (next: InterceptorNext) => InterceptorNext;
 
 
 type Fn<T extends Array<any>, S extends any> = (...arg: T) => S;
