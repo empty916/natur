@@ -7,6 +7,7 @@
  */
 import React, {
 	ComponentType,
+	useContext,
 	useMemo,
 	useRef,
 	useState,
@@ -29,22 +30,13 @@ import { arrayIsEqual, isEqualWithDepthLimit, supportRef } from "./utils";
 import {
 	isModuleDepDec,
 	DepDecs,
-	Diff,
-	initDiff,
-	InitDiffReturnType,
 } from "./injectCache";
-import { act } from "@testing-library/react";
 import { getDepValue } from "./useInject";
+import { NaturContext } from "./context";
 
 type ModuleName = string;
-type ModuleNames = ModuleName[];
 
 let Loading: ComponentType<{}> = () => null;
-
-type Tstate = {
-	storeStateChange: {};
-	modulesHasLoaded: boolean;
-};
 
 const getModuleByNames = <T extends InjectStoreModules>(
 	ims: T,
@@ -84,7 +76,7 @@ const connect = <
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
 	const FunctionalConnect = ({ forwardedRef, ...props }: ConnectProps) => {
-		const store = useMemo(storeGetter, [storeGetter]);
+		const store = useContext(NaturContext) as (Store<M, LM> | undefined) || storeGetter();
 		const [loadErrorModules, setLoadErrorModules] = useState<string[]>([]);
 		const [_, notifyModuleHasLoad] = useState({});
 		const integralModulesName = moduleNames

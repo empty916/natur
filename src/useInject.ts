@@ -1,4 +1,5 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useContext, useRef, useState, useSyncExternalStore } from "react";
+import { NaturContext } from "./context";
 import MapCache from "./MapCache";
 import { Modules, LazyStoreModules, Store, Fun, ModuleDepDec, StoreModule, InjectStoreModule } from "./ts-utils";
 import { arrayIsEqual } from './utils';
@@ -49,7 +50,7 @@ export const createUseInject = <M extends Modules, LM extends LazyStoreModules>(
 		const stateRef = useRef<ST[K]>();
         const [loading, setLoading] = useState<Partial<Record<K, boolean>>>({});
         const [error, setError] = useState<Partial<Record<K, Error>>>({});
-        const storeIns = storeInsGetter();
+        const storeIns = useContext(NaturContext) as (Store<M, LM> | undefined) || storeInsGetter();
 		const res = useSyncExternalStore(on => storeIns.subscribe(moduleName, on), () => {
             if (storeIns.hasModule(moduleName)) {
                 if (loading[moduleName]) {

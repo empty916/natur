@@ -633,6 +633,7 @@ LM extends LazyStoreModules,
 			setState,
 			getState: () => currentModules[moduleName]!.state,
 			getMaps: () => createMapsProxy(moduleName),
+			getStore: () => currentStoreInstance,
 			dispatch,
 		};
 		const middlewareChain = currentMiddlewares.map(

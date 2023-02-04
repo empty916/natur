@@ -106,6 +106,7 @@ export type MiddlewareParams<StoreType extends InjectStoreModules> = {
 	setState: MiddlewareNext,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
+	getStore: () => Store<any, any>,
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 
@@ -136,6 +137,7 @@ export type InterceptorParams<StoreType extends InjectStoreModules> = {
 	setState: MiddlewareNext,
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
+	getStore: () => Store<any, any>,
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 

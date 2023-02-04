@@ -9,7 +9,8 @@ import MapCache from "./MapCache";
 export { default as createInject } from "./inject";
 export { createUseInject } from "./useInject";
 export { default as createStore } from "./createStore";
-
+export { createUseStore } from './useStore'
+export { NaturContext } from './context'
 export {
 	ModuleEvent,
 	Listener,

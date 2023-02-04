@@ -42,6 +42,7 @@ test("inject normal", async () => {
 			value: "name1",
 		},
 	});
+	expect(store.getModule('name').state.text).toBe('name1');
 	fireEvent.click(screen.getByRole("btn-inc"));
 
 	expect(screen.getByRole("lazy-name-input")).toHaveValue("name");
@@ -94,7 +95,7 @@ test("inject normal2", async () => {
 			value: "name1",
 		},
 	});
-
+	expect(store.getModule('name').state.text).toBe('name1');
 	fireEvent.click(screen.getByRole("btn-inc"));
 
 	expect(screen.getByRole("lazy-name-input")).toHaveValue("name");
