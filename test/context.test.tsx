@@ -9,7 +9,7 @@ import {
 	createStore,
 	createUseInject,
 	createUseStore,
-	NaturContext,
+	Provider,
 } from "../src";
 import {
 	promiseMiddleware,
@@ -114,9 +114,9 @@ test("context with provider", () => {
 
 	const App = ({ children }) => {
 		return (
-			<NaturContext.Provider value={store1}>
+			<Provider store={store1}>
 				{children}
-			</NaturContext.Provider>
+			</Provider>
 		);
 	}
 

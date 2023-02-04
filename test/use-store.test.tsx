@@ -4,7 +4,7 @@
 import React, { ReactElement, ReactNode, StrictMode } from "react";
 import { render, fireEvent, waitFor, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
-import { createStore, createUseStore, NaturContext } from "../src";
+import { createStore, createUseStore, Provider } from "../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -97,9 +97,9 @@ test("createUseStore with provider", () => {
 
 	function App({ children }: { children: ReactNode }) {
 		return (
-			<NaturContext.Provider value={store1}>
+			<Provider store={store1}>
 				{children}
-			</NaturContext.Provider>
+			</Provider>
 		);
 	}
 
