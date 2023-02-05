@@ -1,27 +1,6 @@
-/**
- * @jest-environment jsdom
- */
-import React, {
-	FC,
-	ReactChildren,
-	ReactElement,
-	ReactNode,
-	StrictMode,
-} from "react";
-import {
-	render,
-	fireEvent,
-	waitFor,
-	screen,
-	logDOM,
-} from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import {
-	createInject,
 	createStore,
-	createUseInject,
-	createUseStore,
-	Provider,
 } from "../src";
 import {
 	promiseMiddleware,
@@ -29,7 +8,7 @@ import {
 	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware,
 } from "../src/middlewares";
-import { AllModuleEvent, ModuleEvent, WatchParams } from "../src/ts-utils";
+import { AllModuleEvent, ModuleEvent, WatchParams } from "../src";
 
 const name = () => ({
 	state: {
