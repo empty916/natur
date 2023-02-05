@@ -104,7 +104,6 @@ export interface InjectMaps {
 	[p: string]: any;
 };
 
-
 export interface WatchObject {
 	[k: string]: Listener;
 }
