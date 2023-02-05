@@ -695,6 +695,7 @@ describe('subscribe', () => {
 		count: typeof count;
 	}, {}>
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{ count }, {},
 			{
@@ -777,6 +778,7 @@ describe('subscribeAll', () => {
 		count: typeof count;
 	}, {}>
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{ count }, {},
 			{
