@@ -98,7 +98,7 @@ const connect = <
 		const injectModules = useSyncExternalStore(
 			(on) => {
 				return store.subscribeAll(({ moduleName }) => {
-					if (moduleNames.includes(moduleName)) {
+					if (moduleNames.includes(moduleName as string)) {
 						on();
 					}
 				});

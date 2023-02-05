@@ -74,7 +74,7 @@ LM extends LazyStoreModules,
 			[k in keyof StoreType]: StoreType[k]["state"];
 		}
 	>;
-	let initing = true;
+	let isInited = false;
 	/**
 	 * 存放store实例
 	 */
@@ -273,7 +273,7 @@ LM extends LazyStoreModules,
 	 * @param me 模块变动的详情
 	 */
 	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => {
-		if (initing) {
+		if (!isInited) {
 			return;
 		}
 		const middlewareParams: WatchParams<M, LM> = {
@@ -428,7 +428,7 @@ LM extends LazyStoreModules,
 			mapsCache[moduleName] = {} as any;
 			mapsCacheList[moduleName] = [] as any;
 		}
-		if (!initing) {
+		if (isInited) {
 			const oldModule = isModuleExist ? getModule(moduleName) : undefined;
 			runListeners(moduleName, {
 				type: "init",
@@ -744,7 +744,7 @@ LM extends LazyStoreModules,
 		moduleNames.forEach((moduleName) => {
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
-		initing = false;
+		isInited = true;
 		moduleNames.forEach(moduleName => {
 			if (typeof watchModule[moduleName] === 'function') {
 				subscribeAll(watchModule[moduleName] as AllListener);

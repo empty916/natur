@@ -1,23 +1,55 @@
 import { NonReactStatics } from "hoist-non-react-statics";
 import { ClassAttributes, ComponentClass, ComponentType, FunctionComponent } from "react";
 
-export interface ModuleEvent<AN extends string = string, T extends 'init' | 'update' | 'remove' = 'init' | 'update' | 'remove'> {
-	type: T;
-	actionName?: AN | undefined | 'globalSetStates' | 'globalResetStates';
-	oldModule: T extends 'init' ? undefined : InjectStoreModule;
-	newModule: T extends 'remove' ? undefined : InjectStoreModule;
+export interface ModuleEvent<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> {
+	type: 'init' | 'update' | 'remove';
+	actionName?: ActionName<M, LM> | undefined | 'globalSetStates' | 'globalResetStates';
+	oldModule: undefined | ST[MN];
+	newModule: undefined | ST[MN];
 };
 
-export interface AllModuleEvent<AN extends string = string, MN extends string = string> extends ModuleEvent<AN> {
-	moduleName: MN;
+export interface AllModuleEvent<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+	MANS = {
+		[k in MN]: keyof ST[k]['actions']
+	}
+> {
+	type: 'init' | 'update' | 'remove';
+	moduleName: keyof ST;
+	actionName?: MANS[keyof MANS] | undefined | 'globalSetStates' | 'globalResetStates';
+	oldModule: undefined | InjectStoreModule;
+	newModule: undefined | InjectStoreModule;
 };
 
-export interface Listener<AN extends string = string> {
-	(me: ModuleEvent<AN>, apis: WatchParams): any;
+export type ActionName<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> = Extract<keyof ST[MN]['actions'], string>
+
+export interface Listener<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> {
+	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchParams<M, LM>): any;
 }
 
-export interface AllListener<AN extends string = string, MN extends string = string> {
-	(me: AllModuleEvent<AN, MN>, apis: WatchParams): any;
+export interface AllListener<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+> {
+	(me: AllModuleEvent<M, LM>, apis: WatchParams<M, LM>): any;
 }
 
 export type State = any;
@@ -341,8 +373,8 @@ export interface Store<
 	loadModule: <MN extends keyof LM>(moduleName: MN) => Promise<PickLazyStoreModules<LM>[MN]>;
 	getOriginModule: <MN extends keyof AOST>(moduleName: MN) => AOST[MN];
 	getLazyModule: (moduleName: ModuleName<{}, LM>) => () => Promise<StoreModule>;
-	subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<Extract<keyof AOST[MN]['actions'], string>>) => () => void;
-	subscribeAll: <MN extends keyof AOST>(listener: AllListener<Extract<keyof AOST[MN]['actions'], string>, Extract<MN, string>>) => () => void;
+	subscribe: <MN extends keyof AOST>(moduleName: MN, listener: Listener<M, LM, StoreType, Extract<MN, string>>) => () => void;
+	subscribeAll: (listener: AllListener<M, LM>) => () => void;
 	getAllModuleName: () => (keyof StoreType)[];
 	destroy: () => void;
 	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
