@@ -328,9 +328,9 @@ LM extends LazyStoreModules,
 	const globalSetStates = (states: PS) => {
 		Object.keys(states).forEach((moduleName: ModuleName) => {
 			if (hasModule(moduleName)) {
-				if (!setStateProxyWithMiddlewareCache[moduleName]) {
-					createDispatch(moduleName);
-				}
+				// if (!setStateProxyWithMiddlewareCache[moduleName]) {
+				// 	createDispatch(moduleName);
+				// }
 				setStateProxyWithMiddlewareCache[moduleName]!({
 					moduleName: moduleName as string,
 					actionName: "globalSetStates",
@@ -389,9 +389,9 @@ LM extends LazyStoreModules,
 			});
 		}
 		shouldResetModuleNames.forEach((mn) => {
-			if (!setStateProxyWithMiddlewareCache[mn]) {
-				createDispatch(mn);
-			}
+			// if (!setStateProxyWithMiddlewareCache[mn]) {
+			// 	createDispatch(mn);
+			// }
 			setStateProxyWithMiddlewareCache[mn]!({
 				moduleName: mn as string,
 				actionName: "globalResetStates",
@@ -428,13 +428,13 @@ LM extends LazyStoreModules,
 			mapsCache[moduleName] = {} as any;
 			mapsCacheList[moduleName] = [] as any;
 		}
+		const oldModule = isModuleExist ? getModule(moduleName) : undefined;
+		runListeners(moduleName, {
+			type: "init",
+			oldModule: oldModule,
+			newModule: getModule(moduleName),
+		});
 		if (isInited) {
-			const oldModule = isModuleExist ? getModule(moduleName) : undefined;
-			runListeners(moduleName, {
-				type: "init",
-				oldModule: oldModule,
-				newModule: getModule(moduleName),
-			});
 			if(moduleName in globalSetStateCache) {
 				const s = globalSetStateCache[moduleName];
 				delete globalSetStateCache[moduleName];
@@ -624,12 +624,12 @@ LM extends LazyStoreModules,
 			return Promise.resolve(undefined);
 		}
 		return lm().then((loadedModule) => {
-			if (!loadModule) {
+			if (!loadedModule) {
 				return undefined;
 			}
 			if (isStoreModule(loadedModule)) {
 				setModule(moduleName, loadedModule);
-			} else if(isStoreModule(loadedModule!.default)) {
+			} else if(isStoreModule(loadedModule?.default)) {
 				setModule(moduleName, loadedModule!.default);
 			}
 			return getModule(moduleName)!;
@@ -683,7 +683,7 @@ LM extends LazyStoreModules,
 			moduleName,
 			actionName,
 			actionArgs,
-			actionFunc: currentModules[moduleName]!['actions'][actionName],
+			actionFunc: currentModules[moduleName]?.['actions']?.[actionName] as any,
 		});
 	};
 	/**
@@ -745,7 +745,7 @@ LM extends LazyStoreModules,
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
 		isInited = true;
-		moduleNames.forEach(moduleName => {
+		Object.keys(watchModule).forEach(moduleName => {
 			if (typeof watchModule[moduleName] === 'function') {
 				subscribeAll(watchModule[moduleName] as AllListener);
 			} else if(watchModule[moduleName]) {
@@ -753,21 +753,14 @@ LM extends LazyStoreModules,
 					subscribe(mn, (watchModule[moduleName] as WatchObject)[mn] as Listener)
 				})
 			}
+		});
+		moduleNames.forEach(moduleName => {
 			runListeners(moduleName, {
 				type: "init" as const,
 				oldModule: undefined,
 				newModule: getModule(moduleName),
 			});
-
-			if(moduleName in globalSetStateCache) {
-				const s = globalSetStateCache[moduleName];
-				delete globalSetStateCache[moduleName];
-				globalSetStates({
-					[moduleName]: s,
-				} as PS);
-			}
 		});
-
 
 	};
 

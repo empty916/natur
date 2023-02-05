@@ -23,8 +23,8 @@ export interface AllModuleEvent<
 	}
 > {
 	type: 'init' | 'update' | 'remove';
-	moduleName: keyof ST;
-	actionName?: MANS[keyof MANS] | undefined | 'globalSetStates' | 'globalResetStates';
+	moduleName: Extract<keyof ST, string>;
+	actionName?: Extract<MANS[keyof MANS], string> | undefined | 'globalSetStates' | 'globalResetStates';
 	oldModule: undefined | InjectStoreModule;
 	newModule: undefined | InjectStoreModule;
 };

@@ -492,6 +492,7 @@ describe('setModule', () => {
 	});
 	test('get module', getModule('name', name));
 	test('get origin module', getOriginModule('count', count));
+	
 	test('get module not exist', getModuleNotExist('name1'));
 	test('get moduleWithoutMaps', getModuleWithoutMaps('name', name));
 	test('get moduleWithMaps', getModuleWithMaps('nameWithMaps', nameWithMaps));
@@ -920,6 +921,9 @@ describe('actions', () => {
 		expect(store.dispatch('count', 'inc/aa/22', countModule.state)).toBe(undefined);
 		// @ts-ignore
 		expect(store.dispatch('inc', countModule.state)).toBe(undefined);
+		const incAction = countModule.actions.inc;
+		store.removeModule('count');
+		expect(() => incAction(countModule.state)).toThrow("module: count is not valid!");
 	});
 	test('return no change state', () => {
 		let recordCache: any = null;
@@ -1084,7 +1088,8 @@ describe('globalSetStates', () => {
 				count,
 				name,
 			},
-			{},
+			{
+			},
 			{
 				middlewares: [() => next => record => {
 					if (record.moduleName === 'nameWithMaps') {
@@ -1480,3 +1485,23 @@ describe('getAllStates', () => {
 		});
 	});
 })
+
+
+test('get Module which is not exist', async () => {
+	// @ts-ignore
+	store = createStore({ name, count }, {
+		// @ts-ignore
+		bbb: () => Promise.resolve(undefined),
+	}, {
+		middlewares: [
+			thunkMiddleware,
+			promiseMiddleware
+		],
+	});
+	// @ts-ignore
+	expect(store.getOriginModule('aa11')).toBe(undefined);
+	// @ts-ignore
+	expect(await store.loadModule('aa11')).toBe(undefined);
+	// @ts-ignore
+	expect(await store.loadModule('bbb')).toBe(undefined);
+});
