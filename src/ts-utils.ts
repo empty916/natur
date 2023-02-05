@@ -1,23 +1,23 @@
 import { NonReactStatics } from "hoist-non-react-statics";
 import { ClassAttributes, ComponentClass, ComponentType, FunctionComponent } from "react";
 
-export type ModuleEvent<AN extends string = string> = {
-	type: 'init' | 'update' | 'remove',
-	actionName?: AN | 'globalSetStates' | 'globalResetStates',
+export interface ModuleEvent<AN extends string = string, T extends 'init' | 'update' | 'remove' = 'init' | 'update' | 'remove'> {
+	type: T;
+	actionName?: AN | undefined | 'globalSetStates' | 'globalResetStates';
+	oldModule: T extends 'init' ? undefined : InjectStoreModule;
+	newModule: T extends 'remove' ? undefined : InjectStoreModule;
 };
 
-export type AllModuleEvent<AN extends string = string, MN extends string = string> = {
-	type: 'init' | 'update' | 'remove';
-	actionName?: AN | 'globalSetStates' | 'globalResetStates';
+export interface AllModuleEvent<AN extends string = string, MN extends string = string> extends ModuleEvent<AN> {
 	moduleName: MN;
 };
 
 export interface Listener<AN extends string = string> {
-	(me: ModuleEvent<AN>): any;
+	(me: ModuleEvent<AN>, apis: WatchParams): any;
 }
 
 export interface AllListener<AN extends string = string, MN extends string = string> {
-	(me: AllModuleEvent<AN, MN>): any;
+	(me: AllModuleEvent<AN, MN>, apis: WatchParams): any;
 }
 
 export type State = any;
@@ -71,10 +71,16 @@ export interface Maps {
 export interface InjectMaps {
 	[p: string]: any;
 };
+
+
+export interface WatchObject {
+	[k: string]: Listener;
+}
 export interface StoreModule {
 	state: State;
 	actions: Actions;
 	maps?: Maps;
+	watch?: AllListener | WatchObject;
 }
 export interface InjectStoreModule {
 	state: State;
@@ -101,6 +107,17 @@ export type MiddlewareActionRecord = {
 
 
 export type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
+
+export type WatchParams<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+> = {
+	getState: () => State,
+	getMaps: () => InjectMaps | undefined,
+	getStore: () => Store<M, LM>,
+	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+};
 
 export type MiddlewareParams<
 	M extends Modules = Modules,

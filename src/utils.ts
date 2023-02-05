@@ -63,6 +63,9 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 	if (!!obj.maps && !isMapsObj(obj.maps)) {
 		return false;
 	}
+	if (!!obj.watch && (!isFn(obj.watch) && !isFnObj(obj.watch))) {
+		return false;
+	}
 	return true;
 };
 
@@ -76,7 +79,6 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
  */
-
 export function compose<A extends any[], R extends any>(
 	...funcs: anyFn[]
 ): (...arg: A) => R {

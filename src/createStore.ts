@@ -1,3 +1,4 @@
+import { WatchObject, MiddlewareParams, WatchParams } from './ts-utils';
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -67,23 +68,13 @@ LM extends LazyStoreModules,
 ) => {
 	// type ModuleName = keyof M | keyof LM;
 	type ModuleName = string;
-	const t = ({
-		...modules,
-		...lazyModules,
-	})
-	type AM = M &
-		{
-			[k in keyof LM]: PickPromiseType<LM[k]>;
-		};
 	type StoreType = GenerateStoreType<M, LM>;
-	// type AS = Partial<{
-	// 	[k in keyof StoreType]: StoreType[k]['state']
-	// }>;
 	type PS = Partial<
 		{
 			[k in keyof StoreType]: StoreType[k]["state"];
 		}
 	>;
+	let initing = true;
 	/**
 	 * 存放store实例
 	 */
@@ -176,6 +167,8 @@ LM extends LazyStoreModules,
 		[moduleName: string]: MapCache[]
 	}= {};
 
+	const watchModule: Record<string, AllListener | WatchObject | undefined> = {}
+
 	/**
 	 * 此方法使用在setModule中，
 	 * 使用createStore中的初始化的state，来替换待加载模块的state数据
@@ -186,15 +179,18 @@ LM extends LazyStoreModules,
 		let res;
 		// 缓存每个模块的初始化状态，供globalResetStates使用
 		resetStateData[moduleName as keyof StoreType] = storeModule.state;
+		const { watch, ...restData } = storeModule;
+		watchModule[moduleName] = watch;
 		if (!!currentInitStates[moduleName as keyof StoreType]) {
 			res = {
-				...storeModule,
+				...restData,
 				state: currentInitStates[moduleName as keyof StoreType],
 			};
 			delete currentInitStates[moduleName as keyof StoreType];
 		} else {
-			res = { ...storeModule };
+			res = { ...restData };
 		}
+		
 		return res;
 	};
 
@@ -269,7 +265,7 @@ LM extends LazyStoreModules,
 				...currentLazyModules,
 			});
 		}
-		return allModuleNames;
+		return allModuleNames as (keyof StoreType)[];
 	};
 	/**
 	 * 模块发生变动，通知对应的监听器
@@ -277,13 +273,22 @@ LM extends LazyStoreModules,
 	 * @param me 模块变动的详情
 	 */
 	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => {
+		if (initing) {
+			return;
+		}
+		const middlewareParams: WatchParams<M, LM> = {
+			getState: () => currentModules[moduleName]?.state,
+			getMaps: () => createMapsProxy(moduleName),
+			getStore: () => currentStoreInstance,
+			dispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(moduleName, actionName, ...args),
+		};
 		if (Array.isArray(listeners[moduleName])) {
-			listeners[moduleName]!.forEach((listener) => listener(me))
+			listeners[moduleName]!.forEach((listener) => listener(me, middlewareParams as any))
 		}
 		allListeners.forEach((listener) => listener({
 			...me,
 			moduleName,
-		}))
+		}, middlewareParams as any))
 	};
 	
 	/**
@@ -302,11 +307,15 @@ LM extends LazyStoreModules,
 		if (stateHasNoChange) {
 			return newState;
 		}
+		const oldModule = getModule(moduleName);
 		currentModules[moduleName]!.state = newState;
 		mapsCacheShouldCheckForValid(moduleName as string);
+		const newModule = getModule(moduleName);
 		runListeners(moduleName as string, {
 			type: "update",
 			actionName,
+			oldModule,
+			newModule,
 		});
 		return currentModules[moduleName]!.state;
 	};
@@ -405,6 +414,7 @@ LM extends LazyStoreModules,
 			throw new Error(errMsg);
 		}
 		const isModuleExist = hasModule(moduleName as keyof StoreType);
+		
 		currentModules = {
 			...currentModules,
 			[moduleName]: replaceModule(moduleName, storeModule),
@@ -418,13 +428,20 @@ LM extends LazyStoreModules,
 			mapsCache[moduleName] = {} as any;
 			mapsCacheList[moduleName] = [] as any;
 		}
-		runListeners(moduleName, { type: "init" });
-		if(moduleName in globalSetStateCache) {
-			const s = globalSetStateCache[moduleName];
-			delete globalSetStateCache[moduleName];
-			globalSetStates({
-				[moduleName]: s,
-			} as PS);
+		if (!initing) {
+			const oldModule = isModuleExist ? getModule(moduleName) : undefined;
+			runListeners(moduleName, {
+				type: "init",
+				oldModule: oldModule,
+				newModule: getModule(moduleName),
+			});
+			if(moduleName in globalSetStateCache) {
+				const s = globalSetStateCache[moduleName];
+				delete globalSetStateCache[moduleName];
+				globalSetStates({
+					[moduleName]: s,
+				} as PS);
+			}
 		}
 		return currentStoreInstance;
 	};
@@ -443,8 +460,9 @@ LM extends LazyStoreModules,
 	 * @param moduleName 
 	 */
 	const removeModule = (moduleName: string) => {
+		const oldModule = getModule(moduleName);
 		destroyModule(moduleName);
-		runListeners(moduleName, { type: "remove" });
+		runListeners(moduleName, { type: "remove", oldModule, newModule: undefined });
 		return currentStoreInstance;
 	};
 	/**
@@ -477,7 +495,7 @@ LM extends LazyStoreModules,
 	const createMapsProxy = (
 		moduleName: ModuleName
 	): InjectMaps | undefined => {
-		const { maps } = currentModules[moduleName]!;
+		const maps = currentModules[moduleName]?.maps;
 		if (maps === undefined) {
 			return undefined;
 		}
@@ -535,7 +553,9 @@ LM extends LazyStoreModules,
 	 * @param moduleName 
 	 */
 	const getModule = <MN extends keyof StoreType>(moduleName: MN) => {
-		checkModuleIsValid(moduleName);
+		if (!hasModule(moduleName)) {
+			return undefined;
+		}
 		if (moduleCache[moduleName] &&
 			moduleCache[moduleName]?.state === currentModules[moduleName]?.state &&
 			moduleCache[moduleName]?.actions === createActionsProxy(moduleName as string)
@@ -576,7 +596,9 @@ LM extends LazyStoreModules,
 	 * @param moduleName 
 	 */
 	const getOriginModule = (moduleName: ModuleName) => {
-		checkModuleIsValid(moduleName);
+		if (!hasModule(moduleName)) {
+			return undefined;
+		}
 		return currentModules[moduleName];
 	};
 	/**
@@ -587,25 +609,30 @@ LM extends LazyStoreModules,
 		if (!!(currentLazyModules as LM)[moduleName]) {
 			return (currentLazyModules as LM)[moduleName];
 		}
-		const errMsg = `getLazyModule: ${moduleName as string} is not exist`;
-		// console.error(errMsg);
-		throw new Error(errMsg);
+		return undefined;
 	};
 	/**
 	 * 加载某个懒加载模块，如果已经加载就返回以及加载的模块
 	 * @param moduleName 
 	 */
-	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule> => {
+	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule | undefined> => {
 		if (hasModule(moduleName)) {
-			return Promise.resolve(getModule(moduleName));
+			return Promise.resolve(getModule(moduleName)!);
 		}
-		return getLazyModule(moduleName)().then((loadedModule) => {
+		const lm = getLazyModule(moduleName);
+		if (!lm) {
+			return Promise.resolve(undefined);
+		}
+		return lm().then((loadedModule) => {
+			if (!loadModule) {
+				return undefined;
+			}
 			if (isStoreModule(loadedModule)) {
 				setModule(moduleName, loadedModule);
-			} else if(isStoreModule(loadedModule.default)) {
-				setModule(moduleName, loadedModule.default);
+			} else if(isStoreModule(loadedModule!.default)) {
+				setModule(moduleName, loadedModule!.default);
 			}
-			return getModule(moduleName);
+			return getModule(moduleName)!;
 		});
 	};
 
@@ -701,14 +728,47 @@ LM extends LazyStoreModules,
 		allModuleNames = undefined;
 		currentMiddlewares = [];
 		currentInterceptors = [];
+		allListeners = [];
 	};
+	// const initWatch = () => {
+	// 	Object.keys(watchModule).keys(() => {
+
+	// 	})
+	// };
+
 	/**
 	 * 初始化store
 	 */
 	const init = () => {
-		Object.keys(modules).forEach((moduleName) => {
+		const moduleNames = Object.keys(modules);
+		moduleNames.forEach((moduleName) => {
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
+		initing = false;
+		moduleNames.forEach(moduleName => {
+			if (typeof watchModule[moduleName] === 'function') {
+				subscribeAll(watchModule[moduleName] as AllListener);
+			} else if(watchModule[moduleName]) {
+				Object.keys(watchModule[moduleName]!).forEach(mn => {
+					subscribe(mn, (watchModule[moduleName] as WatchObject)[mn] as Listener)
+				})
+			}
+			runListeners(moduleName, {
+				type: "init" as const,
+				oldModule: undefined,
+				newModule: getModule(moduleName),
+			});
+
+			if(moduleName in globalSetStateCache) {
+				const s = globalSetStateCache[moduleName];
+				delete globalSetStateCache[moduleName];
+				globalSetStates({
+					[moduleName]: s,
+				} as PS);
+			}
+		});
+
+
 	};
 
 	/**
@@ -744,7 +804,7 @@ LM extends LazyStoreModules,
 		globalResetStates,
 		getAllStates,
 		type: (null as any) as StoreType,
-	} as any;
+	} as any as Store<M, LM>;
 	return currentStoreInstance;
 };
 export default createStore;

@@ -166,7 +166,7 @@ const getOriginModule = <MN extends keyof M>(moduleName: MN, originModule: M[MN]
 	expect(targetModule.maps).toBe(originModule.maps);
 }
 const getModuleNotExist = (moduleName: string) => () => {
-	expect(() => store.getModule(moduleName as any)).toThrowError(new RegExp(`module: ${moduleName} is not valid!`));
+	expect(store.getModule(moduleName as any)).toBe(undefined);
 }
 const getModuleWithMaps = <MN extends 'count'|'nameWithMaps'>(moduleName: MN, originModule: M[MN]) => () => {
 	const targetModule = store.getModule(moduleName);
@@ -232,11 +232,17 @@ const countMapsCache = () => {
 
 	expect(countModule.maps.a1).toBe(2)
 	expect(countModule.maps.a2).toBe(3)
+
 	countModule.actions.addA1(countModule.state);
+
 	countModule = store.getModule('count');
+
 	expect(countModule.maps.a1).toBe(6)
+
 	countModule.actions.addA2(countModule.state);
+
 	countModule = store.getModule('count');
+	
 	expect(countModule.maps.a2).toBe(11)
 
 
@@ -600,7 +606,7 @@ describe('lazyModule', () => {
 		// @ts-ignore
 		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
 		// @ts-ignore
-		expect(() => store.getLazyModule('lazyModule111')).toThrow();
+		expect(store.getLazyModule('lazyModule111')).toBe(undefined);
 		// @ts-ignore
 		expect(store.getLazyModule('lazyModuleWithoutMaps')).toBe(lazyModuleWithoutMaps);
 	});
@@ -682,11 +688,11 @@ describe('remove lazy module', () => {
 			lazyModule,
 		});
 	});
-	test('remove lazy module', () => {
+	test('remove lazy module', async () => {
 		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
 		store.removeLazyModule('lazyModule');
-
-		expect(() => store.getLazyModule('lazyModule')).toThrow();
+		const res = await store.getLazyModule('lazyModule')
+		expect(res).toBe(undefined);
 	});
 });
 
@@ -1117,7 +1123,6 @@ describe('globalSetStates', () => {
 		store.globalSetStates(newStates);
 		// lazy module
 		store.setModule('nameWithMaps', nameWithMaps);
-
 	})
 	test('setStates before set module manually', () => {
 		const newStates = {
