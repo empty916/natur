@@ -8,7 +8,7 @@ import {
 	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware,
 } from "../src/middlewares";
-import { AllModuleEvent, ModuleEvent, WatchParams } from "../src";
+import { AllModuleEvent, ModuleEvent, WatchAPI } from "../src";
 
 const name = () => ({
 	state: {
@@ -46,7 +46,7 @@ test("watch function", () => {
 			name: name(),
 			count: {
 				...count(),
-				watch: (event: AllModuleEvent, apis: WatchParams) => {
+				watch: (event: AllModuleEvent, apis: WatchAPI) => {
 					expect(["count", "name"].includes(event.moduleName)).toBe(
 						true
 					);
@@ -94,7 +94,7 @@ test("watch function", () => {
 		{
 			name: {
 				...name(),
-				watch: (event: AllModuleEvent, apis: WatchParams) => {
+				watch: (event: AllModuleEvent, apis: WatchAPI) => {
 					expect(["name"].includes(event.moduleName)).toBe(true);
 					if (event.actionName) {
 						expect(event.type).toBe("update");
@@ -166,7 +166,7 @@ test("watch object", () => {
 			count: {
 				...count(),
 				watch: {
-					count: (event: ModuleEvent, apis: WatchParams) => {
+					count: (event: ModuleEvent, apis: WatchAPI) => {
 						if (event.actionName) {
 							expect(event.type).toBe("update");
 							expect(
@@ -209,7 +209,7 @@ test("watch object", () => {
 							});
 						}
 					},
-					name: (event: ModuleEvent, apis: WatchParams) => {
+					name: (event: ModuleEvent, apis: WatchAPI) => {
 						if (event.actionName) {
 							expect(
 								["globalSetStates"].includes(event.actionName)
@@ -249,7 +249,7 @@ test("watch obj apis", () => {
 			count: {
 				...count(),
 				watch: {
-					count: (event: ModuleEvent, apis: WatchParams) => {
+					count: (event: ModuleEvent, apis: WatchAPI) => {
                         if (event.type === 'init') {
                             expect(apis.getState()).toEqual({
                                 text: "count",
@@ -259,9 +259,9 @@ test("watch obj apis", () => {
                                 firstChar: "c",
                                 textSplit: "c,o,u,n,t",
                             });
-    
+
                             expect(apis.getStore()).toBe(store);
-                            apis.dispatch('updateText', 'count1');
+                            apis.localDispatch('updateText', 'count1');
                         } else {
                             expect(apis.getState()).toEqual({
                                 text: "count1",
@@ -291,7 +291,7 @@ test("watch obj apis", () => {
             name: name(),
 			count: {
 				...count(),
-				watch: (event: AllModuleEvent, apis: WatchParams) => {
+				watch: (event: AllModuleEvent, apis: WatchAPI) => {
                     if (event.moduleName === 'name') {
                         return;
                     }
@@ -304,9 +304,8 @@ test("watch obj apis", () => {
                             firstChar: "c",
                             textSplit: "c,o,u,n,t",
                         });
-
                         expect(apis.getStore()).toBe(store);
-                        apis.dispatch('updateText', 'count1');
+                        apis.localDispatch('updateText', 'count1');
                     } else {
                         expect(apis.getState()).toEqual({
                             text: "count1",
@@ -314,6 +313,39 @@ test("watch obj apis", () => {
                         });
                     }
                 },
+			},
+		},
+		{},
+		{
+			middlewares: [
+				promiseMiddleware,
+				filterNonObjectMiddleware,
+				fillObjectRestDataMiddleware,
+				shallowEqualMiddleware,
+			],
+		}
+	);
+});
+
+
+test("watch obj apis 2", () => {
+	const store = createStore(
+		{
+			name: name(),
+			count: {
+				...count(),
+				watch: (event: AllModuleEvent, apis: WatchAPI) => {
+					if (event.moduleName === 'name') {
+						apis.localDispatch('updateText', event.newModule.state.text);
+						return;
+					}
+					if (event.type === 'update') {
+						expect(apis.getState()).toEqual({
+							text: "name",
+							count: 0,
+						});
+					}
+				},
 			},
 		},
 		{},

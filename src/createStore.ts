@@ -1,4 +1,4 @@
-import { WatchObject, MiddlewareParams, WatchParams } from './ts-utils';
+import {WatchObject, MiddlewareParams, WatchAPI, ListenerAPI, AllWatcher} from './ts-utils';
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -38,14 +38,14 @@ import {
 import MapCache from "./MapCache";
 
 /**
- * 
+ *
  * @param modules 同步模块, 你的store模块
  * @param lazyModules 懒加载模块， 必填，如果没有可以传{}, 如果不填，那么ts的类型推断会有问题
  * @param param2 选项配置，详情见文档
  */
 const createStore = <
-M extends Modules,
-LM extends LazyStoreModules,
+	M extends Modules,
+	LM extends LazyStoreModules,
 >(
 	modules: M = {} as any,
 	lazyModules: LM,
@@ -167,7 +167,7 @@ LM extends LazyStoreModules,
 		[moduleName: string]: MapCache[]
 	}= {};
 
-	const watchModule: Record<string, AllListener | WatchObject | undefined> = {}
+	const watchModule: Record<string, AllWatcher | WatchObject | undefined> = {}
 
 	/**
 	 * 此方法使用在setModule中，
@@ -190,7 +190,7 @@ LM extends LazyStoreModules,
 		} else {
 			res = { ...restData };
 		}
-		
+
 		return res;
 	};
 
@@ -232,7 +232,7 @@ LM extends LazyStoreModules,
 	/**
 	 * 当模块对应的state更新时，需要通知该模块的maps缓存，state已经改变
 	 * 所以在下一次获取maps的值时，应该先看看maps的依赖有没有变化，
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const mapsCacheShouldCheckForValid = (moduleName: ModuleName) => {
 		mapsCacheList[moduleName]!.forEach((i) => i.shouldCheckCache());
@@ -240,7 +240,7 @@ LM extends LazyStoreModules,
 
 	/**
 	 * 清除setStateProxyWithMiddlewareCache对应模块的缓存
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const clearSetStateProxyWithMiddlewareCache = (moduleName: string) => {
 		delete setStateProxyWithMiddlewareCache[moduleName];
@@ -254,6 +254,7 @@ LM extends LazyStoreModules,
 		clearActionsProxyCache(moduleName);
 		clearSetStateProxyWithMiddlewareCache(moduleName);
 		moduleCache[moduleName as keyof StoreType] = undefined;
+		watchModule[moduleName] = undefined;
 	};
 	/**
 	 * 获取所有模块的名字，包括懒加载模块的名字
@@ -269,34 +270,56 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 模块发生变动，通知对应的监听器
-	 * @param moduleName 
+	 * @param moduleName
 	 * @param me 模块变动的详情
 	 */
 	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => {
 		if (!isInited) {
 			return;
 		}
-		const middlewareParams: WatchParams<M, LM> = {
+		const commonAPI = {
 			getState: () => currentModules[moduleName]?.state,
 			getMaps: () => createMapsProxy(moduleName),
 			getStore: () => currentStoreInstance,
-			dispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(moduleName, actionName, ...args),
+		}
+		const listenerAPI: ListenerAPI<M, LM> = {
+			...commonAPI,
+			dispatch,
 		};
 		if (Array.isArray(listeners[moduleName])) {
-			listeners[moduleName]!.forEach((listener) => listener(me, middlewareParams as any))
+			listeners[moduleName]!.forEach((listener) => listener(me, listenerAPI as any))
 		}
 		allListeners.forEach((listener) => listener({
 			...me,
 			moduleName,
-		}, middlewareParams as any))
+		}, listenerAPI as any));
+		Object.keys(watchModule).forEach(watcherModuleName => {
+			const target = watchModule[watcherModuleName];
+			const watcherAPI = {
+				...commonAPI,
+				localDispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(watcherModuleName, actionName, ...args),
+			}
+			if (typeof target === 'function') {
+				target({
+					...me,
+					moduleName,
+				}, watcherAPI as any)
+			} else {
+				if (target?.[moduleName] && typeof target[moduleName] === 'function') {
+					target[moduleName]({
+						...me,
+					}, watcherAPI as any)
+				}
+			}
+		})
 	};
-	
+
 	/**
 	 * 用于更新模块对应的state，并发出通知
 	 * 通知模块监听器
 	 * 通知模块中的maps缓存state更新了
 	 * 如果新的state全等于旧的state则不会触发更新
-	 * @param param0 
+	 * @param param0
 	 */
 	const setState = ({
 		moduleName,
@@ -323,7 +346,7 @@ LM extends LazyStoreModules,
 	 * 全局统一设置state
 	 * 主要的应用场景是，异步加载所有的state配置时，需要更新到对应的模块中
 	 * 更新会走中间件，中间中的actionName参数是'globalSetStates'
-	 * @param states 
+	 * @param states
 	 */
 	const globalSetStates = (states: PS) => {
 		Object.keys(states).forEach((moduleName: ModuleName) => {
@@ -349,7 +372,7 @@ LM extends LazyStoreModules,
 	 * 可以配置include：只重置哪些模块
 	 * 可以配置exclude：不重置哪些模块
 	 * exclude优先级大于include
-	 * @param states 
+	 * @param states
 	 */
 	const globalResetStates = ({
 		include,
@@ -414,7 +437,7 @@ LM extends LazyStoreModules,
 			throw new Error(errMsg);
 		}
 		const isModuleExist = hasModule(moduleName as keyof StoreType);
-		
+
 		currentModules = {
 			...currentModules,
 			[moduleName]: replaceModule(moduleName, storeModule),
@@ -447,7 +470,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 销毁模块，清空缓存以及对应的原始数据
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const destroyModule = (moduleName: string) => {
 		delete currentModules[moduleName];
@@ -457,7 +480,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 移除模块，会调用destroyModule，并发送通知
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const removeModule = (moduleName: string) => {
 		const oldModule = getModule(moduleName);
@@ -467,8 +490,8 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 设置懒加载模块
-	 * @param moduleName 
-	 * @param lazyModule 
+	 * @param moduleName
+	 * @param lazyModule
 	 */
 	const setLazyModule = (
 		moduleName: keyof LM,
@@ -480,7 +503,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 移除懒加载模块
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const removeLazyModule = (moduleName: string) => {
 		allModuleNames = undefined;
@@ -490,7 +513,7 @@ LM extends LazyStoreModules,
 
 	/**
 	 * 计算maps的值，如果首次获取maps则会先建立缓存对象
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const createMapsProxy = (
 		moduleName: ModuleName
@@ -529,12 +552,12 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 创建action代理
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const createActionsProxy = (moduleName: ModuleName) => {
 		if (!!actionsProxyCache[moduleName]) {
 			// console.log('use action cache!');
-			
+
 			return actionsProxyCache[moduleName];
 		}
 		let actionsProxy = { ...currentModules[moduleName]!.actions };
@@ -550,7 +573,7 @@ LM extends LazyStoreModules,
 	let moduleCache: Partial<StoreType> = {};
 	/**
 	 * 获取module
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const getModule = <MN extends keyof StoreType>(moduleName: MN) => {
 		if (!hasModule(moduleName)) {
@@ -593,7 +616,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 获取原始的module数据
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const getOriginModule = (moduleName: ModuleName) => {
 		if (!hasModule(moduleName)) {
@@ -603,7 +626,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 获取某个懒加载模块
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const getLazyModule = (moduleName: keyof LM) => {
 		if (!!(currentLazyModules as LM)[moduleName]) {
@@ -613,7 +636,7 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 加载某个懒加载模块，如果已经加载就返回以及加载的模块
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule | undefined> => {
 		if (hasModule(moduleName)) {
@@ -652,7 +675,7 @@ LM extends LazyStoreModules,
 	/**
 	 * 创建dispath
 	 * 这里是拼接filter，action，middleware，setState的地方
-	 * @param moduleName 
+	 * @param moduleName
 	 */
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
@@ -676,7 +699,7 @@ LM extends LazyStoreModules,
 				});
 			}
 		);
-		
+
 		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
 
 		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithInterceptors({
@@ -688,8 +711,8 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 监听某个模块
-	 * @param moduleName 
-	 * @param listener 
+	 * @param moduleName
+	 * @param listener
 	 */
 	const subscribe = (moduleName: ModuleName, listener: Listener) => {
 		if (!listeners[moduleName]) {
@@ -706,8 +729,8 @@ LM extends LazyStoreModules,
 	};
 	/**
 	 * 监听所有模块
-	 * @param moduleName 
-	 * @param listener 
+	 * @param moduleName
+	 * @param listener
 	 */
 	const subscribeAll = (listener: AllListener) => {
 		allListeners.push(listener);
@@ -730,11 +753,6 @@ LM extends LazyStoreModules,
 		currentInterceptors = [];
 		allListeners = [];
 	};
-	// const initWatch = () => {
-	// 	Object.keys(watchModule).keys(() => {
-
-	// 	})
-	// };
 
 	/**
 	 * 初始化store
@@ -745,15 +763,6 @@ LM extends LazyStoreModules,
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
 		isInited = true;
-		Object.keys(watchModule).forEach(moduleName => {
-			if (typeof watchModule[moduleName] === 'function') {
-				subscribeAll(watchModule[moduleName] as AllListener);
-			} else if(watchModule[moduleName]) {
-				Object.keys(watchModule[moduleName]!).forEach(mn => {
-					subscribe(mn, (watchModule[moduleName] as WatchObject)[mn] as Listener)
-				})
-			}
-		});
 		moduleNames.forEach(moduleName => {
 			runListeners(moduleName, {
 				type: "init" as const,

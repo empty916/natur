@@ -42,15 +42,32 @@ export interface Listener<
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 	MN extends keyof ST = keyof ST,
 > {
-	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchParams<M, LM>): any;
+	(me: ModuleEvent<M, LM, ST, MN>, apis: ListenerAPI<M, LM>): any;
 }
 
 export interface AllListener<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 > {
-	(me: AllModuleEvent<M, LM>, apis: WatchParams<M, LM>): any;
+	(me: AllModuleEvent<M, LM>, apis: ListenerAPI<M, LM>): any;
 }
+
+export interface Watcher<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+	> {
+	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchAPI<M, LM>): any;
+}
+
+export interface AllWatcher<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+> {
+	(me: AllModuleEvent<M, LM>, apis: WatchAPI<M, LM>): any;
+}
+
 
 export type State = any;
 
@@ -105,13 +122,13 @@ export interface InjectMaps {
 };
 
 export interface WatchObject {
-	[k: string]: Listener;
+	[k: string]: Watcher;
 }
 export interface StoreModule {
 	state: State;
 	actions: Actions;
 	maps?: Maps;
-	watch?: AllListener | WatchObject;
+	watch?: AllWatcher | WatchObject;
 }
 export interface InjectStoreModule {
 	state: State;
@@ -131,15 +148,26 @@ export interface Modules {
 	[p: string]: StoreModule;
 }
 export type MiddlewareActionRecord = {
-	moduleName: string, 
-	actionName: string, 
+	moduleName: string,
+	actionName: string,
 	state: ReturnType<Action>
 };
 
 
 export type MiddlewareNext = (record: MiddlewareActionRecord) => ReturnType<Action>;
 
-export type WatchParams<
+export type ListenerAPI<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+	> = {
+	getState: () => State,
+	getMaps: () => InjectMaps | undefined,
+	getStore: () => Store<M, LM>,
+	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(moduleName: MN, actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+};
+
+export type WatchAPI<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
@@ -147,7 +175,7 @@ export type WatchParams<
 	getState: () => State,
 	getMaps: () => InjectMaps | undefined,
 	getStore: () => Store<M, LM>,
-	dispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+	localDispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
 };
 
 export type MiddlewareParams<
@@ -188,8 +216,8 @@ export type Middleware<
 
 
 export type InterceptorActionRecord = {
-	moduleName: string, 
-	actionName: string, 
+	moduleName: string,
+	actionName: string,
 	actionArgs: Parameters<Action>;
 	actionFunc: AnyFun;
 };
@@ -214,7 +242,7 @@ type ActionActualReturnType<Action extends AnyFun> =
 /**
  * 将actions的返回值中的Partial<state>替换为state
  */
-type ReplacePartialStateToState<ART, S, PS = Partial<S>> = Extract<ART, PS | Promise<PS>> extends never ? ART : 
+type ReplacePartialStateToState<ART, S, PS = Partial<S>> = Extract<ART, PS | Promise<PS>> extends never ? ART :
 	Extract<ART, PS | Promise<PS>> extends PS ? (Exclude<ART, PS> | S) :
 	Extract<ART, PS | Promise<PS>> extends Promise<PS> ? (Exclude<ART, Promise<PS>> | Promise<S>) :
 	Extract<ART, PS | Promise<PS>> extends (Promise<PS> | PS) ? (Exclude<ART, (Promise<PS> | PS)> | Promise<S> | S) : ART;
@@ -278,8 +306,8 @@ export interface PickedLazyStoreModules {
  * 将懒加载类型计算为于同步类型相同的类型
  */
 export type PickLazyStoreModules<LMS extends LazyStoreModules> =  {
-	[p in keyof LMS]: LMS[p] extends () => Promise<infer V> ? 
-		V extends StoreModule ? 
+	[p in keyof LMS]: LMS[p] extends () => Promise<infer V> ?
+		V extends StoreModule ?
 			Omit<V, 'default'> : V extends {default: StoreModule} ?
 				V['default'] : never : never;
 };
@@ -388,7 +416,7 @@ export type Fun<P> = (p: P) => any;
 
 
 export type ModuleDepDec<ST extends InjectStoreModules = InjectStoreModules, MN extends keyof ST = string> = [MN, {
-	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: 
-		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : 
+	[k in Extract<keyof ST[MN], 'state'|'maps'>]?:
+		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> :
 			k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
 }];
