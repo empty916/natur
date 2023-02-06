@@ -44,10 +44,10 @@ import MapCache from "./MapCache";
  * @param param2 选项配置，详情见文档
  */
 const createStore = <
-	M extends Modules,
-	LM extends LazyStoreModules,
+M extends Modules,
+LM extends LazyStoreModules,
 >(
-	modules: M = {} as any,
+	modules: M = {} as M,
 	lazyModules: LM,
 	{
 		initStates = {},
@@ -62,8 +62,8 @@ const createStore = <
 				>[k]["state"];
 			}
 		>,
-		middlewares?: Middleware<M, LM>[],
-		interceptors?: Interceptor<M, LM>[]
+		middlewares?: Middleware[],
+		interceptors?: Interceptor[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -597,6 +597,7 @@ const createStore = <
 	 * 执行对应模块对应的action
 	 * @param moduleName
 	 * @param actionName
+	 * @param arg
 	 */
 	const dispatch = <
 		MN extends keyof StoreType,
@@ -686,9 +687,11 @@ const createStore = <
 			getStore: () => currentStoreInstance,
 			dispatch,
 		};
+		// @ts-ignore
 		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
 
+		// @ts-ignore
 		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
 		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
 			filterRecord => {
@@ -729,7 +732,6 @@ const createStore = <
 	};
 	/**
 	 * 监听所有模块
-	 * @param moduleName
 	 * @param listener
 	 */
 	const subscribeAll = (listener: AllListener) => {

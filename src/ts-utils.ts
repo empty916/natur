@@ -1,5 +1,5 @@
 import { NonReactStatics } from "hoist-non-react-statics";
-import { ClassAttributes, ComponentClass, ComponentType, FunctionComponent } from "react";
+import { ClassAttributes, ComponentClass, ComponentType } from "react";
 
 export interface ModuleEvent<
 	M extends Modules = Modules,
@@ -11,7 +11,7 @@ export interface ModuleEvent<
 	actionName?: ActionName<M, LM> | undefined | 'globalSetStates' | 'globalResetStates';
 	oldModule: undefined | ST[MN];
 	newModule: undefined | ST[MN];
-};
+}
 
 export interface AllModuleEvent<
 	M extends Modules = Modules,
@@ -27,7 +27,7 @@ export interface AllModuleEvent<
 	actionName?: Extract<MANS[keyof MANS], string> | undefined | 'globalSetStates' | 'globalResetStates';
 	oldModule: undefined | InjectStoreModule;
 	newModule: undefined | InjectStoreModule;
-};
+}
 
 export type ActionName<
 	M extends Modules = Modules,
@@ -103,7 +103,7 @@ export type ConnectedComponent<
 
 export interface States {
 	[type: string]: State,
-};
+}
 
 export interface Action {
 	(...arg: any[]): any;
@@ -111,15 +111,15 @@ export interface Action {
 
 export interface Actions {
 	[type: string]: Action;
-};
+}
 
 export type StoreMap = Array<string | AnyFun> | AnyFun;
 export interface Maps {
 	[p: string]: StoreMap;
-};
+}
 export interface InjectMaps {
 	[p: string]: any;
-};
+}
 
 export interface WatchObject {
 	[k: string]: Watcher;
@@ -342,7 +342,7 @@ export type PromiseModuleType<
 }
 
 
-type SMW = StoreModuleWithMaps | StoreModuleWithoutMaps;
+// type SMW = StoreModuleWithMaps | StoreModuleWithoutMaps;
 
 /**
  * 生成StoreType
