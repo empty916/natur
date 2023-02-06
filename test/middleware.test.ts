@@ -29,7 +29,8 @@ const count = {
 	state: countState,
 	actions: {
 		inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
-		thunkInc: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
+		thunkInc: () => ({getState, setState, getMaps, dispatch, localDispatch}: ThunkParams<CountState, CountMaps>) => {
+            localDispatch('inc', getState());
             dispatch('inc', getState());
             dispatch('count2/inc');
             return setState({ ...getState(), count: getState().count + 1 });
@@ -76,7 +77,7 @@ describe('actions', () => {
         const countModule = store.getModule('count');
         
 		expect(countModule.maps.isOdd).toBe(false);
-        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 3);
         const count2Module = store.getModule('count2');
         
 		expect(count2Module.state).toBe(1);
@@ -92,7 +93,7 @@ describe('actions', () => {
         const countModule = store.getModule('count');
         
 		expect(countModule.maps.isOdd).toBe(false);
-        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 3);
         const count2Module = store.getModule('count2');
         
 		expect(count2Module.state).toBe(1);
