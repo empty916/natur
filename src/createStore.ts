@@ -636,10 +636,11 @@ LM extends LazyStoreModules,
 			getStore: () => currentStoreInstance,
 			dispatch,
 		};
-		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams as any));
+		// @ts-ignore
+		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
-
-		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams as any));
+		// @ts-ignore
+		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
 		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
 			filterRecord => {
 				return setStateProxyWithMiddleware({
