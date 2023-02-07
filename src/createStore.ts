@@ -1,3 +1,4 @@
+import { MiddlewareParams } from './ts-utils';
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -629,17 +630,15 @@ LM extends LazyStoreModules,
 	 */
 	const createDispatch = (moduleName: ModuleName): Action => {
 		checkModuleIsValid(moduleName);
-		const middlewareParams = {
+		const middlewareParams: MiddlewareParams<Modules, LazyStoreModules> = {
 			setState,
 			getState: () => currentModules[moduleName]!.state,
 			getMaps: () => createMapsProxy(moduleName),
-			getStore: () => currentStoreInstance,
+			getStore: () => currentStoreInstance as Store<Modules, LazyStoreModules>,
 			dispatch,
 		};
-		// @ts-ignore
 		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
 		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
-		// @ts-ignore
 		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
 		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
 			filterRecord => {
