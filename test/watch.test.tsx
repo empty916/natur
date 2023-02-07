@@ -246,10 +246,11 @@ test("watch object", () => {
 test("watch obj apis", () => {
 	const store = createStore(
 		{
+			name: name(),
 			count: {
 				...count(),
 				watch: {
-					count: (event: ModuleEvent, apis: WatchAPI) => {
+					name: (event: ModuleEvent, apis: WatchAPI) => {
                         if (event.type === 'init') {
                             expect(apis.getState()).toEqual({
                                 text: "count",
@@ -336,7 +337,7 @@ test("watch obj apis 2", () => {
 				...count(),
 				watch: (event: AllModuleEvent, apis: WatchAPI) => {
 					if (event.moduleName === 'name') {
-						apis.localDispatch('updateText', event.newModule.state.text);
+						apis.localDispatch('updateText', event.newModule?.state.text);
 						return;
 					}
 					if (event.type === 'update') {

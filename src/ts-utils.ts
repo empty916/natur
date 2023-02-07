@@ -57,15 +57,15 @@ export interface Watcher<
 	LM extends LazyStoreModules = LazyStoreModules,
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 	MN extends keyof ST = keyof ST,
-	> {
-	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchAPI<M, LM>): any;
+> {
+	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchAPI): any;
 }
 
 export interface AllWatcher<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 > {
-	(me: AllModuleEvent<M, LM>, apis: WatchAPI<M, LM>): any;
+	(me: AllModuleEvent<M, LM>, apis: WatchAPI): any;
 }
 
 
@@ -168,14 +168,14 @@ export type ListenerAPI<
 };
 
 export type WatchAPI<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+	S extends State = State,
+	M extends Maps = Maps,
+	A extends Actions = Actions,
 > = {
-	getState: () => State,
-	getMaps: () => InjectMaps | undefined,
-	getStore: () => Store<M, LM>,
-	localDispatch: <MN extends keyof StoreType, AN extends keyof StoreType[MN]['actions']>(actionName: AN, ...arg: Parameters<StoreType[MN]['actions'][AN]>) => ReturnType<StoreType[MN]['actions'][AN]>;
+	getState: () => S,
+	getMaps: () => GenMapsType<M, S> | undefined,
+	getStore: () => InjectStoreModules,
+	localDispatch: <AN extends keyof A>(actionName: AN, ...arg: Parameters<A[AN]>) => ActionReturnType<A[AN], S>;
 };
 
 export type MiddlewareParams<

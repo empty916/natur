@@ -277,13 +277,10 @@ LM extends LazyStoreModules,
 		if (!isInited) {
 			return;
 		}
-		const commonAPI = {
-			getState: () => currentModules[moduleName]?.state,
-			getMaps: () => createMapsProxy(moduleName),
-			getStore: () => currentStoreInstance,
-		}
 		const listenerAPI: ListenerAPI<M, LM> = {
-			...commonAPI,
+			getState: () => currentModules[moduleName]?.state,
+			getMaps: () => getModule(moduleName)?.maps,
+			getStore: () => currentStoreInstance,
 			dispatch,
 		};
 		if (Array.isArray(listeners[moduleName])) {
@@ -296,7 +293,9 @@ LM extends LazyStoreModules,
 		Object.keys(watchModule).forEach(watcherModuleName => {
 			const target = watchModule[watcherModuleName];
 			const watcherAPI = {
-				...commonAPI,
+				getState: () => currentModules[watcherModuleName]?.state,
+				getMaps: () => getModule(watcherModuleName)?.maps,
+				getStore: () => currentStoreInstance,
 				localDispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(watcherModuleName, actionName, ...args),
 			}
 			if (typeof target === 'function') {
@@ -683,7 +682,7 @@ LM extends LazyStoreModules,
 		const middlewareParams = {
 			setState,
 			getState: () => currentModules[moduleName]!.state,
-			getMaps: () => createMapsProxy(moduleName),
+			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
 		};
