@@ -61,8 +61,8 @@ LM extends LazyStoreModules,
 				>[k]["state"];
 			}
 		>,
-		middlewares?: Middleware<M, LM>[],
-		interceptors?: Interceptor<M, LM>[]
+		middlewares?: Middleware[],
+		interceptors?: Interceptor[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -636,10 +636,10 @@ LM extends LazyStoreModules,
 			getStore: () => currentStoreInstance,
 			dispatch,
 		};
-		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
+		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams as any));
 		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
 
-		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
+		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams as any));
 		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
 			filterRecord => {
 				return setStateProxyWithMiddleware({
