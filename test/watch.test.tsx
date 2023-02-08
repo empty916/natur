@@ -9,6 +9,7 @@ import {
 	shallowEqualMiddleware,
 } from "../src/middlewares";
 import { AllModuleEvent, ModuleEvent, WatchAPI } from "../src";
+import { WatchEvent, AllWatchEvent } from "../src/ts-utils";
 
 const name = () => ({
 	state: {
@@ -39,6 +40,7 @@ const count = () => ({
 		firstChar: ["text", (text: string) => text[0]],
 	},
 });
+type C = ReturnType<typeof count>;
 
 test("watch function", () => {
 	const store = createStore(
@@ -244,13 +246,14 @@ test("watch object", () => {
 });
 
 test("watch obj apis", () => {
+	
 	const store = createStore(
 		{
 			name: name(),
 			count: {
 				...count(),
 				watch: {
-					name: (event: ModuleEvent, apis: WatchAPI) => {
+					name: (event: WatchEvent<C>, apis: WatchAPI<C['state'], C['maps'], C['actions']>) => {
                         if (event.type === 'init') {
                             expect(apis.getState()).toEqual({
                                 text: "count",
@@ -260,7 +263,6 @@ test("watch obj apis", () => {
                                 firstChar: "c",
                                 textSplit: "c,o,u,n,t",
                             });
-
                             expect(apis.getStore()).toBe(store);
                             apis.localDispatch('updateText', 'count1');
                         } else {
@@ -292,7 +294,7 @@ test("watch obj apis", () => {
             name: name(),
 			count: {
 				...count(),
-				watch: (event: AllModuleEvent, apis: WatchAPI) => {
+				watch: (event: AllWatchEvent<C>, apis: WatchAPI<C['state'], C['maps'], C['actions']>) => {
                     if (event.moduleName === 'name') {
                         return;
                     }

@@ -719,7 +719,8 @@ describe('subscribe', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribe('count', ({type, actionName, oldModule, newModule}) => {
+		store.subscribe('count', (e) => {
+			const {type, actionName, oldModule, newModule} = e;
 			expect(type).toBe('update');
 			expect(actionName).toBe('inc');
 			done();

@@ -62,8 +62,8 @@ LM extends LazyStoreModules,
 				>[k]["state"];
 			}
 		>,
-		middlewares?: Middleware[],
-		interceptors?: Interceptor[]
+		middlewares?: any[],
+		interceptors?: any[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -766,7 +766,7 @@ LM extends LazyStoreModules,
 		isInited = true;
 		moduleNames.forEach(moduleName => {
 			runListeners(moduleName, {
-				type: "init" as const,
+				type: "init",
 				oldModule: undefined,
 				newModule: getModule(moduleName),
 			});

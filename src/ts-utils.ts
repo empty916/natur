@@ -1,17 +1,75 @@
 import { NonReactStatics } from "hoist-non-react-statics";
 import { ClassAttributes, ComponentClass, ComponentType } from "react";
 
+export type EventType = 'init' | 'update' | 'remove';
+
+export type WatchEventMap<
+	M extends StoreModule = StoreModule,
+	IM = ModuleType<M>
+> = {
+	[k in EventType]: {
+		type: k;
+		actionName: k extends 'init'|'remove' ? undefined : keyof M['actions'] | 'globalSetStates' | 'globalResetStates';
+		oldModule: k extends 'init' ? undefined : IM;
+		newModule: k extends 'remove' ? undefined : IM;
+	}
+}
+
+export type ModuleEventMap<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> = {
+	[k in EventType]: {
+		type: k;
+		actionName: k extends 'init'|'remove' ? undefined : ActionName<M, LM> | 'globalSetStates' | 'globalResetStates';
+		oldModule: k extends 'init' ? undefined : ST[MN];
+		newModule: k extends 'remove' ? undefined : ST[MN];
+	}
+};
+
+export type AllWatchEventMap<
+	M extends StoreModule = StoreModule,
+	IM = ModuleType<M>
+> = {
+	[k in EventType]: {
+		type: k;
+		moduleName: string;
+		actionName: k extends 'init'|'remove' ? undefined : keyof M['actions'] | 'globalSetStates' | 'globalResetStates';
+		oldModule: k extends 'init' ? undefined : IM;
+		newModule: k extends 'remove' ? undefined : IM;
+	}
+}
+
+export type AllModuleEventMap<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> = {
+	[k in EventType]: {
+		type: k;
+		moduleName: MN;
+		actionName: k extends 'init'|'remove' ? undefined : ActionName<M, LM> | 'globalSetStates' | 'globalResetStates';
+		oldModule: k extends 'init' ? undefined : ST[MN];
+		newModule: k extends 'remove' ? undefined : ST[MN];
+	}
+};
+
 export interface ModuleEvent<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 	MN extends keyof ST = keyof ST,
 > {
-	type: 'init' | 'update' | 'remove';
+	type: EventType;
 	actionName?: ActionName<M, LM> | undefined | 'globalSetStates' | 'globalResetStates';
 	oldModule: undefined | ST[MN];
 	newModule: undefined | ST[MN];
 }
+
+
 
 export interface AllModuleEvent<
 	M extends Modules = Modules,
@@ -52,20 +110,17 @@ export interface AllListener<
 	(me: AllModuleEvent<M, LM>, apis: ListenerAPI<M, LM>): any;
 }
 
-export interface Watcher<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
-	MN extends keyof ST = keyof ST,
-> {
-	(me: ModuleEvent<M, LM, ST, MN>, apis: WatchAPI): any;
+export type WatchEvent<M extends StoreModule = StoreModule> = WatchEventMap<M>[EventType];
+
+export interface Watcher {
+	(me: any, apis: any): any;
 }
 
-export interface AllWatcher<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-> {
-	(me: AllModuleEvent<M, LM>, apis: WatchAPI): any;
+export type AllWatchEvent<M extends StoreModule = StoreModule> = AllWatchEventMap<M>[EventType];
+
+
+export interface AllWatcher {
+	(me: any, apis: any): any;
 }
 
 
@@ -173,8 +228,8 @@ export type WatchAPI<
 	A extends Actions = Actions,
 > = {
 	getState: () => S,
-	getMaps: () => GenMapsType<M, S> | undefined,
-	getStore: () => InjectStoreModules,
+	getMaps: () => GenMapsType<M, S>,
+	getStore: () => Store<any, any>,
 	localDispatch: <AN extends keyof A>(actionName: AN, ...arg: Parameters<A[AN]>) => ActionReturnType<A[AN], S>;
 };
 

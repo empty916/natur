@@ -21,6 +21,8 @@ export {
     AllWatcher,
 	WatchAPI,
     WatchObject,
+	WatchEvent,
+	AllWatchEvent,
 	State,
 	States,
 	Action,
