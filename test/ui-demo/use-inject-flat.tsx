@@ -72,7 +72,6 @@ const App = () => {
 		state: ['text'],
 		maps: ['textSplit']
 	});
-	name.count
 	const [lazyName, loading] = useInject('lazyName')
 	if (loading) {
 		return <div role='loading'>loading</div>;
@@ -93,7 +92,6 @@ const App = () => {
 const DynamicModuleApp = () => {
 	const [moduleName, setModuleName] = useState<'lazyName' | 'lazyName2'>('lazyName');
 	const [lazyName, loading] = useInject(moduleName);
-
 	useEffect(() => {
 		if (moduleName === 'lazyName' && loading === false) {
 			setModuleName('lazyName2');
