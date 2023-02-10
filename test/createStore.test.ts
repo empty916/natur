@@ -795,7 +795,7 @@ describe('subscribeAll', () => {
 	beforeEach(() => {
 		// @ts-ignore
 		store = createStore(
-			{ count }, {},
+			{ count, name }, {},
 			{
 				middlewares: [
 					promiseMiddleware,
