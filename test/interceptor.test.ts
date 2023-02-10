@@ -148,7 +148,6 @@ describe('interceptor', () => {
     });
 
     test('one more interceptor add action arg', () => {
-
         const interceptor1: Interceptor = () => next => interceptorActionRecord => {
             return next({
                 ...interceptorActionRecord,

@@ -719,10 +719,14 @@ describe('subscribe', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribe('count', (e) => {
+		store.subscribe('count', (e, apis) => {
 			const {type, actionName, oldModule, newModule} = e;
 			expect(type).toBe('update');
 			expect(actionName).toBe('inc');
+			countModule = store.getModule('count');
+			expect(apis.getMaps()).toBe(countModule.maps);
+			expect(apis.getState()).toBe(countModule.state);
+			expect(apis.getStore()).toBe(store);
 			done();
 		});
 		countModule.actions.inc(countModule.state);
@@ -803,11 +807,14 @@ describe('subscribeAll', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribeAll(({type, actionName, moduleName, oldModule}) => {
+		store.subscribeAll(({type, actionName, moduleName, oldModule}, apis) => {
 			if (moduleName === 'count') {
 				expect(type).toBe('update');
 				expect(actionName).toBe('inc');
-				
+				countModule = store.getModule('count');
+				expect(apis.getMaps()).toBe(countModule.maps);
+				expect(apis.getState()).toBe(countModule.state);
+				expect(apis.getStore()).toBe(store);
 				done();
 			}
 		});
