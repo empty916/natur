@@ -7,11 +7,13 @@ import {
 	shallowEqualMiddleware
 } from '../../src/middlewares'
 
+const state = {
+	text: 'name',
+	count: 0,
+};
+
 const name = {
-	state: {
-		text: 'name',
-		count: 0,
-	},
+	state,
 	actions: {
 		updateText: (text: string) => ({text}),
 		inc: (count: number) => ({count: count + 1}),
@@ -19,6 +21,7 @@ const name = {
 	maps: {
 		textSplit: ['text', (text: string) => text.split('').join(',')],
 		firstChar: ['text', (text: string) => text[0]],
+		// count: ['count', (c: number) => c + 1]
 	}
 }
 const lazyName = {
@@ -89,7 +92,6 @@ const App = () => {
 const DynamicModuleApp = () => {
 	const [moduleName, setModuleName] = useState<'lazyName' | 'lazyName2'>('lazyName');
 	const [lazyName, loading] = useInject(moduleName);
-
 	useEffect(() => {
 		if (moduleName === 'lazyName' && loading === false) {
 			setModuleName('lazyName2');

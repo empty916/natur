@@ -49,23 +49,7 @@ export function getDepValue<
 }
 export type FlatModule<
     T extends InjectStoreModule,
-    S = T["state"],
-    M = T["maps"],
-    A = T["actions"],
-    MK = M extends undefined | null ? never : Extract<keyof M, string>
-> = MK extends never
-    ? {
-            [k in keyof S]: S[k];
-      } & {
-            [k in keyof A]: A[k];
-      }
-    : {
-            [k in Exclude<keyof S, keyof M>]: S[k];
-      } & {
-            [k in keyof A]: A[k];
-      } & {
-            [k in keyof M]: M[k];
-      };
+> = T extends {maps: any} ? Omit<T['state'], keyof T['maps']> & T['maps'] & T['actions'] : T['state'] & T['actions'];
 
 export type CreateUseInjectOptions<F extends boolean|undefined> = {
     flat?: F;
