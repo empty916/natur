@@ -483,6 +483,7 @@ LM extends LazyStoreModules,
 	 */
 	const removeModule = (moduleName: string) => {
 		const oldModule = getModule(moduleName);
+		runListeners(moduleName, { type: "beforeRemove", oldModule, newModule: oldModule });
 		destroyModule(moduleName);
 		runListeners(moduleName, { type: "remove", oldModule, newModule: undefined });
 		return currentStoreInstance;

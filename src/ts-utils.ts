@@ -1,7 +1,7 @@
 import { NonReactStatics } from "hoist-non-react-statics";
 import { ClassAttributes, ComponentClass, ComponentType } from "react";
 
-export type EventType = 'init' | 'update' | 'remove';
+export type EventType = 'init' | 'update' | 'remove' | 'beforeRemove';
 
 export type WatchEventMap<
 	M extends StoreModule = StoreModule,
@@ -80,7 +80,7 @@ export interface AllModuleEvent<
 		[k in MN]: keyof ST[k]['actions']
 	}
 > {
-	type: 'init' | 'update' | 'remove';
+	type: EventType;
 	moduleName: Extract<keyof ST, string>;
 	actionName?: Extract<MANS[keyof MANS], string> | undefined | 'globalSetStates' | 'globalResetStates';
 	oldModule: undefined | InjectStoreModule;

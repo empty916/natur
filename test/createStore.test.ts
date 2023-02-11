@@ -742,16 +742,19 @@ describe('subscribe', () => {
 	});
 	test('subscribe listener get remove module event', done => {
 		store.subscribe('count', ({type, actionName}) => {
-			expect(type).toBe('remove');
+			expect(['remove', 'beforeRemove'].includes(type)).toBe(true);
 			expect(actionName).toBe(undefined);
-			done();
+			type === 'remove' && done();
 		});
 		store.removeModule('count');
 	});
 	test('subscribe listener', done => {
 		let countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
-		const unsub = store.subscribe('count', () => {
+		const unsub = store.subscribe('count', (e) => {
+			if (e.type === 'init') {
+				e.
+			}
 			countModule = store.getModule('count');
 			expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
 			expect(countModule.state.count).toBe(oldCount + 1);
@@ -834,9 +837,9 @@ describe('subscribeAll', () => {
 	test('subscribe listener get remove module event', done => {
 		store.subscribeAll(({type, actionName, moduleName}) => {
 			if (moduleName === 'count') {
-				expect(type).toBe('remove');
+				expect(['remove', 'beforeRemove'].includes(type)).toBe(true);
 				expect(actionName).toBe(undefined);
-				done();
+				type === 'remove' && done();
 			}
 		});
 		store.removeModule('count');
