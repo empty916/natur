@@ -36,7 +36,7 @@ export type AllWatchEventBase = {
 	newModule: InjectStoreModule | undefined;
 };
 
-export type WatcherAPIBase = {
+export type WatchAPIBase = {
 	getState: () => any;
 	getMaps: () => Maps | undefined;
 	localDispatch: (actionName: string, ...arg: any) => any;
@@ -44,12 +44,12 @@ export type WatcherAPIBase = {
 }
 
 export interface Watcher {
-	(we: WatchEventBase, apis: WatcherAPIBase): any;
+	(we: WatchEventBase, apis: WatchAPIBase): any;
 }
 
 
 export interface AllWatcher {
-	(we: AllWatchEventBase, apis: WatcherAPIBase): any;
+	(we: AllWatchEventBase, apis: WatchAPIBase): any;
 }
 
 export interface StoreModule {
@@ -187,7 +187,7 @@ export interface StoreBase {
 	getAllModuleName: () => string[];
 	destroy: () => void;
 	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
-	globalSetStates: (s: Partial<States>) => void;
+	globalSetStates: (s: States) => void;
 	globalResetStates: (option?: GlobalResetStatesOption) => void;
 	getAllStates: () => States;
 	type: InjectStoreModules;

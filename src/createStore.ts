@@ -10,7 +10,7 @@ import { compose, isDefaultStoreModule, isStoreModule } from "./utils";
 
 import MapCache from "./MapCache";
 import { AllStates, GenerateStoreType, Store } from "./ts/utils";
-import { Action, Actions, AllListenerBase, AllWatcher, GlobalResetStatesOption, InjectMaps, InjectStoreModule, InterceptorBase, InterceptorNextBase, LazyStoreModules, ListenerAPIBase, ListenerBase, MiddlewareActionRecordBase, MiddlewareBase, MiddlewareNextBase, MiddlewareParamsBase, ModuleEventBase, Modules, StoreBase, StoreModule, WatchObject } from "./ts/base";
+import { Action, Actions, AllListenerBase, AllWatcher, GlobalResetStatesOption, InjectMaps, InjectStoreModule, InterceptorBase, InterceptorNextBase, LazyStoreModules, ListenerAPIBase, ListenerBase, MiddlewareActionRecordBase, MiddlewareBase, MiddlewareNextBase, MiddlewareParamsBase, ModuleEventBase, Modules, StoreBase, StoreModule, WatchAPIBase, WatchObject } from "./ts/base";
 
 /**
  *
@@ -252,12 +252,12 @@ const createStore = <
 		if (!isInited) {
 			return;
 		}
-		const listenerAPI: ListenerAPIBase = {
+		const listenerAPI = {
 			getState: () => currentModules[moduleName]?.state,
 			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
-		};
+		} as ListenerAPIBase;
 		if (Array.isArray(listeners[moduleName])) {
 			listeners[moduleName]!.forEach((listener) => listener(me, listenerAPI))
 		}
@@ -272,7 +272,7 @@ const createStore = <
 				getMaps: () => getModule(watcherModuleName)?.maps,
 				getStore: () => currentStoreInstance,
 				localDispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(watcherModuleName, actionName, ...args),
-			}
+			} as WatchAPIBase
 			if (typeof target === 'function') {
 				target({
 					...me,
