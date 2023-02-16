@@ -13,6 +13,10 @@ import {
 	InjectStoreModule,
 	EventType,
 	GlobalResetStatesOption,
+	StoreBase,
+	ListenerBase,
+	ListenerAPIBase,
+	AllListenerBase,
 } from "./base";
 import { AnyFun, MapsFun } from "./base";
 
@@ -301,15 +305,15 @@ export type ActionName<
 export interface AllListener<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules
-> {
+> extends AllListenerBase {
 	(me: AllModuleEvent<M, LM>, apis: ListenerAPI<M, LM>): any;
 }
 
-export type ListenerAPI<
+export interface ListenerAPI<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
-> = {
+> extends ListenerAPIBase {
 	getState: () => State;
 	getMaps: () => InjectMaps | undefined;
 	getStore: () => Store<M, LM>;
@@ -329,7 +333,7 @@ export interface Listener<
 	LM extends LazyStoreModules = LazyStoreModules,
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 	MN extends keyof ST = keyof ST
-> {
+> extends ListenerBase {
 	(me: ModuleEvent<M, LM, ST, MN>, apis: ListenerAPI<M, LM>): any;
 }
 
@@ -345,7 +349,7 @@ export interface Store<
 		[k in keyof LM]: PickLazyStoreModules<LM>[k];
 	},
 	S extends Partial<States> = AllStates<M, LM>
-> {
+> extends StoreBase {
 	getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
 	setModule: <MN extends keyof AOST>(
 		moduleName: MN,
@@ -380,7 +384,7 @@ export interface Store<
 		actionName: AN,
 		...arg: Parameters<StoreType[MN]["actions"][AN]>
 	) => ReturnType<StoreType[MN]["actions"][AN]>;
-	globalSetStates: (s: Partial<S>) => void;
+	globalSetStates: <D extends States = Partial<S>>(s: D) => void;
 	globalResetStates: <MN extends keyof StoreType>(
 		option?: GlobalResetStatesOption<Extract<MN, string>>
 	) => void;

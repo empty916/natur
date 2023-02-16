@@ -25,7 +25,7 @@ export type AllWatchEventMap<
 		moduleName: string;
 		actionName: k extends "init" | "remove"
 			? undefined
-			: keyof M["actions"] | "globalSetStates" | "globalResetStates";
+			: Extract<keyof M["actions"], string> | "globalSetStates" | "globalResetStates";
 		oldModule: k extends "init" ? undefined : IM;
 		newModule: k extends "remove" ? undefined : IM;
 	};

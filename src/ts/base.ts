@@ -43,12 +43,12 @@ export type WatchAPIBase = {
 	getStore: () => StoreBase;
 }
 
-export interface Watcher {
+export interface WatcherBase {
 	(we: WatchEventBase, apis: WatchAPIBase): any;
 }
 
 
-export interface AllWatcher {
+export interface AllWatcherBase {
 	(we: AllWatchEventBase, apis: WatchAPIBase): any;
 }
 
@@ -56,7 +56,7 @@ export interface StoreModule {
 	state: State;
 	actions: Actions;
 	maps?: Maps;
-	watch?: AllWatcher | WatchObject;
+	watch?: AllWatcherBase | WatchObjectBase;
 }
 
 export interface InjectStoreModule {
@@ -69,8 +69,8 @@ export interface InjectMaps {
 	[p: string]: any;
 }
 
-export interface WatchObject {
-	[k: string]: Watcher;
+export interface WatchObjectBase {
+	[k: string]: WatcherBase;
 }
 
 export interface Modules {
@@ -103,7 +103,7 @@ export interface ModuleEventBase {
 	newModule: InjectStoreModule | undefined;
 }
 
-export type ListenerAPIBase = {
+export interface ListenerAPIBase {
 	getState: () => State;
 	getMaps: () => InjectMaps | undefined;
 	getStore: () => StoreBase;

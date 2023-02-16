@@ -7,10 +7,32 @@
  */
 import { compose, isDefaultStoreModule, isStoreModule } from "./utils";
 
-
 import MapCache from "./MapCache";
 import { AllStates, GenerateStoreType, Store } from "./ts/utils";
-import { Action, Actions, AllListenerBase, AllWatcher, GlobalResetStatesOption, InjectMaps, InjectStoreModule, InterceptorBase, InterceptorNextBase, LazyStoreModules, ListenerAPIBase, ListenerBase, MiddlewareActionRecordBase, MiddlewareBase, MiddlewareNextBase, MiddlewareParamsBase, ModuleEventBase, Modules, StoreBase, StoreModule, WatchAPIBase, WatchObject } from "./ts/base";
+import {
+	Action,
+	Actions,
+	AllListenerBase,
+	AllWatcherBase,
+	GlobalResetStatesOption,
+	InjectMaps,
+	InjectStoreModule,
+	InterceptorBase,
+	InterceptorNextBase,
+	LazyStoreModules,
+	ListenerAPIBase,
+	ListenerBase,
+	MiddlewareActionRecordBase,
+	MiddlewareBase,
+	MiddlewareNextBase,
+	MiddlewareParamsBase,
+	ModuleEventBase,
+	Modules,
+	StoreBase,
+	StoreModule,
+	WatchAPIBase,
+	WatchObjectBase,
+} from "./ts/base";
 
 /**
  *
@@ -18,10 +40,7 @@ import { Action, Actions, AllListenerBase, AllWatcher, GlobalResetStatesOption, 
  * @param lazyModules 懒加载模块， 必填，如果没有可以传{}, 如果不填，那么ts的类型推断会有问题
  * @param param2 选项配置，详情见文档
  */
-const createStore = <
-	M extends Modules,
-	LM extends LazyStoreModules,
->(
+const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	modules: M = {} as M,
 	lazyModules: LM,
 	{
@@ -29,26 +48,22 @@ const createStore = <
 		middlewares = [],
 		interceptors = [],
 	}: {
-		initStates?: Partial<
-			{
-				[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<
-					M,
-					LM
-				>[k]["state"];
-			}
-		>,
-		middlewares?: MiddlewareBase[],
-		interceptors?: InterceptorBase[]
+		initStates?: Partial<{
+			[k in keyof GenerateStoreType<M, LM>]: GenerateStoreType<
+				M,
+				LM
+			>[k]["state"];
+		}>;
+		middlewares?: MiddlewareBase[];
+		interceptors?: InterceptorBase[];
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
 	type ModuleName = string;
 	type StoreType = GenerateStoreType<M, LM>;
-	type PS = Partial<
-		{
-			[k in keyof StoreType]: StoreType[k]["state"];
-		}
-	>;
+	type PS = Partial<{
+		[k in keyof StoreType]: StoreType[k]["state"];
+	}>;
 	let isInited = false;
 	/**
 	 * 存放store实例
@@ -73,11 +88,9 @@ const createStore = <
 	 * 主要存放，已经加载的store的state，maps，actions
 	 * 这里存放的是原始的maps，actions，并非经过代理后的maps和actions，或者说并非是natur使用者获取的maps和actions
 	 */
-	let currentModules: Partial<
-		{
-			[k in keyof StoreType]: StoreModule;
-		}
-	> = {};
+	let currentModules: Partial<{
+		[k in keyof StoreType]: StoreModule;
+	}> = {};
 	/**
 	 * 懒加载模块配置
 	 */
@@ -89,7 +102,7 @@ const createStore = <
 	 * 在模块的state变更，模块的删除，初始化时，会通知对应的监听器
 	 */
 	let listeners: {
-		[p: string]: ListenerBase[]
+		[p: string]: ListenerBase[];
 	} = {};
 	let allListeners: AllListenerBase[] = [];
 	/**
@@ -108,7 +121,7 @@ const createStore = <
 	 * 同时这个setState会使用洋葱模型包装好middlewares，所以在调用setState时，会先调用middlewares
 	 */
 	const setStateProxyWithMiddlewareCache: {
-		[moduleName: string]: MiddlewareNextBase
+		[moduleName: string]: MiddlewareNextBase;
 	} = {};
 	/**
 	 * 存放每个模块对应的actions代理缓存
@@ -132,17 +145,20 @@ const createStore = <
 		[mapName: string]: MapCache;
 	};
 	const mapsCache: {
-		[moduleName: string]: MapCacheValue
+		[moduleName: string]: MapCacheValue;
 	} = {};
 	/**
 	 * 与mapsCache一样是maps的缓存
 	 * 但是数据结构不同，mapsCache第二层的key是模块对应的maps中的key，这里则是一个数组，方便做循环遍历使用
 	 */
 	const mapsCacheList: {
-		[moduleName: string]: MapCache[]
-	}= {};
+		[moduleName: string]: MapCache[];
+	} = {};
 
-	const watchModule: Record<string, AllWatcher | WatchObject | undefined> = {}
+	const watchModule: Record<
+		string,
+		AllWatcherBase | WatchObjectBase | undefined
+	> = {};
 
 	/**
 	 * 此方法使用在setModule中，
@@ -150,7 +166,10 @@ const createStore = <
 	 * @param moduleName 模块名
 	 * @param storeModule 待加载模块的原始数据
 	 */
-	const replaceModule = (moduleName: ModuleName, storeModule: StoreModule) => {
+	const replaceModule = (
+		moduleName: ModuleName,
+		storeModule: StoreModule
+	) => {
 		let res;
 		// 缓存每个模块的初始化状态，供globalResetStates使用
 		resetStateData[moduleName as keyof StoreType] = storeModule.state;
@@ -193,7 +212,7 @@ const createStore = <
 	 */
 	const clearActionsProxyCache = (moduleName: ModuleName) => {
 		delete actionsProxyCache[moduleName];
-	}
+	};
 
 	/**
 	 * 删除一个模块的map proxy缓存
@@ -219,7 +238,7 @@ const createStore = <
 	 */
 	const clearSetStateProxyWithMiddlewareCache = (moduleName: string) => {
 		delete setStateProxyWithMiddlewareCache[moduleName];
-	}
+	};
 	/**
 	 * 清除模块对应的一切缓存
 	 * @param moduleName 模块名
@@ -257,35 +276,54 @@ const createStore = <
 			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
-		} as ListenerAPIBase;
+		};
 		if (Array.isArray(listeners[moduleName])) {
-			listeners[moduleName]!.forEach((listener) => listener(me, listenerAPI))
+			listeners[moduleName]!.forEach((listener) =>
+				listener(me, listenerAPI)
+			);
 		}
-		allListeners.forEach((listener) => listener({
-			...me,
-			moduleName,
-		}, listenerAPI));
-		Object.keys(watchModule).forEach(watcherModuleName => {
+		allListeners.forEach((listener) =>
+			listener(
+				{
+					...me,
+					moduleName,
+				},
+				listenerAPI
+			)
+		);
+		Object.keys(watchModule).forEach((watcherModuleName) => {
 			const target = watchModule[watcherModuleName];
 			const watcherAPI = {
 				getState: () => currentModules[watcherModuleName]?.state,
 				getMaps: () => getModule(watcherModuleName)?.maps,
 				getStore: () => currentStoreInstance,
-				localDispatch: (actionName: keyof StoreType[ModuleName]['actions'], ...args: any) => dispatch(watcherModuleName, actionName, ...args),
-			} as WatchAPIBase
-			if (typeof target === 'function') {
-				target({
-					...me,
-					moduleName,
-				}, watcherAPI)
-			} else {
-				if (target?.[moduleName] && typeof target[moduleName] === 'function') {
-					target[moduleName]({
+				localDispatch: (
+					actionName: keyof StoreType[ModuleName]["actions"],
+					...args: any
+				) => dispatch(watcherModuleName, actionName, ...args),
+			};
+			if (typeof target === "function") {
+				target(
+					{
 						...me,
-					}, watcherAPI as any)
+						moduleName,
+					},
+					watcherAPI
+				);
+			} else {
+				if (
+					target?.[moduleName] &&
+					typeof target[moduleName] === "function"
+				) {
+					target[moduleName](
+						{
+							...me,
+						},
+						watcherAPI as any
+					);
 				}
 			}
-		})
+		});
 	};
 
 	/**
@@ -352,9 +390,8 @@ const createStore = <
 		include,
 		exclude,
 	}: GlobalResetStatesOption = {}) => {
-		let shouldResetModuleNames: ModuleName[] = Object.keys(
-			resetStateData
-		).filter(hasModule);
+		let shouldResetModuleNames: ModuleName[] =
+			Object.keys(resetStateData).filter(hasModule);
 		if (exclude) {
 			const stringExclude = exclude.filter(
 				(ex) => typeof ex === "string"
@@ -378,7 +415,7 @@ const createStore = <
 				(ex) => typeof ex !== "string"
 			) as RegExp[];
 			// 如果存在include配置，则只重制include配置中的模块
-			shouldResetModuleNames = shouldResetModuleNames.filter(mn => {
+			shouldResetModuleNames = shouldResetModuleNames.filter((mn) => {
 				return (
 					stringInclude.indexOf(mn as string) > -1 ||
 					regExpInclude.some((reg) => reg.test(mn as string))
@@ -431,7 +468,7 @@ const createStore = <
 			newModule: getModule(moduleName),
 		});
 		if (isInited) {
-			if(moduleName in globalSetStateCache) {
+			if (moduleName in globalSetStateCache) {
 				const s = globalSetStateCache[moduleName];
 				delete globalSetStateCache[moduleName];
 				globalSetStates({
@@ -457,9 +494,17 @@ const createStore = <
 	 */
 	const removeModule = (moduleName: string) => {
 		const oldModule = getModule(moduleName);
-		runListeners(moduleName, { type: "beforeRemove", oldModule, newModule: oldModule });
+		runListeners(moduleName, {
+			type: "beforeRemove",
+			oldModule,
+			newModule: oldModule,
+		});
 		destroyModule(moduleName);
-		runListeners(moduleName, { type: "remove", oldModule, newModule: undefined });
+		runListeners(moduleName, {
+			type: "remove",
+			oldModule,
+			newModule: undefined,
+		});
 		return currentStoreInstance;
 	};
 	/**
@@ -512,11 +557,14 @@ const createStore = <
 					} else {
 						mapCacheSecondParam = [() => undefined, targetMap];
 					}
-					(mapsCache[moduleName] as MapCacheValue)[key] = new MapCache(
-						() => currentModules[moduleName]!.state,
-						mapCacheSecondParam
+					(mapsCache[moduleName] as MapCacheValue)[key] =
+						new MapCache(
+							() => currentModules[moduleName]!.state,
+							mapCacheSecondParam
+						);
+					mapsCacheList[moduleName]!.push(
+						mapsCache[moduleName]![key]
 					);
-					mapsCacheList[moduleName]!.push(mapsCache[moduleName]![key]);
 				}
 				const targetWatcher = mapsCache[moduleName]![key];
 				proxyMaps[key] = targetWatcher.getValue();
@@ -553,9 +601,12 @@ const createStore = <
 		if (!hasModule(moduleName)) {
 			return undefined;
 		}
-		if (moduleCache[moduleName] &&
-			moduleCache[moduleName]?.state === currentModules[moduleName]?.state &&
-			moduleCache[moduleName]?.actions === createActionsProxy(moduleName as string)
+		if (
+			moduleCache[moduleName] &&
+			moduleCache[moduleName]?.state ===
+				currentModules[moduleName]?.state &&
+			moduleCache[moduleName]?.actions ===
+				createActionsProxy(moduleName as string)
 		) {
 			return moduleCache[moduleName] as StoreType[MN];
 		}
@@ -613,7 +664,9 @@ const createStore = <
 	 * 加载某个懒加载模块，如果已经加载就返回以及加载的模块
 	 * @param moduleName
 	 */
-	const loadModule = (moduleName: ModuleName): Promise<InjectStoreModule | undefined> => {
+	const loadModule = (
+		moduleName: ModuleName
+	): Promise<InjectStoreModule | undefined> => {
 		if (hasModule(moduleName)) {
 			return Promise.resolve(getModule(moduleName)!);
 		}
@@ -625,7 +678,7 @@ const createStore = <
 			if (!loadedModule) {
 				return undefined;
 			}
-			if(isDefaultStoreModule(loadedModule)) {
+			if (isDefaultStoreModule(loadedModule)) {
 				setModule(moduleName, loadedModule.default);
 			} else if (isStoreModule(loadedModule)) {
 				setModule(moduleName, loadedModule);
@@ -646,7 +699,7 @@ const createStore = <
 		checkModuleIsValid(moduleName);
 		const targetModule = currentModules[moduleName]!;
 		return targetModule.actions[actionName](...actionArgs);
-	}
+	};
 	/**
 	 * 创建dispath
 	 * 这里是拼接filter，action，middleware，setState的地方
@@ -660,28 +713,40 @@ const createStore = <
 			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
-		} as MiddlewareParamsBase;
-		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
-		const setStateProxyWithMiddleware = (compose<[MiddlewareNextBase], MiddlewareNextBase>(...middlewareChain))(setState);
-		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
-		const runActionProxyWithInterceptors = (compose<[InterceptorNextBase], InterceptorNextBase>(...filterChain))(
-			filterRecord => {
-				return setStateProxyWithMiddleware({
-					moduleName,
-					actionName: filterRecord.actionName,
-					state: runAcion(filterRecord),
-				});
-			}
+		};
+		const middlewareChain = currentMiddlewares.map((middleware) =>
+			middleware(middlewareParams)
 		);
-
-		setStateProxyWithMiddlewareCache[moduleName] = setStateProxyWithMiddleware;
-
-		return (actionName: string, ...actionArgs: any[]) => runActionProxyWithInterceptors({
-			moduleName,
-			actionName,
-			actionArgs,
-			actionFunc: currentModules[moduleName]?.['actions']?.[actionName] as any,
+		const setStateProxyWithMiddleware = compose<
+			[MiddlewareNextBase],
+			MiddlewareNextBase
+		>(...middlewareChain)(setState);
+		const filterChain = currentInterceptors.map((middleware) =>
+			middleware(middlewareParams)
+		);
+		const runActionProxyWithInterceptors = compose<
+			[InterceptorNextBase],
+			InterceptorNextBase
+		>(...filterChain)((filterRecord) => {
+			return setStateProxyWithMiddleware({
+				moduleName,
+				actionName: filterRecord.actionName,
+				state: runAcion(filterRecord),
+			});
 		});
+
+		setStateProxyWithMiddlewareCache[moduleName] =
+			setStateProxyWithMiddleware;
+
+		return (actionName: string, ...actionArgs: any[]) =>
+			runActionProxyWithInterceptors({
+				moduleName,
+				actionName,
+				actionArgs,
+				actionFunc: currentModules[moduleName]?.["actions"]?.[
+					actionName
+				] as any,
+			});
 	};
 	/**
 	 * 监听某个模块
@@ -736,14 +801,13 @@ const createStore = <
 			setModule(moduleName, modules[moduleName as keyof M] as any);
 		});
 		isInited = true;
-		moduleNames.forEach(moduleName => {
+		moduleNames.forEach((moduleName) => {
 			runListeners(moduleName, {
 				type: "init",
 				oldModule: undefined,
 				newModule: getModule(moduleName),
 			});
 		});
-
 	};
 
 	/**
@@ -752,10 +816,13 @@ const createStore = <
 	 * value是模块对应的值
 	 */
 	const getAllStates = () => {
-		return Object.keys(currentModules).reduce((as, key: keyof M | keyof LM) => {
-			as[key] = currentModules[key]!.state;
-			return as;
-		}, {} as AllStates<M, LM>);
+		return Object.keys(currentModules).reduce(
+			(as, key: keyof M | keyof LM) => {
+				as[key] = currentModules[key]!.state;
+				return as;
+			},
+			{} as AllStates<M, LM>
+		);
 	};
 
 	init();
@@ -778,7 +845,7 @@ const createStore = <
 		globalSetStates,
 		globalResetStates,
 		getAllStates,
-		type: (null as any) as StoreType,
+		type: null as any as StoreType,
 	} as any as Store<M, LM>;
 	return currentStoreInstance;
 };
