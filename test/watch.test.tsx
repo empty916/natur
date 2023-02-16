@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/extend-expect";
 import {
+	AllWatchEvent,
 	createStore,
 } from "../src";
 import {
@@ -9,7 +10,6 @@ import {
 	shallowEqualMiddleware,
 } from "../src/middlewares";
 import { AllModuleEvent, ModuleEvent, WatchAPI } from "../src";
-import { WatchEvent, AllWatchEvent } from "../src/ts-utils";
 
 const name = () => ({
 	state: {
@@ -48,7 +48,7 @@ test("watch function", () => {
 			name: name(),
 			count: {
 				...count(),
-				watch: (event: AllModuleEvent, apis: WatchAPI) => {
+				watch: (event: AllWatchEvent, apis: WatchAPI) => {
 					expect(["count", "name"].includes(event.moduleName)).toBe(
 						true
 					);
