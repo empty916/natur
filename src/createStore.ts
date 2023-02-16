@@ -1,4 +1,3 @@
-import {WatchObject, MiddlewareParams, WatchAPI, ListenerAPI, AllWatcher} from './ts-utils';
 /**
  * @author empty916
  * @email [empty916@qq.com]
@@ -6,36 +5,12 @@ import {WatchObject, MiddlewareParams, WatchAPI, ListenerAPI, AllWatcher} from '
  * @modify date 2019-08-09 17:12:36
  * @desc [description]
  */
-import { compose, isStoreModule } from "./utils";
+import { compose, isDefaultStoreModule, isStoreModule } from "./utils";
 
-import {
-	GenerateStoreType,
-	PickPromiseType,
-	Modules,
-	LazyStoreModules,
-	Middleware,
-	Store,
-	StoreModule,
-	Listener,
-	MiddlewareNext,
-	Actions,
-	ModuleEvent,
-	MiddlewareActionRecord,
-	GlobalResetStatesOption,
-	InjectMaps,
-	InjectStoreModule,
-	Action,
-	PromiseModuleType,
-	AllStates,
-	Interceptor,
-	InterceptorNext,
-	PickedLazyStoreModules,
-	PickLazyStoreModules,
-	AllListener,
-	InjectStoreModules,
-} from "./ts-utils";
 
 import MapCache from "./MapCache";
+import { AllStates, GenerateStoreType, Store } from "./ts/utils";
+import { Action, Actions, AllListenerBase, AllWatcher, GlobalResetStatesOption, InjectMaps, InjectStoreModule, InterceptorBase, InterceptorNextBase, LazyStoreModules, ListenerAPIBase, ListenerBase, MiddlewareActionRecordBase, MiddlewareBase, MiddlewareNextBase, MiddlewareParamsBase, ModuleEventBase, Modules, StoreBase, StoreModule, WatchObject } from "./ts/base";
 
 /**
  *
@@ -44,8 +19,8 @@ import MapCache from "./MapCache";
  * @param param2 选项配置，详情见文档
  */
 const createStore = <
-M extends Modules,
-LM extends LazyStoreModules,
+	M extends Modules,
+	LM extends LazyStoreModules,
 >(
 	modules: M = {} as M,
 	lazyModules: LM,
@@ -62,8 +37,8 @@ LM extends LazyStoreModules,
 				>[k]["state"];
 			}
 		>,
-		middlewares?: any[],
-		interceptors?: any[]
+		middlewares?: MiddlewareBase[],
+		interceptors?: InterceptorBase[]
 	} = {}
 ) => {
 	// type ModuleName = keyof M | keyof LM;
@@ -114,9 +89,9 @@ LM extends LazyStoreModules,
 	 * 在模块的state变更，模块的删除，初始化时，会通知对应的监听器
 	 */
 	let listeners: {
-		[p: string]: Listener[]
+		[p: string]: ListenerBase[]
 	} = {};
-	let allListeners: AllListener[] = [];
+	let allListeners: AllListenerBase[] = [];
 	/**
 	 * 存放所有模块的名字
 	 */
@@ -133,7 +108,7 @@ LM extends LazyStoreModules,
 	 * 同时这个setState会使用洋葱模型包装好middlewares，所以在调用setState时，会先调用middlewares
 	 */
 	const setStateProxyWithMiddlewareCache: {
-		[moduleName: string]: MiddlewareNext
+		[moduleName: string]: MiddlewareNextBase
 	} = {};
 	/**
 	 * 存放每个模块对应的actions代理缓存
@@ -273,23 +248,23 @@ LM extends LazyStoreModules,
 	 * @param moduleName
 	 * @param me 模块变动的详情
 	 */
-	const runListeners = (moduleName: ModuleName, me: ModuleEvent) => {
+	const runListeners = (moduleName: ModuleName, me: ModuleEventBase) => {
 		if (!isInited) {
 			return;
 		}
-		const listenerAPI: ListenerAPI<M, LM> = {
+		const listenerAPI: ListenerAPIBase = {
 			getState: () => currentModules[moduleName]?.state,
 			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
 		};
 		if (Array.isArray(listeners[moduleName])) {
-			listeners[moduleName]!.forEach((listener) => listener(me, listenerAPI as any))
+			listeners[moduleName]!.forEach((listener) => listener(me, listenerAPI))
 		}
 		allListeners.forEach((listener) => listener({
 			...me,
 			moduleName,
-		}, listenerAPI as any));
+		}, listenerAPI));
 		Object.keys(watchModule).forEach(watcherModuleName => {
 			const target = watchModule[watcherModuleName];
 			const watcherAPI = {
@@ -302,7 +277,7 @@ LM extends LazyStoreModules,
 				target({
 					...me,
 					moduleName,
-				}, watcherAPI as any)
+				}, watcherAPI)
 			} else {
 				if (target?.[moduleName] && typeof target[moduleName] === 'function') {
 					target[moduleName]({
@@ -324,7 +299,7 @@ LM extends LazyStoreModules,
 		moduleName,
 		state: newState,
 		actionName,
-	}: MiddlewareActionRecord) => {
+	}: MiddlewareActionRecordBase) => {
 		const stateHasNoChange = currentModules[moduleName]!.state === newState;
 		if (stateHasNoChange) {
 			return newState;
@@ -432,7 +407,6 @@ LM extends LazyStoreModules,
 	const setModule = (moduleName: ModuleName, storeModule: StoreModule) => {
 		if (!isStoreModule(storeModule)) {
 			const errMsg = `setModule: storeModule ${moduleName} is illegal!`;
-			// console.error(errMsg);
 			throw new Error(errMsg);
 		}
 		const isModuleExist = hasModule(moduleName as keyof StoreType);
@@ -651,10 +625,10 @@ LM extends LazyStoreModules,
 			if (!loadedModule) {
 				return undefined;
 			}
-			if (isStoreModule(loadedModule)) {
+			if(isDefaultStoreModule(loadedModule)) {
+				setModule(moduleName, loadedModule.default);
+			} else if (isStoreModule(loadedModule)) {
 				setModule(moduleName, loadedModule);
-			} else if(isStoreModule(loadedModule?.default)) {
-				setModule(moduleName, loadedModule!.default);
 			}
 			return getModule(moduleName)!;
 		});
@@ -686,11 +660,11 @@ LM extends LazyStoreModules,
 			getMaps: () => getModule(moduleName)?.maps,
 			getStore: () => currentStoreInstance,
 			dispatch,
-		};
+		} as MiddlewareParamsBase;
 		const middlewareChain = currentMiddlewares.map(middleware => middleware(middlewareParams));
-		const setStateProxyWithMiddleware = (compose<[MiddlewareNext], MiddlewareNext>(...middlewareChain))(setState);
+		const setStateProxyWithMiddleware = (compose<[MiddlewareNextBase], MiddlewareNextBase>(...middlewareChain))(setState);
 		const filterChain = currentInterceptors.map(middleware => middleware(middlewareParams));
-		const runActionProxyWithInterceptors = (compose<[InterceptorNext], InterceptorNext>(...filterChain))(
+		const runActionProxyWithInterceptors = (compose<[InterceptorNextBase], InterceptorNextBase>(...filterChain))(
 			filterRecord => {
 				return setStateProxyWithMiddleware({
 					moduleName,
@@ -714,7 +688,7 @@ LM extends LazyStoreModules,
 	 * @param moduleName
 	 * @param listener
 	 */
-	const subscribe = (moduleName: ModuleName, listener: Listener) => {
+	const subscribe = (moduleName: ModuleName, listener: ListenerBase) => {
 		if (!listeners[moduleName]) {
 			listeners[moduleName] = [] as any;
 		}
@@ -722,7 +696,7 @@ LM extends LazyStoreModules,
 		return () => {
 			if (Array.isArray(listeners[moduleName])) {
 				listeners[moduleName] = listeners[moduleName]!.filter(
-					(lis: Listener) => listener !== lis
+					(lis) => listener !== lis
 				) as any;
 			}
 		};
@@ -731,7 +705,7 @@ LM extends LazyStoreModules,
 	 * 监听所有模块
 	 * @param listener
 	 */
-	const subscribeAll = (listener: AllListener) => {
+	const subscribeAll = (listener: AllListenerBase) => {
 		allListeners.push(listener);
 		return () => {
 			if (Array.isArray(allListeners)) {

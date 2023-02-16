@@ -50,7 +50,7 @@ export {
 	GenMapsType,
 	GenActionsType,
 	GenerateStoreType,
-} from "./ts-utils";
+} from './ts';
 export { ThunkParams } from "./middlewares";
 export const setMapDepParser = MapCache.setMapDepParser;
 export const resetMapDepParser = MapCache.resetMapDepParser;

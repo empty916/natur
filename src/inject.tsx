@@ -17,14 +17,6 @@ import hoistStatics from "hoist-non-react-statics";
 import {
 	// ModuleName,
 	Store,
-	Modules,
-	InjectStoreModules,
-	LazyStoreModules,
-	GenerateStoreType,
-	ConnectedComponent,
-	GetLibraryManagedProps,
-	GetProps,
-	ModuleDepDec,
 } from "./ts-utils";
 import { arrayIsEqual, isEqualWithDepthLimit, supportRef } from "./utils";
 import {
@@ -33,6 +25,8 @@ import {
 } from "./injectCache";
 import { getDepValue } from "./useInject";
 import { NaturContext } from "./context";
+import { ConnectedComponent, GenerateStoreType, GetLibraryManagedProps, GetProps, ModuleDepDec } from "./ts/utils";
+import { InjectStoreModules, Modules, LazyStoreModules } from ".";
 
 type ModuleName = string;
 

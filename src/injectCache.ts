@@ -1,5 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules, LazyStoreModules, ModuleDepDec } from "./ts-utils";
+import { ModuleDepDec } from "./ts/utils";
 
 export type DepDecs = {
 	[m: string]: ModuleDepDec[1];
