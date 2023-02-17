@@ -16,9 +16,7 @@ export interface Action {
 	(...arg: any[]): any;
 }
 
-export interface Actions {
-	[type: string]: Action;
-}
+export type Actions = Record<string, Action>;
 
 
 export type WatchEventBase = {
@@ -134,17 +132,17 @@ export type GlobalResetStatesOption<MN extends string = string> = {
 };
 
 export type MiddlewareParamsBase = {
-	setState: (s: State) => any;
+	setState: (s: MiddlewareActionRecordBase) => any;
 	getState: () => State;
-	getMaps: () => InjectMaps | undefined;
+	getMaps: () => any;
 	getStore: () => StoreBase;
 	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
 };
 
 export type InterceptorParamsBase = {
-	setState: (s: State) => any;
+	setState: (s: MiddlewareActionRecordBase) => any;
 	getState: () => State;
-	getMaps: () => InjectMaps | undefined;
+	getMaps: () => any;
 	getStore: () => StoreBase;
 	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
 };
@@ -164,7 +162,7 @@ export type InterceptorActionRecordBase = {
 
 export type InterceptorNextBase = (record: InterceptorActionRecordBase) => any;
 
-export type InterceptorBase = (filterParams: InterceptorParamsBase)
+export type InterceptorBase = (interceptorParams: InterceptorParamsBase)
     => (next: InterceptorNextBase)
         => InterceptorNextBase;
 

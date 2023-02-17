@@ -87,7 +87,7 @@ export type MiddlewareParamsAPI<
     LM extends LazyStoreModules = LazyStoreModules,
     ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 > = {
-    setState: <MN extends keyof ST>(s: Partial<ST[MN]['state']>) => any;
+    setState: <MN extends keyof ST>(s: {moduleName: MN; state: ST[MN]['state']; actionName: (keyof ST[MN]['actions']) | string}) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
     getStore: () => Store<M, LM>;
@@ -122,28 +122,56 @@ export type Middleware<
     M extends Modules = Modules,
     LM extends LazyStoreModules = LazyStoreModules,
 > = (middlewareParams: MiddlewareParamsAPI<M, LM>)
-    => (next: MiddlewareNextAPI)
-        => MiddlewareNextAPI
+    => (next: MiddlewareNextAPI<M, LM>)
+        => MiddlewareNextAPI<M, LM>
 
 
-export type InterceptorActionRecordAPI = {
-    moduleName: string;
+export type InterceptorActionRecordAPIMap<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+> = {
+    [K in keyof ST]: {
+        moduleName: K;
+        actionName: keyof ST[K]['actions'];
+    }
+}
+
+export type InterceptorActionRecordAPI<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+> = {
+    moduleName: keyof ST;
     actionName: string;
     actionArgs: any;
     actionFunc: AnyFun;
 };
 
-export type InterceptorParamsAPI = {
-    setState: (s: State) => any;
-    getState: () => State;
-    getMaps: () => InjectMaps | undefined;
+export type InterceptorParamsAPI<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+> = {
+    setState: <MN extends keyof ST>(s: {moduleName: MN; state: ST[MN]['state']; actionName: (Extract<keyof ST[MN]['actions'], string>) | string}) => any;
+    getState: <MN extends keyof ST>() => ST[MN]['state'];
+    getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
+    // getStore: () => Store<M, LM>;
+    // dispatch: Store<M, LM>['dispatch'];
     getStore: () => StoreBase;
-    dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
+    dispatch: StoreBase['dispatch'];
 };
 
-export type InterceptorNextAPI = (record: InterceptorActionRecordAPI) => any;
+export type InterceptorNextAPI<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+> = (record: InterceptorActionRecordAPI<M, LM, ST>) => any;
 
-export type Interceptor = (filterParams: InterceptorParamsAPI)
-    => (next: InterceptorNextAPI)
-        => InterceptorNextAPI;
+export type Interceptor<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+> = (interceptorParams: InterceptorParamsAPI<M, LM>)
+    => (next: InterceptorNextAPI<M, LM>)
+        => InterceptorNextAPI<M, LM>;
     

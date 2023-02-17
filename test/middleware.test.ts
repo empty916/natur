@@ -1,4 +1,4 @@
-import { createStore } from '../src';
+import { createStore, Middleware } from '../src';
 import { isObj } from '../src/utils';
 import {
 	promiseMiddleware,
@@ -60,16 +60,22 @@ const count2 = {
     }
 }
 
+
 describe('actions', () => {
     test('middleware api', () => {
+        const m = { count, count2 };
+        const lm = {};
+        type M = typeof m;
+        type LM = typeof lm;
+        const mid1: Middleware<M, LM> = ({getMaps, getState, getStore, dispatch}) => next => record => {
+            expect(getStore()).toBe(store);
+            expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
+            expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
+            return next(record);
+        };
         const store = createStore({ count, count2 }, {}, {
             middlewares: [
-                ({getMaps, getState, getStore}) => next => record => {
-                    expect(getStore()).toBe(store);
-                    expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
-                    expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
-                    return next(record);
-                },
+                mid1,
                 thunkMiddleware,
                 filterUndefinedMiddleware,
             ]
