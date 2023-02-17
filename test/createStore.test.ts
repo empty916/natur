@@ -437,15 +437,19 @@ describe('setModule', () => {
 	test('run actions', updateCountState);
 	test('maps cache', countMapsCache);
 	test('set illegal module', () => {
+		// @ts-ignore
 		expect(() => store.setModule('name1', {})).toThrow();
 		expect(() => store.setModule('name1', {
 			state: {a:1},
+			// @ts-ignore
 			actions: {a:1},
+			// @ts-ignore
 			maps: {a:1}
 		})).toThrow();
 		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
+			// @ts-ignore
 			maps: {a:1}
 		})).toThrow();
 		expect(() => store.setModule('name1', {
@@ -474,6 +478,7 @@ describe('setModule', () => {
 	})
 	test('set module', () => {
 		expect(store.setModule('name1', name)).toBe(store);
+		// @ts-ignore
 		expect(() => store.setModule('name11', {})).toThrow();
 		expect(store.hasModule('name11')).toBe(false);
 	});
@@ -746,15 +751,19 @@ describe('subscribe', () => {
 			expect(actionName).toBe(undefined);
 			type === 'remove' && done();
 		});
+		store.subscribe('count', (e, a) => {
+			e.actionName;
+		})
+		// store.setLazyModule('count', 1);
 		store.removeModule('count');
 	});
 	test('subscribe listener', done => {
 		let countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
 		const unsub = store.subscribe('count', (e) => {
-			if (e.type === 'init') {
-				e.
-			}
+			// if (e.type === 'init') {
+			// 	e
+			// }
 			countModule = store.getModule('count');
 			expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
 			expect(countModule.state.count).toBe(oldCount + 1);
@@ -794,9 +803,9 @@ describe('subscribe', () => {
 describe('subscribeAll', () => {
 	let store: Store<{
 		count: typeof count;
+		name: typeof name;
 	}, {}>
 	beforeEach(() => {
-		// @ts-ignore
 		store = createStore(
 			{ count, name }, {},
 			{
@@ -810,7 +819,7 @@ describe('subscribeAll', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribeAll(({type, actionName, moduleName, oldModule}, apis) => {
+		store.subscribeAll(({type, actionName, moduleName, oldModule, newModule}, apis) => {
 			if (moduleName === 'count') {
 				expect(type).toBe('update');
 				expect(actionName).toBe('inc');
@@ -819,6 +828,12 @@ describe('subscribeAll', () => {
 				expect(apis.getState()).toBe(countModule.state);
 				expect(apis.getStore()).toBe(store);
 				done();
+			}
+			if (type === 'remove') {
+				moduleName;
+				actionName;
+				oldModule;
+				newModule;
 			}
 		});
 		countModule.actions.inc(countModule.state);

@@ -1,15 +1,18 @@
 import "@testing-library/jest-dom/extend-expect";
 import {
-	AllWatchEvent,
-	createStore,
-} from "../src";
-import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
 	fillObjectRestDataMiddleware,
 	shallowEqualMiddleware,
 } from "../src/middlewares";
-import { AllModuleEvent, ModuleEvent, WatchAPI } from "../src";
+import {
+	AllModuleEvent,
+	AllWatchEvent,
+	createStore,
+	ModuleEvent,
+	WatchAPI,
+	WatchEvent,
+} from "../src";
 
 const name = () => ({
 	state: {
@@ -52,6 +55,36 @@ test("watch function", () => {
 					expect(["count", "name"].includes(event.moduleName)).toBe(
 						true
 					);
+					// switch (event.type) {
+					// 	case 'init': {
+					// 		event.actionName;
+					// 		event.moduleName;
+					// 		event.oldModule;
+					// 		event.newModule;
+					// 		break;
+					// 	}
+					// 	case 'update': {
+					// 		event.actionName;
+					// 		event.moduleName;
+					// 		event.oldModule;
+					// 		event.newModule;
+					// 		break;
+					// 	}
+					// 	case 'beforeRemove': {
+					// 		event.actionName;
+					// 		event.moduleName;
+					// 		event.oldModule;
+					// 		event.newModule;
+					// 		break;
+					// 	}
+					// 	case 'remove': {
+					// 		event.actionName;
+					// 		event.moduleName;
+					// 		event.oldModule;
+					// 		event.newModule;
+					// 		break;
+					// 	}
+					// }
 					if (event.actionName) {
 						expect(event.type).toBe("update");
 						expect(
@@ -96,8 +129,13 @@ test("watch function", () => {
 		{
 			name: {
 				...name(),
-				watch: (event: AllModuleEvent, apis: WatchAPI) => {
+				watch: (event: AllWatchEvent, apis: WatchAPI) => {
 					expect(["name"].includes(event.moduleName)).toBe(true);
+					event.type;
+					event.actionName;
+					event.moduleName;
+					event.oldModule;
+					event.newModule;
 					if (event.actionName) {
 						expect(event.type).toBe("update");
 						expect(
@@ -246,31 +284,33 @@ test("watch object", () => {
 });
 
 test("watch obj apis", () => {
-	
 	const store = createStore(
 		{
 			name: name(),
 			count: {
 				...count(),
 				watch: {
-					name: (event: WatchEvent<C>, apis: WatchAPI<C['state'], C['maps'], C['actions']>) => {
-                        if (event.type === 'init') {
-                            expect(apis.getState()).toEqual({
-                                text: "count",
-                                count: 0,
-                            });
-                            expect(apis.getMaps()).toEqual({
-                                firstChar: "c",
-                                textSplit: "c,o,u,n,t",
-                            });
-                            expect(apis.getStore()).toBe(store);
-                            apis.localDispatch('updateText', 'count1');
-                        } else {
-                            expect(apis.getState()).toEqual({
-                                text: "count1",
-                                count: 0,
-                            });
-                        }
+					name: (
+						event: WatchEvent<C>,
+						apis: WatchAPI<C["state"], C["maps"], C["actions"]>
+					) => {
+						if (event.type === "init") {
+							expect(apis.getState()).toEqual({
+								text: "count",
+								count: 0,
+							});
+							expect(apis.getMaps()).toEqual({
+								firstChar: "c",
+								textSplit: "c,o,u,n,t",
+							});
+							expect(apis.getStore()).toBe(store);
+							apis.localDispatch("updateText", "count1");
+						} else {
+							expect(apis.getState()).toEqual({
+								text: "count1",
+								count: 0,
+							});
+						}
 					},
 				},
 			},
@@ -287,35 +327,37 @@ test("watch obj apis", () => {
 	);
 });
 
-
 test("watch obj apis", () => {
 	const store = createStore(
 		{
-            name: name(),
+			name: name(),
 			count: {
 				...count(),
-				watch: (event: AllWatchEvent<C>, apis: WatchAPI<C['state'], C['maps'], C['actions']>) => {
-                    if (event.moduleName === 'name') {
-                        return;
-                    }
-                    if (event.type === 'init') {
-                        expect(apis.getState()).toEqual({
-                            text: "count",
-                            count: 0,
-                        });
-                        expect(apis.getMaps()).toEqual({
-                            firstChar: "c",
-                            textSplit: "c,o,u,n,t",
-                        });
-                        expect(apis.getStore()).toBe(store);
-                        apis.localDispatch('updateText', 'count1');
-                    } else {
-                        expect(apis.getState()).toEqual({
-                            text: "count1",
-                            count: 0,
-                        });
-                    }
-                },
+				watch: (
+					event: AllWatchEvent<C>,
+					apis: WatchAPI<C["state"], C["maps"], C["actions"]>
+				) => {
+					if (event.moduleName === "name") {
+						return;
+					}
+					if (event.type === "init") {
+						expect(apis.getState()).toEqual({
+							text: "count",
+							count: 0,
+						});
+						expect(apis.getMaps()).toEqual({
+							firstChar: "c",
+							textSplit: "c,o,u,n,t",
+						});
+						expect(apis.getStore()).toBe(store);
+						apis.localDispatch("updateText", "count1");
+					} else {
+						expect(apis.getState()).toEqual({
+							text: "count1",
+							count: 0,
+						});
+					}
+				},
 			},
 		},
 		{},
@@ -330,7 +372,6 @@ test("watch obj apis", () => {
 	);
 });
 
-
 test("watch obj apis 2", () => {
 	const store = createStore(
 		{
@@ -338,11 +379,14 @@ test("watch obj apis 2", () => {
 			count: {
 				...count(),
 				watch: (event: AllModuleEvent, apis: WatchAPI) => {
-					if (event.moduleName === 'name') {
-						apis.localDispatch('updateText', event.newModule?.state.text);
+					if (event.moduleName === "name") {
+						apis.localDispatch(
+							"updateText",
+							event.newModule?.state.text
+						);
 						return;
 					}
-					if (event.type === 'update') {
+					if (event.type === "update") {
 						expect(apis.getState()).toEqual({
 							text: "name",
 							count: 0,

@@ -8,7 +8,7 @@
 import { compose, isDefaultStoreModule, isStoreModule } from "./utils";
 
 import MapCache from "./MapCache";
-import { AllStates, GenerateStoreType, Store } from "./ts/utils";
+import { AllStates, GenerateStoreType } from "./ts/utils";
 import {
 	Action,
 	Actions,
@@ -32,7 +32,8 @@ import {
 	StoreModule,
 	WatchAPIBase,
 	WatchObjectBase,
-} from "./ts/base";
+	Store,
+} from "./ts";
 
 /**
  *
@@ -464,6 +465,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		const oldModule = isModuleExist ? getModule(moduleName) : undefined;
 		runListeners(moduleName, {
 			type: "init",
+			actionName: undefined,
 			oldModule: oldModule,
 			newModule: getModule(moduleName),
 		});
@@ -496,12 +498,14 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		const oldModule = getModule(moduleName);
 		runListeners(moduleName, {
 			type: "beforeRemove",
+			actionName: undefined,
 			oldModule,
 			newModule: oldModule,
 		});
 		destroyModule(moduleName);
 		runListeners(moduleName, {
 			type: "remove",
+			actionName: undefined,
 			oldModule,
 			newModule: undefined,
 		});
@@ -804,6 +808,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		moduleNames.forEach((moduleName) => {
 			runListeners(moduleName, {
 				type: "init",
+				actionName: undefined,
 				oldModule: undefined,
 				newModule: getModule(moduleName),
 			});

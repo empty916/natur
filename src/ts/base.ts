@@ -1,4 +1,4 @@
-export type EventType = "init" | "update" | "remove" | "beforeRemove";
+export type EventType = "init" | "update" | "beforeRemove" | "remove";
 
 export type AnyFun = (...arg: any) => any;
 
@@ -23,14 +23,14 @@ export interface Actions {
 
 export type WatchEventBase = {
 	type: EventType;
-	actionName?: string;
+	actionName: string | undefined;
 	oldModule: InjectStoreModule | undefined;
 	newModule: InjectStoreModule | undefined;
 };
 
 export type AllWatchEventBase = {
 	type: EventType;
-	actionName?: string;
+	actionName: string | undefined;
 	moduleName: string;
 	oldModule: InjectStoreModule | undefined;
 	newModule: InjectStoreModule | undefined;
@@ -44,12 +44,11 @@ export type WatchAPIBase = {
 }
 
 export interface WatcherBase {
-	(we: WatchEventBase, apis: WatchAPIBase): any;
+	(we: any, apis: any): any;
 }
 
-
 export interface AllWatcherBase {
-	(we: AllWatchEventBase, apis: WatchAPIBase): any;
+	(we: any, apis: any): any;
 }
 
 export interface StoreModule {
@@ -98,7 +97,7 @@ export interface LazyStoreModules {
 
 export interface ModuleEventBase {
 	type: EventType;
-	actionName?: string;
+	actionName: string | undefined;
 	oldModule: InjectStoreModule | undefined;
 	newModule: InjectStoreModule | undefined;
 }
@@ -117,7 +116,7 @@ export interface ListenerBase {
 export interface AllModuleEventBase<> {
 	type: EventType;
 	moduleName: string;
-	actionName?: string;
+	actionName: string | undefined;
 	oldModule: undefined | InjectStoreModule;
 	newModule: undefined | InjectStoreModule;
 }

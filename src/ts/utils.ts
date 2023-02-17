@@ -17,8 +17,9 @@ import {
 	ListenerBase,
 	ListenerAPIBase,
 	AllListenerBase,
+	AnyFun,
+	MapsFun,
 } from "./base";
-import { AnyFun, MapsFun } from "./base";
 
 /**
  * 获取promise值的类型
@@ -40,15 +41,14 @@ type StoreModuleWithoutMaps = {
  * 生成模块类型
  */
 export type ModuleType<M extends StoreModule> = {
-	[m in keyof M]: m extends "state"
-		? M["state"]
-		: m extends "actions"
-		? GenActionsType<M["actions"], M["state"]>
-		: m extends "maps"
-		? M extends StoreModuleWithMaps
-			? GenMapsType<M["maps"], M["state"]>
-			: undefined
-		: never;
+	[m in keyof M]: 
+		m extends "state" ? M["state"] : m extends "actions"
+				? GenActionsType<M["actions"], M["state"]> 
+				: m extends "maps"
+					? M extends StoreModuleWithMaps
+						? GenMapsType<M["maps"], M["state"]>
+						: undefined
+					: m extends 'watch' ? never : never;
 };
 
 /**
@@ -224,57 +224,7 @@ export type ModuleDepDec<
 	}
 ];
 
-
-export type ModuleEventMap<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
-	MN extends keyof ST = keyof ST
-> = {
-	[k in EventType]: {
-		type: k;
-		actionName: k extends "init" | "remove"
-			? undefined
-			: ActionName<M, LM> | "globalSetStates" | "globalResetStates";
-		oldModule: k extends "init" ? undefined : ST[MN];
-		newModule: k extends "remove" ? undefined : ST[MN];
-	};
-};
-
 export type AllModuleEventMap<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
-	MN extends keyof ST = keyof ST
-> = {
-	[k in EventType]: {
-		type: k;
-		moduleName: MN;
-		actionName: k extends "init" | "remove"
-			? undefined
-			: ActionName<M, LM> | "globalSetStates" | "globalResetStates";
-		oldModule: k extends "init" ? undefined : ST[MN];
-		newModule: k extends "remove" ? undefined : ST[MN];
-	};
-};
-
-export interface ModuleEvent<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules,
-	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
-	MN extends keyof ST = keyof ST
-> {
-	type: EventType;
-	actionName?:
-		| ActionName<M, LM>
-		| undefined
-		| "globalSetStates"
-		| "globalResetStates";
-	oldModule: undefined | ST[MN];
-	newModule: undefined | ST[MN];
-}
-
-export interface AllModuleEvent<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
@@ -282,17 +232,24 @@ export interface AllModuleEvent<
 	MANS = {
 		[k in MN]: keyof ST[k]["actions"];
 	}
-> {
-	type: EventType;
-	moduleName: Extract<keyof ST, string>;
-	actionName?:
-		| Extract<MANS[keyof MANS], string>
-		| undefined
-		| "globalSetStates"
-		| "globalResetStates";
-	oldModule: undefined | InjectStoreModule;
-	newModule: undefined | InjectStoreModule;
-}
+> = {
+	[k in EventType]: {
+		type: k;
+		moduleName: Extract<MN, string>;
+		actionName: k extends "init" | "remove" | 'beforeRemove'
+			? undefined
+			: Extract<MANS[keyof MANS], string> | "globalSetStates" | "globalResetStates";
+		oldModule: k extends "init" ? undefined : ST[MN];
+		newModule: k extends "remove" ? undefined : ST[MN];
+	};
+};
+
+export type AllModuleEvent<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST
+> = AllModuleEventMap<M, LM, ST, MN>[EventType];
 
 export type ActionName<
 	M extends Modules = Modules,
@@ -302,40 +259,79 @@ export type ActionName<
 > = Extract<keyof ST[MN]["actions"], string>;
 
 
-export interface AllListener<
-	M extends Modules = Modules,
-	LM extends LazyStoreModules = LazyStoreModules
-> extends AllListenerBase {
-	(me: AllModuleEvent<M, LM>, apis: ListenerAPI<M, LM>): any;
-}
-
-export interface ListenerAPI<
+export interface AllListenerAPI<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
-	StoreType extends GenerateStoreType<M, LM> = GenerateStoreType<M, LM>
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 > extends ListenerAPIBase {
-	getState: () => State;
-	getMaps: () => InjectMaps | undefined;
+	getState: <MN extends keyof ST>() => ST[MN]['state'];
+	getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
 	getStore: () => Store<M, LM>;
 	dispatch: <
-		MN extends keyof StoreType,
-		AN extends keyof StoreType[MN]["actions"]
+		MN extends keyof ST,
+		AN extends keyof ST[MN]["actions"]
 	>(
 		moduleName: MN,
 		actionName: AN,
-		...arg: Parameters<StoreType[MN]["actions"][AN]>
-	) => ReturnType<StoreType[MN]["actions"][AN]>;
-};
+		...arg: Parameters<ST[MN]["actions"][AN]>
+	) => ReturnType<ST[MN]["actions"][AN]>;
+}
 
 
-export interface Listener<
+export type AllListener<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules
+> = (me: AllModuleEvent<M, LM>, apis: AllListenerAPI<M, LM>) => any;
+
+
+export type ModuleEventMap<
 	M extends Modules = Modules,
 	LM extends LazyStoreModules = LazyStoreModules,
 	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 	MN extends keyof ST = keyof ST
-> extends ListenerBase {
-	(me: ModuleEvent<M, LM, ST, MN>, apis: ListenerAPI<M, LM>): any;
+> = {
+	[k in EventType]: {
+		type: k;
+		actionName: k extends "init" | "remove" | 'beforeRemove'
+			? undefined
+			: Extract<keyof ST[MN]['actions'], string> | "globalSetStates" | "globalResetStates";
+		oldModule: k extends "init" ? undefined : ST[MN];
+		newModule: k extends "remove" ? undefined : ST[MN];
+	};
+};
+
+export type ModuleEvent<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST
+> = ModuleEventMap<M, LM, ST, MN>[EventType]
+
+export interface ListenerAPI<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> extends ListenerAPIBase {
+	getState: () => ST[MN]['state'];
+	getMaps: () => ST[MN]['maps'];
+	getStore: () => Store<M, LM>;
+	dispatch: <
+		MN extends keyof ST,
+		AN extends keyof ST[MN]["actions"]
+	>(
+		moduleName: MN,
+		actionName: AN,
+		...arg: Parameters<ST[MN]["actions"][AN]>
+	) => ReturnType<ST[MN]["actions"][AN]>;
 }
+
+export type Listener<
+	M extends Modules = Modules,
+	LM extends LazyStoreModules = LazyStoreModules,
+	ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+	MN extends keyof ST = keyof ST,
+> = (me: ModuleEvent<M, LM, ST, MN>, apis: ListenerAPI<M, LM, ST, MN>) => any;
 
 /**
  * 生成store类型
@@ -343,7 +339,6 @@ export interface Listener<
 export interface Store<
 	M extends Modules,
 	LM extends LazyStoreModules,
-	// LM extends Modules = PickLazyStoreModules<_LM>, // PickLazyStoreModules<LM>
 	StoreType extends InjectStoreModules = GenerateStoreType<M, LM>,
 	AOST extends Modules = M & {
 		[k in keyof LM]: PickLazyStoreModules<LM>[k];
@@ -351,15 +346,15 @@ export interface Store<
 	S extends Partial<States> = AllStates<M, LM>
 > extends StoreBase {
 	getModule: <MN extends keyof StoreType>(moduleName: MN) => StoreType[MN];
-	setModule: <MN extends keyof AOST>(
+	setModule: <MN extends string, V extends StoreModule>(
 		moduleName: MN,
-		storeModule: StoreModule
-	) => Store<M, LM>;
+		storeModule: V
+	) => Store<Omit<M, MN> & Record<MN, V>, LM>;
 	removeModule: (moduleName: ModuleName<M, LM>) => Store<M, LM>;
-	setLazyModule: (
-		moduleName: ModuleName<M, LM>,
-		lazyModule: () => Promise<StoreModule>
-	) => Store<M, LM>;
+	setLazyModule: <MN extends string, V extends StoreModule>(
+		moduleName: MN,
+		lazyModule: () => Promise<V>
+	) => Store<M, Omit<LM, MN> & Record<MN, () => Promise<V>>>;
 	removeLazyModule: (moduleName: ModuleName<M, LM>) => Store<M, LM>;
 	hasModule: (moduleName: ModuleName<M, LM>) => boolean;
 	loadModule: <MN extends keyof LM>(
@@ -374,7 +369,7 @@ export interface Store<
 		listener: Listener<M, LM, StoreType, Extract<MN, string>>
 	) => () => void;
 	subscribeAll: (listener: AllListener<M, LM>) => () => void;
-	getAllModuleName: () => (Extract<keyof StoreType, string>)[];
+	getAllModuleName: () => Extract<keyof StoreType, string>[];
 	destroy: () => void;
 	dispatch: <
 		MN extends keyof StoreType,
