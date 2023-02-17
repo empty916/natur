@@ -73,6 +73,8 @@ export interface WatchAPI<
 	) => ActionReturnType<A[AN], S>;
 }
 
+export type AllWatchAPI = WatchAPI;
+
 export type WatchEvent<M extends StoreModule = StoreModule> =
 	WatchEventMap<M>[EventType];
 

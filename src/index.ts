@@ -18,6 +18,7 @@ export {
 	AllListener,
     ListenerAPI,
 	WatchAPI,
+	AllWatchAPI,
 	WatchEvent,
 	AllWatchEvent,
 	State,

@@ -7,6 +7,7 @@ import {
 } from "../src/middlewares";
 import {
 	AllModuleEvent,
+	AllWatchAPI,
 	AllWatchEvent,
 	createStore,
 	ModuleEvent,
@@ -129,7 +130,7 @@ test("watch function", () => {
 		{
 			name: {
 				...name(),
-				watch: (event: AllWatchEvent, apis: WatchAPI) => {
+				watch: (event: AllWatchEvent, apis: AllWatchAPI) => {
 					expect(["name"].includes(event.moduleName)).toBe(true);
 					event.type;
 					event.actionName;
