@@ -1,6 +1,5 @@
-import {Middleware, Action, State, Maps} from './ts-utils';
+import {Middleware, Action, State, Maps, GenMapsType} from './ts';
 import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
-import { GenMapsType } from './ts-utils';
 
 /**
  * S state的类型

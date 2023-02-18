@@ -1,4 +1,4 @@
-import { State } from './ts-utils'
+import { State } from './ts'
 import { getValueFromObjByKeyPath, arrayIsEqual } from './utils'
 
 type MapDepParser = (s: State, p: any) => any;

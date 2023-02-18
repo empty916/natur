@@ -1,6 +1,11 @@
 export type EventType = "init" | "update" | "beforeRemove" | "remove";
 
-export type AnyFun = (...arg: any) => any;
+export type GlobalAction = 'globalSetStates' | 'globalResetStates';
+
+export interface AnyFun {
+	(...arg: any): any;
+	[k: string]: any;
+};
 
 export type State = any;
 
@@ -73,11 +78,6 @@ export interface WatchObjectBase {
 export interface Modules {
 	[p: string]: StoreModule;
 }
-export type MiddlewareActionRecordBase = {
-	moduleName: string;
-	actionName: string;
-	state: any;
-};
 
 export type ModuleName<M, LM> = keyof M | keyof LM;
 
@@ -111,7 +111,7 @@ export interface ListenerBase {
 	(me: ModuleEventBase, apis: ListenerAPIBase): any;
 }
 
-export interface AllModuleEventBase<> {
+export interface AllModuleEventBase {
 	type: EventType;
 	moduleName: string;
 	actionName: string | undefined;
@@ -129,6 +129,12 @@ export interface AllListenerBase<
 export type GlobalResetStatesOption<MN extends string = string> = {
 	include?: Array<MN | RegExp>;
 	exclude?: Array<MN | RegExp>;
+};
+
+export type MiddlewareActionRecordBase = {
+	moduleName: string;
+	actionName: string;
+	state: any;
 };
 
 export type MiddlewareParamsBase = {
@@ -154,7 +160,7 @@ export type MiddlewareBase = (middlewareParams: MiddlewareParamsBase)
         => MiddlewareNextBase;
 
 export type InterceptorActionRecordBase = {
-	moduleName: string;
+	moduleName: any;
 	actionName: string;
 	actionArgs: any;
 	actionFunc: AnyFun;

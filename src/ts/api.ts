@@ -13,6 +13,8 @@ import {
     Modules,
     LazyStoreModules,
     InjectStoreModules,
+    MiddlewareActionRecordBase,
+    GlobalAction
 } from "./base";
 import {
 	ActionReturnType,
@@ -30,7 +32,7 @@ export type WatchEventMap<
 		type: k;
 		actionName: k extends "init" | "remove"
 			? undefined
-			: keyof M["actions"] | "globalSetStates" | "globalResetStates";
+			: keyof M["actions"] | GlobalAction;
 		oldModule: k extends "init" ? undefined : IM;
 		newModule: k extends "remove" ? undefined : IM;
 	};
@@ -46,8 +48,7 @@ export interface AllWatchEventValue<
 		? undefined
 		:
 				| Extract<keyof IM["actions"], string>
-				| "globalSetStates"
-				| "globalResetStates";
+				| GlobalAction;
 	oldModule: K extends "init" ? undefined : IM;
 	newModule: K extends "remove" ? undefined : IM;
 }
@@ -81,13 +82,23 @@ export type WatchEvent<M extends StoreModule = StoreModule> =
 export type AllWatchEvent<M extends StoreModule = StoreModule> =
 	AllWatchEventMap<M>[EventType];
 
+export type SetStateAPI<
+    M extends Modules = Modules,
+    LM extends LazyStoreModules = LazyStoreModules,
+    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+    MN extends keyof ST = keyof ST,
+> = {
+    moduleName: Extract<MN, string>;
+    state: ST[MN]['state'];
+    actionName: Extract<keyof ST[MN]['actions'], string>;
+}
 
 export type MiddlewareParamsAPI<
     M extends Modules = Modules,
     LM extends LazyStoreModules = LazyStoreModules,
     ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 > = {
-    setState: <MN extends keyof ST>(s: {moduleName: MN; state: ST[MN]['state']; actionName: (keyof ST[MN]['actions']) | string}) => any;
+    setState: <MN extends keyof ST>(s: SetStateAPI<M, LM, ST, MN>) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
     getStore: () => Store<M, LM>;
@@ -153,7 +164,7 @@ export type InterceptorParamsAPI<
     LM extends LazyStoreModules = LazyStoreModules,
     ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 > = {
-    setState: <MN extends keyof ST>(s: {moduleName: MN; state: ST[MN]['state']; actionName: (Extract<keyof ST[MN]['actions'], string>) | string}) => any;
+    setState: <MN extends keyof ST>(s: SetStateAPI<M, LM, ST, MN>) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
     // getStore: () => Store<M, LM>;

@@ -7,7 +7,7 @@
  */
 
 import { isMemo } from "react-is";
-import { StoreModule, State } from "./ts-utils";
+import { State, StoreModule } from "./ts";
 
 const hasOwn = Object.prototype.hasOwnProperty;
 // export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {

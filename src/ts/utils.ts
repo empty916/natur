@@ -19,6 +19,7 @@ import {
 	AllListenerBase,
 	AnyFun,
 	MapsFun,
+	GlobalAction,
 } from "./base";
 
 /**
@@ -238,7 +239,7 @@ export type AllModuleEventMap<
 		moduleName: Extract<MN, string>;
 		actionName: k extends "init" | "remove" | 'beforeRemove'
 			? undefined
-			: Extract<MANS[keyof MANS], string> | "globalSetStates" | "globalResetStates";
+			: Extract<MANS[keyof MANS], string> | GlobalAction;
 		oldModule: k extends "init" ? undefined : ST[MN];
 		newModule: k extends "remove" ? undefined : ST[MN];
 	};
@@ -294,7 +295,7 @@ export type ModuleEventMap<
 		type: k;
 		actionName: k extends "init" | "remove" | 'beforeRemove'
 			? undefined
-			: Extract<keyof ST[MN]['actions'], string> | "globalSetStates" | "globalResetStates";
+			: Extract<keyof ST[MN]['actions'], string> | GlobalAction;
 		oldModule: k extends "init" ? undefined : ST[MN];
 		newModule: k extends "remove" ? undefined : ST[MN];
 	};

@@ -1,4 +1,4 @@
-import { createStore, Middleware } from '../src';
+import { createStore, Interceptor, Middleware } from '../src';
 import { isObj } from '../src/utils';
 import {
 	promiseMiddleware,
@@ -67,8 +67,14 @@ describe('actions', () => {
         const lm = {};
         type M = typeof m;
         type LM = typeof lm;
-        const mid1: Middleware<M, LM> = ({getMaps, getState, getStore, dispatch}) => next => record => {
+        const inter1: Interceptor<M, LM> = () => next => record => next(record);
+        const mid1: Middleware<M, LM> = ({getMaps, getState, getStore, dispatch, setState}) => next => record => {
             expect(getStore()).toBe(store);
+            // setState({
+            //     moduleName: 'count',
+            //     actionName: 'inc',
+            //     state: {},
+            // })
             expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
             expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
             return next(record);
@@ -78,6 +84,9 @@ describe('actions', () => {
                 mid1,
                 thunkMiddleware,
                 filterUndefinedMiddleware,
+            ],
+            interceptors: [
+                inter1
             ]
         });
         const countModule = store.getModule('count');

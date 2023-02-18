@@ -130,9 +130,13 @@ describe('interceptor', () => {
             expect(getMaps<'count'>()).toStrictEqual(store.getModule('count').maps);
             setState({
                 moduleName: interceptorActionRecord.moduleName,
-                actionName: interceptorActionRecord.actionName,
+                actionName: interceptorActionRecord.actionName as 'updateName',
                 state: countChangedState,
             });
+            interceptorActionRecord.actionArgs;
+            interceptorActionRecord.actionFunc;
+            interceptorActionRecord.actionName;
+            interceptorActionRecord.moduleName;
             expect(getState()).toBe(countChangedState);
             expect(getMaps()).toStrictEqual(store.getModule('count').maps);
             return next(interceptorActionRecord);
