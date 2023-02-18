@@ -68,13 +68,16 @@ describe('actions', () => {
         type M = typeof m;
         type LM = typeof lm;
         const inter1: Interceptor<M, LM> = () => next => record => next(record);
-        const mid1: Middleware<M, LM> = ({getMaps, getState, getStore, dispatch, setState}) => next => record => {
+        const mid1: Middleware = ({getMaps, getState, getStore, dispatch, setState}) => next => record => {
             expect(getStore()).toBe(store);
             // setState({
             //     moduleName: 'count',
             //     actionName: 'inc',
             //     state: {},
             // })
+            record.actionName;
+            record.moduleName;
+            record.state;
             expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
             expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
             return next(record);

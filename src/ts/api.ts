@@ -89,8 +89,8 @@ export type SetStateAPI<
     MN extends keyof ST = keyof ST,
 > = {
     moduleName: Extract<MN, string>;
-    state: ST[MN]['state'];
     actionName: Extract<keyof ST[MN]['actions'], string>;
+    state: ST[MN]['state'];
 }
 
 export type MiddlewareParamsAPI<
@@ -101,7 +101,7 @@ export type MiddlewareParamsAPI<
     setState: <MN extends keyof ST>(s: SetStateAPI<M, LM, ST, MN>) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
-    getStore: () => Store<M, LM>;
+    getStore: () => Store<M, LM> extends StoreBase ? Store<M, LM> : StoreBase;
     dispatch: Store<M, LM>['dispatch'];
 };
 
@@ -111,6 +111,8 @@ export type MiddlewareActionRecordAPIMap<
     ST extends InjectStoreModules = GenerateStoreType<M, LM>,
 > = {
 	[K in keyof ST]: {
+        // moduleName: string;
+        // actionName: string;
         moduleName: K;
         actionName: keyof ST[K]['actions'];
         state: ST[K]['state'];
@@ -137,17 +139,6 @@ export type Middleware<
         => MiddlewareNextAPI<M, LM>
 
 
-export type InterceptorActionRecordAPIMap<
-    M extends Modules = Modules,
-    LM extends LazyStoreModules = LazyStoreModules,
-    ST extends InjectStoreModules = GenerateStoreType<M, LM>,
-> = {
-    [K in keyof ST]: {
-        moduleName: K;
-        actionName: keyof ST[K]['actions'];
-    }
-}
-
 export type InterceptorActionRecordAPI<
     M extends Modules = Modules,
     LM extends LazyStoreModules = LazyStoreModules,
@@ -163,12 +154,14 @@ export type InterceptorParamsAPI<
     M extends Modules = Modules,
     LM extends LazyStoreModules = LazyStoreModules,
     ST extends InjectStoreModules = GenerateStoreType<M, LM>,
+    S = Store<M, LM> extends StoreBase ? Store<M, LM> : StoreBase,
+    SD = S extends StoreBase ? S['dispatch'] : StoreBase['dispatch'],
 > = {
     setState: <MN extends keyof ST>(s: SetStateAPI<M, LM, ST, MN>) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
-    getStore: () => StoreBase;
-    dispatch: StoreBase['dispatch'];
+    getStore: () => S;
+    dispatch: SD;
 };
 
 export type InterceptorNextAPI<

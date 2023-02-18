@@ -88,7 +88,7 @@ export type GenerateStoreType<
 export type AllStates<
 	M extends Modules,
 	_LM extends LazyStoreModules,
-	LM extends Modules = PickLazyStoreModules<_LM>
+	LM extends Modules = PickLazyStoreModules<_LM>,
 > = {
 	[KM in keyof M]: M[KM]["state"];
 } & {

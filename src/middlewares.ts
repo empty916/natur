@@ -1,3 +1,4 @@
+import { MiddlewareBase } from './ts/base';
 import {Middleware, Action, State, Maps, GenMapsType} from './ts';
 import {isPromise, isObj, isEqualWithDepthLimit} from './utils'
 
@@ -19,7 +20,7 @@ export type ThunkParams<S = any, M extends Maps = any> = {
 	localDispatch: (actionName: string, ...params: any) => any;
 }
 
-export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => next => record => {
+export const thunkMiddleware: MiddlewareBase = ({getState, getMaps, dispatch}) => next => record => {
 	if (typeof record.state === 'function') {
 		const setState = (s: State) => next({
 			...record,
@@ -44,7 +45,7 @@ export const thunkMiddleware: Middleware = ({getState, getMaps, dispatch}) => ne
 	return next(record);
 }
 
-export const promiseMiddleware: Middleware = () => next => record => {
+export const promiseMiddleware: MiddlewareBase = () => next => record => {
 	if (isPromise<ReturnType<Action>>(record.state)) {
 		return (record.state as Promise<ReturnType<Action>>)
 			.then(ns => next({
@@ -55,14 +56,14 @@ export const promiseMiddleware: Middleware = () => next => record => {
 	return next(record);
 }
 
-export const filterNonObjectMiddleware: Middleware = () => next => record => {
+export const filterNonObjectMiddleware: MiddlewareBase = () => next => record => {
 	if (!isObj<State>(record.state)) {
 		return record.state;
 	}
 	return next(record);
 }
 
-export const shallowEqualMiddleware: Middleware = ({getState}) => next => record => {
+export const shallowEqualMiddleware: MiddlewareBase = ({getState}) => next => record => {
 	const oldState = getState();
 	if (isEqualWithDepthLimit(record.state, oldState, 1)) {
 		return record.state;
@@ -70,7 +71,7 @@ export const shallowEqualMiddleware: Middleware = ({getState}) => next => record
 	return next(record);
 }
 
-export const fillObjectRestDataMiddleware: Middleware = ({getState}) => next => record => {
+export const fillObjectRestDataMiddleware: MiddlewareBase = ({getState}) => next => record => {
 	const currentState = getState();
 	if (isObj(record.state) && isObj(currentState)) {
 		record = Object.assign({}, record, {
@@ -80,7 +81,7 @@ export const fillObjectRestDataMiddleware: Middleware = ({getState}) => next => 
 	return next(record);
 };
 
-export const filterUndefinedMiddleware: Middleware = () => next => record => {
+export const filterUndefinedMiddleware: MiddlewareBase = () => next => record => {
 	if (record.state === undefined) {
 		return undefined;
 	}

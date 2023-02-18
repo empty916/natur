@@ -17,12 +17,9 @@ export interface Maps {
 	[p: string]: StoreMap;
 }
 
-export interface Action {
-	(...arg: any[]): any;
-}
+export interface Action extends AnyFun {};
 
 export type Actions = Record<string, Action>;
-
 
 export type WatchEventBase = {
 	type: EventType;
@@ -132,8 +129,14 @@ export type GlobalResetStatesOption<MN extends string = string> = {
 };
 
 export type MiddlewareActionRecordBase = {
-	moduleName: string;
-	actionName: string;
+	/**
+	 * can not use string,
+	 * because MiddlewareActionRecordAPI's moduleName is string Enum,
+	 * string can not apply to string Enum.
+	 * same as actionName.
+	 */
+	moduleName: any;
+	actionName: any;
 	state: any;
 };
 
@@ -141,16 +144,16 @@ export type MiddlewareParamsBase = {
 	setState: (s: MiddlewareActionRecordBase) => any;
 	getState: () => State;
 	getMaps: () => any;
-	getStore: () => StoreBase;
-	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
+	getStore: () => any;
+	dispatch: (...arg: any) => any;
 };
 
 export type InterceptorParamsBase = {
 	setState: (s: MiddlewareActionRecordBase) => any;
 	getState: () => State;
 	getMaps: () => any;
-	getStore: () => StoreBase;
-	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
+	getStore: () => any;
+	dispatch: (...arg: any) => any;
 };
 
 export type MiddlewareNextBase = (record: MiddlewareActionRecordBase) => any;
@@ -160,6 +163,11 @@ export type MiddlewareBase = (middlewareParams: MiddlewareParamsBase)
         => MiddlewareNextBase;
 
 export type InterceptorActionRecordBase = {
+	/**
+	 * can not use string,
+	 * because InterceptorActionRecordAPI's moduleName is string Enum
+	 * string can not apply to string Enum
+	 */
 	moduleName: any;
 	actionName: string;
 	actionArgs: any;
@@ -189,7 +197,7 @@ export interface StoreBase {
 	subscribeAll: (listener: AllListenerBase) => () => void;
 	getAllModuleName: () => string[];
 	destroy: () => void;
-	dispatch: (moduleName: string, actionName: string, ...arg: any) => any;
+	dispatch: (...arg: any) => any;
 	globalSetStates: (s: States) => void;
 	globalResetStates: (option?: GlobalResetStatesOption) => void;
 	getAllStates: () => States;
