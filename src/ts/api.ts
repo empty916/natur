@@ -167,8 +167,6 @@ export type InterceptorParamsAPI<
     setState: <MN extends keyof ST>(s: SetStateAPI<M, LM, ST, MN>) => any;
     getState: <MN extends keyof ST>() => ST[MN]['state'];
     getMaps: <MN extends keyof ST>() => ST[MN]['maps'];
-    // getStore: () => Store<M, LM>;
-    // dispatch: Store<M, LM>['dispatch'];
     getStore: () => StoreBase;
     dispatch: StoreBase['dispatch'];
 };
