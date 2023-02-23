@@ -1,6 +1,6 @@
 {
 	"name": "natur",
-	"version": "2.1.12",
+	"version": "2.2.0",
 	"description": "react state management. support react, anujs",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -10,6 +10,7 @@
 		"pub:release": "yarn publish",
 		"prepublish": "yarn test && yarn build",
 		"test": "jest --silent",
+		"dev:test": "jest",
 		"test:report": "jest --coverage  --silent"
 	},
 	"files": [

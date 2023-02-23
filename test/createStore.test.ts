@@ -365,6 +365,7 @@ describe('init', () => {
 			'setLazyModule',
 			'removeLazyModule',
 			'subscribe',
+			'subscribeAll',
 			'destroy',
 			'dispatch',
 			'globalSetStates',
@@ -694,6 +695,7 @@ describe('subscribe', () => {
 		count: typeof count;
 	}, {}>
 	beforeEach(() => {
+		// @ts-ignore
 		store = createStore(
 			{ count }, {},
 			{
@@ -769,6 +771,98 @@ describe('subscribe', () => {
 			})
 	});
 });
+
+
+describe('subscribeAll', () => {
+	let store: Store<{
+		count: typeof count;
+	}, {}>
+	beforeEach(() => {
+		// @ts-ignore
+		store = createStore(
+			{ count }, {},
+			{
+				middlewares: [
+					promiseMiddleware,
+					filterNonObjectMiddleware, 
+					shallowEqualMiddleware
+				]
+			},
+		);
+	});
+	test('subscribe listener get update module event', done => {
+		let countModule = store.getModule('count');
+		store.subscribeAll(({type, actionName, moduleName}) => {
+			if (moduleName === 'count') {
+				expect(type).toBe('update');
+				expect(actionName).toBe('inc');
+				done();
+			}
+		});
+		countModule.actions.inc(countModule.state);
+	});
+	test('subscribe listener get init module event', done => {
+		store.subscribeAll(({type, actionName, moduleName}) => {
+			if (moduleName === 'count') {
+				expect(type).toBe('init');
+				expect(actionName).toBe(undefined);
+				done();
+			}
+		});
+		store.setModule('count', count);
+		// countModule.actions.inc(countModule.state);
+	});
+	test('subscribe listener get remove module event', done => {
+		store.subscribeAll(({type, actionName, moduleName}) => {
+			if (moduleName === 'count') {
+				expect(type).toBe('remove');
+				expect(actionName).toBe(undefined);
+				done();
+			}
+		});
+		store.removeModule('count');
+	});
+	test('subscribe listener', done => {
+		let countModule = store.getModule('count');
+		const oldCount = countModule.state.count;
+		const unsub = store.subscribeAll(({type, actionName, moduleName}) => {
+			if (moduleName === 'count') {
+				countModule = store.getModule('count');
+				expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
+				expect(countModule.state.count).toBe(oldCount + 1);
+				expect(countModule.maps.isOdd).toBe(true);
+				done();
+			}
+		});
+		countModule.actions.inc(countModule.state);
+	});
+	test('subscribe unsuscribe', () => {
+		let countModule = store.getModule('count');
+		let callTimes = 0;
+		const unsub = store.subscribeAll(({moduleName}) => {
+			moduleName === 'count' && callTimes ++;
+		});
+		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
+		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
+		unsub();
+		countModule.actions.inc(countModule.state);
+		expect(callTimes).toBe(2);
+	});
+	test('subscribe async actions unsuscribe', () => {
+		let countModule = store.getModule('count');
+		let callTimes = 0;
+		const unsub = store.subscribeAll(({moduleName}) => moduleName === 'count' && callTimes ++);
+		countModule.actions.inc(countModule.state);
+		countModule = store.getModule('count');
+		return countModule.actions.asyncInc(countModule.state)
+			.then(() => {
+				expect(callTimes).toBe(2);
+			})
+	});
+});
+
 
 describe('actions', () => {
 	let store: Store<{

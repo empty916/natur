@@ -1,14 +1,5 @@
 import MapCache from "./MapCache";
-import { Store, InjectStoreModules, Modules, LazyStoreModules } from "./ts-utils";
-
-type Fun<P> = (p: P) => any;
-
-
-export type ModuleDepDec<ST extends InjectStoreModules = InjectStoreModules, MN extends keyof ST = string> = [MN, {
-	[k in Extract<keyof ST[MN], 'state'|'maps'>]?: 
-		k extends 'state' ? Array<keyof ST[MN]['state']|Fun<ST[MN]['state']>> : 
-			k extends 'maps' ? Array<keyof ST[MN]['maps']> : never;
-}];
+import { Store, InjectStoreModules, Modules, LazyStoreModules, ModuleDepDec } from "./ts-utils";
 
 export type DepDecs = {
 	[m: string]: ModuleDepDec[1];
@@ -34,42 +25,7 @@ export type Diff = {
     [m: string]: MapCache[];
 };
 
-export const initDiff = <M extends Modules, LM extends LazyStoreModules>(moduleDepDec: DepDecs, store: Store<M, LM>):{
-	diff: Diff,
-	destroy: Function,
-} => {
-	let diff: Diff = {};
-	for(let moduleName in moduleDepDec) {
-		if(moduleDepDec.hasOwnProperty(moduleName)) {
-			diff[moduleName] = [];
-			if (moduleDepDec[moduleName].state) {
-				const stateCache = new MapCache(
-					() => store.getModule(moduleName).state,
-					[...moduleDepDec[moduleName].state as Array<string|Function>, () => {}],
-				);
-				stateCache.hasDepChanged();
-				diff[moduleName].push(stateCache);
-			}
-			if (moduleDepDec[moduleName].maps) {
-				const mapsCache = new MapCache(
-					() => store.getModule(moduleName).maps,
-					[...moduleDepDec[moduleName].maps as Array<string>, () => {}],
-				);
-				mapsCache.hasDepChanged();
-				diff[moduleName].push(mapsCache);
-			}
-		}
-	}
-
-	const destroy = () => {
-		for(let moduleName in diff) {
-			diff[moduleName].forEach(cache => cache.destroy());
-			diff[moduleName] = [];
-		}
-		diff = {};
-	}
-	return {
-		diff,
-		destroy,
-	}
+export type InitDiffReturnType = {
+	diff: Diff;
+	destroy: Function;
 }

@@ -119,7 +119,7 @@ describe('interceptor', () => {
             ...count.state,
             count: 12345,
         }
-        const interceptor1: Interceptor<StoreType> = ({getState, setState, getMaps, dispatch}) => next => interceptorActionRecord => {
+        const interceptor1: Interceptor = ({getState, setState, getMaps, dispatch}) => next => interceptorActionRecord => {
             expect(interceptorActionRecord.actionArgs).toStrictEqual([store.getModule('count').state]);
             expect(getState()).toBe(countInitState);
             expect(getMaps()).toStrictEqual(store.getModule('count').maps);
@@ -149,13 +149,13 @@ describe('interceptor', () => {
 
     test('one more interceptor add action arg', () => {
         
-        const interceptor1: Interceptor<_ST> = () => next => interceptorActionRecord => {
+        const interceptor1: Interceptor = () => next => interceptorActionRecord => {
             return next({
                 ...interceptorActionRecord,
                 actionArgs: [...interceptorActionRecord.actionArgs, 'interceptor1'],
             });
         }
-        const interceptor2: Interceptor<_ST> = () => next => interceptorActionRecord => {
+        const interceptor2: Interceptor = () => next => interceptorActionRecord => {
             return next({
                 ...interceptorActionRecord,
                 actionArgs: [...interceptorActionRecord.actionArgs, 'interceptor2'],
@@ -186,7 +186,7 @@ describe('interceptor', () => {
     });
 
     test('interceptor stop run action', () => {
-        const interceptor: Interceptor<ST> = () => next => interceptorActionRecord => {
+        const interceptor: Interceptor = () => next => interceptorActionRecord => {
             if (interceptorActionRecord.actionName === 'updateState1') {
                 return next({
                     ...interceptorActionRecord,
@@ -225,7 +225,7 @@ describe('interceptor', () => {
         const action = (newState: string) => {
             return newState;
         };
-        const interceptor: Interceptor<ST> = () => next => interceptorActionRecord => {
+        const interceptor: Interceptor = () => next => interceptorActionRecord => {
             expect(interceptorActionRecord.actionFunc).toBe(action);
             return next(interceptorActionRecord);
         }

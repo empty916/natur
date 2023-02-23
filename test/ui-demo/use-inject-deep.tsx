@@ -1,5 +1,5 @@
 import React from "react";
-import { createInject, createStore } from "../../src";
+import { createInject, createStore, createUseInject } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -35,28 +35,21 @@ export const store = createStore(
 		]
 	}
 );
-const inject = createInject({
-	storeGetter: () => store,
-	loadingComponent: () => <div role='loading'>loading</div>
-});
 
+const useInject = createUseInject(() => store);
 
-const injector = inject(
-	['name', {state: ['text'], maps: ['textSplit']}],
-)
-
-type NameProps = typeof injector.type;
-
-const Son = injector(({name}: NameProps) => {
+const Son = () => {
+	const [name] = useInject('name', {state: ['text'], maps: ['textSplit']})
 	React.useEffect(() => {
 		name.actions.updateText('son name');
 	}, []);
 	return (
 		<div>{name.state.text}</div>
 	)
-})
+}
 
-const App = injector(({name}: NameProps) => {
+const App = () => {
+	const [name] = useInject('name', {state: ['text'], maps: ['textSplit']})
 	const { state, actions, maps } = name;
 	return (
 		<>
@@ -68,7 +61,7 @@ const App = injector(({name}: NameProps) => {
 			<Son />
 		</>
 	);
-});
+};
 
 export {
 	App,

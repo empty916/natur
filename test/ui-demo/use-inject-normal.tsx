@@ -1,6 +1,5 @@
-import { act } from "@testing-library/react";
-import React, { useState } from "react";
-import { createInject, createStore } from "../../src";
+import React from "react";
+import { createInject, createStore, createUseInject } from "../../src";
 import {
 	promiseMiddleware,
 	filterNonObjectMiddleware,
@@ -58,46 +57,33 @@ export const store = createStore(
 		]
 	}
 );
-const inject = createInject({
-	storeGetter: () => store,
-	loadingComponent: () => <div role='loading'>loading</div>
-});
+const useInject = createUseInject(() => store);
 
 
-const appInjector = inject(
-	['name', {
+const _App = () => {
+	const [name] = useInject('name', {
 		state: ['text'],
 		maps: ['textSplit']
-	}], 
-	'lazyName', 
-	'name1' as any
-);
-
-const appInjector2 = inject(
-	['name', {state: ['text',], maps: ['textSplit']}],
-	'lazyName', 
-	'lazyName2'
-);
-
-const _App = ({name, lazyName}: typeof appInjector2.type) => {
+	});
+	const [lazyName, loading] = useInject('lazyName')
 	const { state, actions, maps } = name;
+	if (loading) {
+		return <div role='loading'>loading</div>;
+	}
 	return (
 		<>
-			<input role='name-input' value={state.text} onChange={e => act(() => actions.updateText(e.target.value))} />
-			<input role='lazy-name-input' value={lazyName.state.text} onChange={e => act(() => lazyName.actions.updateText(e.target.value))} />
+			<input role='name-input' value={state.text} onChange={e => actions.updateText(e.target.value)} />
+			<input role='lazy-name-input' value={lazyName?.state?.text} onChange={e => lazyName?.actions?.updateText(e.target.value)} />
 			<br/>
-			<button role='btn-inc' onClick={() => act(() => actions.inc(state.count))}>+</button>
+			<button role='btn-inc' onClick={() => actions.inc(state.count)}>+</button>
 			<span role='count'>{state.count + ''}</span>
 			<span role='text-split'>{maps.textSplit}</span>
 		</>
 	);
 }
 
-const App = appInjector(_App);
-
-const App2 = appInjector2(_App);
+const App = _App;
 
 export {
 	App,
-	App2,
 };

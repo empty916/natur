@@ -32,7 +32,6 @@ const count = {
 		thunkInc: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
             dispatch('inc', getState());
             dispatch('count2/inc');
-
             return setState({ ...getState(), count: getState().count + 1 });
         },
         thunkInc2: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
@@ -61,6 +60,28 @@ const count2 = {
 }
 
 describe('actions', () => {
+    test('middleware api', () => {
+        const store = createStore({ count, count2 }, {}, {
+            middlewares: [
+                ({getMaps, getState, getStore}) => next => record => {
+                    expect(getStore()).toBe(store);
+                    expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
+                    expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
+                    return next(record);
+                },
+                thunkMiddleware,
+                filterUndefinedMiddleware,
+            ]
+        });
+        const countModule = store.getModule('count');
+        
+		expect(countModule.maps.isOdd).toBe(false);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        const count2Module = store.getModule('count2');
+        
+		expect(count2Module.state).toBe(1);
+        // expect(countModule.actions.thunkInc2()).toBe(true);
+    });
 	test('thunkMiddleware', () => {
         const store = createStore({ count, count2 }, {}, {
             middlewares: [

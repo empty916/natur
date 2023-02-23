@@ -5,7 +5,14 @@
  * @modify date 2019-08-09 17:13:03
  * @desc [description]
  */
-import React, { ComponentType } from "react";
+import React, {
+	ComponentType,
+	useContext,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import hoistStatics from "hoist-non-react-statics";
 import {
 	// ModuleName,
@@ -17,24 +24,29 @@ import {
 	ConnectedComponent,
 	GetLibraryManagedProps,
 	GetProps,
-} from "./ts-utils";
-import { isEqualWithDepthLimit, supportRef } from "./utils";
-import {
 	ModuleDepDec,
+} from "./ts-utils";
+import { arrayIsEqual, isEqualWithDepthLimit, supportRef } from "./utils";
+import {
 	isModuleDepDec,
 	DepDecs,
-	Diff,
-	initDiff,
 } from "./injectCache";
+import { getDepValue } from "./useInject";
+import { NaturContext } from "./context";
 
 type ModuleName = string;
-type ModuleNames = ModuleName[];
 
 let Loading: ComponentType<{}> = () => null;
 
-type Tstate = {
-	storeStateChange: {};
-	modulesHasLoaded: boolean;
+const getModuleByNames = <T extends InjectStoreModules>(
+	ims: T,
+	mns: string[]
+) => {
+	return mns.reduce((res, mn) => {
+		// @ts-ignore
+		res[mn] = ims[mn];
+		return res;
+	}, {} as Partial<T>);
 };
 
 export type StoreGetter<
@@ -59,190 +71,118 @@ const connect = <
 	depDecs: DepDecs,
 	storeGetter: StoreGetter<M, LM>,
 	WrappedComponent: C,
-	LoadingComponent?: ComponentType<any>
+	LoadingComponent: ComponentType<any> = Loading
 ): ConnectReturn<P, SP, C> => {
 	type ConnectProps = P & { forwardedRef: React.Ref<any> };
 
-	class Connect extends React.Component<ConnectProps> {
-		private store: Store<M, LM>;
-		private integralModulesName: ModuleNames;
-		private unLoadedModules: ModuleNames;
-		private injectModules: Modules = {};
-		private unsubStore: () => void = () => {};
-		private LoadingComponent: ComponentType<{}>;
-		private storeModuleDiff: Diff | undefined;
-		private destroyCache: Function = () => {};
-		private isSubscribing = false;
-		/**
-		 * 组件还未渲染
-		 */
-		private isUnmounted = true;
-		state: Tstate = {
-			storeStateChange: {},
-			modulesHasLoaded: false,
-		};
-		constructor(props: ConnectProps) {
-			super(props);
-			// 初始化store, integralModulesName(合法模块名)
-			const { store, integralModulesName } = this.init();
-			this.store = store;
-			this.integralModulesName = integralModulesName;
-			const unLoadedModules = integralModulesName.filter(
-				(mn) => !store.hasModule(mn)
-			);
-			this.unLoadedModules = unLoadedModules;
-			// 初始化模块是否全部加载完成标记
-			this.state.modulesHasLoaded = !unLoadedModules.length;
-			this.setStoreStateChanged = this.setStoreStateChanged.bind(this);
-			this.LoadingComponent = LoadingComponent || Loading;
-			this.loadLazyModule();
-		}
-		loadLazyModule() {
-			const { store, unLoadedModules } = this;
-			const { modulesHasLoaded } = this.state;
+	const FunctionalConnect = ({ forwardedRef, ...props }: ConnectProps) => {
+		const store = useContext(NaturContext) as (Store<M, LM> | undefined) || storeGetter();
+		const [loadErrorModules, setLoadErrorModules] = useState<string[]>([]);
+		const [_, notifyModuleHasLoad] = useState({});
+		const integralModulesName = moduleNames
+			.filter((mn) => store.getAllModuleName().includes(mn))
+			.filter((mn) => !loadErrorModules.includes(mn));
+		const unLoadedModules = integralModulesName.filter(
+			(mn) => !store.hasModule(mn)
+		);
+		const noDepModuleNames = integralModulesName.filter(
+			(mn) => !depDecs[mn]
+		);
+		const modulesHasLoaded = !unLoadedModules.length;
+		let newProps = Object.assign({}, props, {
+			ref: supportRef(WrappedComponent) ? forwardedRef : undefined,
+		}) as GetLibraryManagedProps<C>;
+		const injectModulesRef = useRef<InjectStoreModules>({});
+		const loadingModules = useRef<Record<string, boolean>>({});
 
-			if (!modulesHasLoaded) {
-				Promise.all(unLoadedModules.map((mn) => store.loadModule(mn)))
-					.then(() => {
-						if (this.isUnmounted === false) {
-							this.setState({
-								modulesHasLoaded: true,
-							});
-						} else {
-							this.state.modulesHasLoaded = true;
-						}
-					})
-					.catch(() => {
-						if (this.isUnmounted === false) {
-							this.setState({
-								modulesHasLoaded: false,
-							});
-						} else {
-							this.state.modulesHasLoaded = true;
-						}
-					});
-			}
-		}
-		subscribe() {
-			/**
-			 * 如果组件已经订阅了，或者lazy模块还没加载完，就不用订阅了
-			 */
-			if (this.isSubscribing || this.state.modulesHasLoaded === false) {
-				return;
-			}
-			// 初始化store监听
-			this.initStoreListner();
-			this.initDiff();
-			this.isSubscribing = true;
-		}
-		unsubscribe() {
-			this.unsubStore();
-			this.destroyCache();
-			this.unsubStore = () => {};
-			this.destroyCache = () => {};
-			this.isSubscribing = false;
-			this.isUnmounted = true;
-		}
-		setStoreStateChanged(moduleName: ModuleName) {
-			if (!depDecs[moduleName]) {
-				this.setState({
-					storeStateChange: {},
-				});
-			} else if (this.storeModuleDiff) {
-				let hasDepChanged = false;
-				this.storeModuleDiff[moduleName].forEach((diff) => {
-					diff.shouldCheckCache();
-					if (diff.hasDepChanged()) {
-						hasDepChanged = true;
+		const injectModules = useSyncExternalStore(
+			(on) => {
+				return store.subscribeAll(({ moduleName }) => {
+					if (moduleNames.includes(moduleName)) {
+						on();
 					}
 				});
-				if (hasDepChanged) {
-					this.setState({
-						storeStateChange: {},
+			},
+			() => {
+				if (!integralModulesName.length) {
+					return;
+				}
+				if (!modulesHasLoaded) {
+					unLoadedModules.forEach((mn) => {
+						if (loadingModules.current[mn]) {
+							return;
+						}
+						loadingModules.current[mn] = true;
+						store
+							.loadModule(mn)
+							.then(() => notifyModuleHasLoad({}))
+							.catch(() =>
+								setLoadErrorModules((nv) => [...nv, mn])
+							);
 					});
+					return;
 				}
-			} else {
-				this.setState({
-					storeStateChange: {},
-				});
-			}
-		}
-		initDiff(
-			moduleDepDec: DepDecs = depDecs,
-			store: Store<M, LM> = this.store
-		): void {
-			const { diff, destroy } = initDiff(moduleDepDec, store);
-			this.storeModuleDiff = diff;
-			this.destroyCache = destroy;
-		}
-		initStoreListner() {
-			const { store, integralModulesName, setStoreStateChanged } = this;
-			const unsubscribes = integralModulesName.map((mn) =>
-				store.subscribe(mn, () => setStoreStateChanged(mn))
-			);
-			this.unsubStore = () => unsubscribes.forEach((fn) => fn());
-		}
-		componentWillUnmount() {
-			this.unsubscribe();
-		}
-		shouldComponentUpdate(nextProps: ConnectProps, nextState: Tstate) {
-			const propsChanged = !isEqualWithDepthLimit(
-				this.props,
-				nextProps,
-				1
-			);
-			const stateChanged =
-				nextState.modulesHasLoaded !== this.state.modulesHasLoaded ||
-				nextState.storeStateChange !== this.state.storeStateChange;
-			return propsChanged || stateChanged;
-		}
-		init() {
-			const store = storeGetter();
-
-			const allModuleNames = store.getAllModuleName();
-			// 获取store中存在的模块
-			const integralModulesName = moduleNames.filter((mn) => {
-				const isInclude = allModuleNames.includes(mn);
-				if (!isInclude) {
-					console.warn(`inject: ${mn} module is not exits!`);
-				}
-				return isInclude;
-			});
-			return { store, integralModulesName };
-		}
-		render() {
-			if (this.isUnmounted) {
-				this.isUnmounted = false;
-			}
-			this.subscribe();
-			const { forwardedRef, ...props } = this.props;
-			let newProps = Object.assign({}, props, {
-				ref: supportRef(WrappedComponent) ? forwardedRef : undefined,
-			}) as GetLibraryManagedProps<C>;
-
-			if (!this.integralModulesName.length) {
-				console.warn(`modules: ${moduleNames.join()} is not exits!`);
-				// @ts-ignore
-				return <WrappedComponent {...newProps} />;
-			}
-			if (this.state.modulesHasLoaded === false) {
-				return <this.LoadingComponent />;
-			}
-			const { store, integralModulesName } = this;
-
-			this.injectModules = integralModulesName.reduce(
-				(res, mn: ModuleName) => {
+				const nr = integralModulesName.reduce((res, mn: ModuleName) => {
 					res[mn] = store.getModule(mn);
 					return res;
-				},
-				{} as Modules
-			);
+				}, {} as Modules);
+				if (
+					injectModulesRef.current &&
+					!isEqualWithDepthLimit(
+						getModuleByNames(
+							injectModulesRef.current,
+							noDepModuleNames
+						),
+						getModuleByNames(nr, noDepModuleNames),
+						1
+					)
+				) {
+					injectModulesRef.current = nr;
+					return injectModulesRef.current;
+				}
 
-			Object.assign(newProps as {}, this.injectModules);
+				if (!isEqualWithDepthLimit(injectModulesRef.current, nr, 1)) {
+					const mns = Object.keys(depDecs);
+					if (mns.length) {
+						const res = mns.map((mn) => {
+							const oldM = injectModulesRef.current[mn];
+							const newM = nr[mn];
+							if (
+								oldM &&
+								arrayIsEqual(
+									getDepValue(oldM, depDecs[mn] as any),
+									getDepValue(newM, depDecs[mn] as any)
+								)
+							) {
+								return true;
+							}
+							return false;
+						});
+						if (res.every((i) => i)) {
+							return injectModulesRef.current;
+						}
+					}
+					injectModulesRef.current = nr;
+				}
+
+				return injectModulesRef.current;
+			}
+		);
+
+		if (!integralModulesName.length) {
 			// @ts-ignore
 			return <WrappedComponent {...newProps} />;
 		}
-	}
+		if (modulesHasLoaded === false) {
+			return <LoadingComponent />;
+		}
+
+		Object.assign(newProps as {}, injectModules);
+		// @ts-ignore
+		return <WrappedComponent {...newProps} />;
+	};
+
+	const Connect = FunctionalConnect;
 	let FinalConnect: any = Connect;
 	if (!!React.forwardRef) {
 		FinalConnect = React.forwardRef<any, P>(function ForwardConnect(
@@ -265,10 +205,6 @@ export type ConnectFun<
 		LC?: ComponentType<{}>
 	): ConnectedComponent<C, Omit<GetLibraryManagedProps<C>, MNS>>;
 	type: Pick<ST, MNS>;
-	watch<MN extends MNS>(
-		mn: MN,
-		dep: ModuleDepDec<ST, MN>[1]
-	): ConnectFun<ST, MNS>;
 };
 
 const createInject = <
@@ -473,15 +409,6 @@ const createInject = <
 
 		const type = null as any as Pick<ST, MNS>;
 		connectHOC.type = type;
-		connectHOC.watch = function watch<MN extends MNS>(
-			mn: MN,
-			dep: ModuleDepDec<ST, MN>[1]
-		): ConnectFun<ST, MNS> {
-			if (moduleNames.includes(mn) && isModuleDepDec([mn, dep])) {
-				depDecs[mn] = dep;
-			}
-			return connectHOC as ConnectFun<ST, MNS>;
-		};
 		return connectHOC;
 	}
 
