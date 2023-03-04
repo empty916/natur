@@ -130,6 +130,7 @@ export const name = {
 	},
 	actions: {
 		updateName: (name: string) => ({ name }),
+		updateName111: (name: string) => ({ name }),
 	},
 }
 export const nameWithMaps = {
@@ -166,7 +167,7 @@ const getOriginModule = <MN extends keyof M>(moduleName: MN, originModule: M[MN]
 	expect(targetModule.maps).toBe(originModule.maps);
 }
 const getModuleNotExist = (moduleName: string) => () => {
-	expect(() => store.getModule(moduleName as any)).toThrowError(new RegExp(`module: ${moduleName} is not valid!`));
+	expect(store.getModule(moduleName as any)).toBe(undefined);
 }
 const getModuleWithMaps = <MN extends 'count'|'nameWithMaps'>(moduleName: MN, originModule: M[MN]) => () => {
 	const targetModule = store.getModule(moduleName);
@@ -232,32 +233,39 @@ const countMapsCache = () => {
 
 	expect(countModule.maps.a1).toBe(2)
 	expect(countModule.maps.a2).toBe(3)
+
 	countModule.actions.addA1(countModule.state);
+
 	countModule = store.getModule('count');
+
 	expect(countModule.maps.a1).toBe(6)
+
 	countModule.actions.addA2(countModule.state);
+
 	countModule = store.getModule('count');
+	
 	expect(countModule.maps.a2).toBe(11)
 
 
 	// count: 0, isOdd: false
 	countModule.maps.getSplitNameWhenCountIsOdd;
 	countModule.maps.getSplitNameWhenCountIsOdd;
-	expect(countMapCallTimes).toBe(1);
 
 	// name: 'count1'
 	countModule.actions.updateName(countModule.state);
+	expect(countMapCallTimes).toBe(1);
+
 	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(2);
 
 	// name: 'count11'
 	countModule.actions.updateName(countModule.state);
+	expect(countMapCallTimes).toBe(2);
+
 	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(3);
 
 	// count: 1, isOdd: true
 	countModule.actions.inc(countModule.state);
@@ -268,19 +276,19 @@ const countMapsCache = () => {
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(4);
+	expect(countMapCallTimes).toBe(3);
 
 	// name: 'count111'
 	countModule.actions.updateName(countModule.state);
 	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(5);
+	expect(countMapCallTimes).toBe(4);
 
 	// name: 'count1111'
 	countModule.actions.updateName(countModule.state);
 	countModule = store.getModule('count');
 	countModule.maps.getSplitNameWhenCountIsOdd
-	expect(countMapCallTimes).toBe(6);
+	expect(countMapCallTimes).toBe(5);
 
 }
 
@@ -429,15 +437,19 @@ describe('setModule', () => {
 	test('run actions', updateCountState);
 	test('maps cache', countMapsCache);
 	test('set illegal module', () => {
+		// @ts-ignore
 		expect(() => store.setModule('name1', {})).toThrow();
 		expect(() => store.setModule('name1', {
 			state: {a:1},
+			// @ts-ignore
 			actions: {a:1},
+			// @ts-ignore
 			maps: {a:1}
 		})).toThrow();
 		expect(() => store.setModule('name1', {
 			state: {a:1},
 			actions: {a:() => {}},
+			// @ts-ignore
 			maps: {a:1}
 		})).toThrow();
 		expect(() => store.setModule('name1', {
@@ -466,6 +478,7 @@ describe('setModule', () => {
 	})
 	test('set module', () => {
 		expect(store.setModule('name1', name)).toBe(store);
+		// @ts-ignore
 		expect(() => store.setModule('name11', {})).toThrow();
 		expect(store.hasModule('name11')).toBe(false);
 	});
@@ -484,6 +497,7 @@ describe('setModule', () => {
 	});
 	test('get module', getModule('name', name));
 	test('get origin module', getOriginModule('count', count));
+	
 	test('get module not exist', getModuleNotExist('name1'));
 	test('get moduleWithoutMaps', getModuleWithoutMaps('name', name));
 	test('get moduleWithMaps', getModuleWithMaps('nameWithMaps', nameWithMaps));
@@ -600,7 +614,7 @@ describe('lazyModule', () => {
 		// @ts-ignore
 		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
 		// @ts-ignore
-		expect(() => store.getLazyModule('lazyModule111')).toThrow();
+		expect(store.getLazyModule('lazyModule111')).toBe(undefined);
 		// @ts-ignore
 		expect(store.getLazyModule('lazyModuleWithoutMaps')).toBe(lazyModuleWithoutMaps);
 	});
@@ -682,22 +696,23 @@ describe('remove lazy module', () => {
 			lazyModule,
 		});
 	});
-	test('remove lazy module', () => {
+	test('remove lazy module', async () => {
 		expect(store.getLazyModule('lazyModule')).toBe(lazyModule);
 		store.removeLazyModule('lazyModule');
-
-		expect(() => store.getLazyModule('lazyModule')).toThrow();
+		const res = await store.getLazyModule('lazyModule')
+		expect(res).toBe(undefined);
 	});
 });
 
 describe('subscribe', () => {
 	let store: Store<{
 		count: typeof count;
+		name: typeof name;
 	}, {}>
 	beforeEach(() => {
 		// @ts-ignore
 		store = createStore(
-			{ count }, {},
+			{ count, }, {},
 			{
 				middlewares: [
 					promiseMiddleware,
@@ -709,9 +724,14 @@ describe('subscribe', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribe('count', ({type, actionName}) => {
+		store.subscribe('count', (e, apis) => {
+			const {type, actionName, oldModule, newModule} = e;
 			expect(type).toBe('update');
 			expect(actionName).toBe('inc');
+			countModule = store.getModule('count');
+			expect(apis.getMaps()).toBe(countModule.maps);
+			expect(apis.getState()).toBe(countModule.state);
+			expect(apis.getStore()).toBe(store);
 			done();
 		});
 		countModule.actions.inc(countModule.state);
@@ -727,16 +747,23 @@ describe('subscribe', () => {
 	});
 	test('subscribe listener get remove module event', done => {
 		store.subscribe('count', ({type, actionName}) => {
-			expect(type).toBe('remove');
+			expect(['remove', 'beforeRemove'].includes(type)).toBe(true);
 			expect(actionName).toBe(undefined);
-			done();
+			type === 'remove' && done();
 		});
+		store.subscribe('count', (e, a) => {
+			e.actionName;
+		})
+		// store.setLazyModule('count', 1);
 		store.removeModule('count');
 	});
 	test('subscribe listener', done => {
 		let countModule = store.getModule('count');
 		const oldCount = countModule.state.count;
-		const unsub = store.subscribe('count', () => {
+		const unsub = store.subscribe('count', (e) => {
+			// if (e.type === 'init') {
+			// 	e
+			// }
 			countModule = store.getModule('count');
 			expect(Object.keys(countModule.state)).toEqual(['count', 'name', 'obj']);
 			expect(countModule.state.count).toBe(oldCount + 1);
@@ -776,11 +803,11 @@ describe('subscribe', () => {
 describe('subscribeAll', () => {
 	let store: Store<{
 		count: typeof count;
+		name: typeof name;
 	}, {}>
 	beforeEach(() => {
-		// @ts-ignore
 		store = createStore(
-			{ count }, {},
+			{ count, name }, {},
 			{
 				middlewares: [
 					promiseMiddleware,
@@ -792,11 +819,21 @@ describe('subscribeAll', () => {
 	});
 	test('subscribe listener get update module event', done => {
 		let countModule = store.getModule('count');
-		store.subscribeAll(({type, actionName, moduleName}) => {
+		store.subscribeAll(({type, actionName, moduleName, oldModule, newModule}, apis) => {
 			if (moduleName === 'count') {
 				expect(type).toBe('update');
 				expect(actionName).toBe('inc');
+				countModule = store.getModule('count');
+				expect(apis.getMaps()).toBe(countModule.maps);
+				expect(apis.getState()).toBe(countModule.state);
+				expect(apis.getStore()).toBe(store);
 				done();
+			}
+			if (type === 'remove') {
+				moduleName;
+				actionName;
+				oldModule;
+				newModule;
 			}
 		});
 		countModule.actions.inc(countModule.state);
@@ -815,9 +852,9 @@ describe('subscribeAll', () => {
 	test('subscribe listener get remove module event', done => {
 		store.subscribeAll(({type, actionName, moduleName}) => {
 			if (moduleName === 'count') {
-				expect(type).toBe('remove');
+				expect(['remove', 'beforeRemove'].includes(type)).toBe(true);
 				expect(actionName).toBe(undefined);
-				done();
+				type === 'remove' && done();
 			}
 		});
 		store.removeModule('count');
@@ -910,6 +947,9 @@ describe('actions', () => {
 		expect(store.dispatch('count', 'inc/aa/22', countModule.state)).toBe(undefined);
 		// @ts-ignore
 		expect(store.dispatch('inc', countModule.state)).toBe(undefined);
+		const incAction = countModule.actions.inc;
+		store.removeModule('count');
+		expect(() => incAction(countModule.state)).toThrow("module: count is not valid!");
 	});
 	test('return no change state', () => {
 		let recordCache: any = null;
@@ -1074,7 +1114,8 @@ describe('globalSetStates', () => {
 				count,
 				name,
 			},
-			{},
+			{
+			},
 			{
 				middlewares: [() => next => record => {
 					if (record.moduleName === 'nameWithMaps') {
@@ -1119,7 +1160,6 @@ describe('globalSetStates', () => {
 		store.globalSetStates(newStates);
 		// lazy module
 		store.setModule('nameWithMaps', nameWithMaps);
-
 	})
 	test('setStates before set module manually', () => {
 		const newStates = {
@@ -1471,3 +1511,23 @@ describe('getAllStates', () => {
 		});
 	});
 })
+
+
+test('get Module which is not exist', async () => {
+	// @ts-ignore
+	store = createStore({ name, count }, {
+		// @ts-ignore
+		bbb: () => Promise.resolve(undefined),
+	}, {
+		middlewares: [
+			thunkMiddleware,
+			promiseMiddleware
+		],
+	});
+	// @ts-ignore
+	expect(store.getOriginModule('aa11')).toBe(undefined);
+	// @ts-ignore
+	expect(await store.loadModule('aa11')).toBe(undefined);
+	// @ts-ignore
+	expect(await store.loadModule('bbb')).toBe(undefined);
+});

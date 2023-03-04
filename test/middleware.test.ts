@@ -1,4 +1,4 @@
-import { createStore } from '../src';
+import { createStore, Interceptor, Middleware } from '../src';
 import { isObj } from '../src/utils';
 import {
 	promiseMiddleware,
@@ -29,7 +29,8 @@ const count = {
 	state: countState,
 	actions: {
 		inc: (state: CountState) => ({ ...state, count: state.count + 1 }),
-		thunkInc: () => ({getState, setState, getMaps, dispatch}: ThunkParams<CountState, CountMaps>) => {
+		thunkInc: () => ({getState, setState, getMaps, dispatch, localDispatch}: ThunkParams<CountState, CountMaps>) => {
+            localDispatch('inc', getState());
             dispatch('inc', getState());
             dispatch('count2/inc');
             return setState({ ...getState(), count: getState().count + 1 });
@@ -59,24 +60,42 @@ const count2 = {
     }
 }
 
+
 describe('actions', () => {
     test('middleware api', () => {
+        const m = { count, count2 };
+        const lm = {};
+        type M = typeof m;
+        type LM = typeof lm;
+        const inter1: Interceptor<M, LM> = () => next => record => next(record);
+        const mid1: Middleware = ({getMaps, getState, getStore, dispatch, setState}) => next => record => {
+            expect(getStore()).toBe(store);
+            // setState({
+            //     moduleName: 'count',
+            //     actionName: 'inc',
+            //     state: {},
+            // })
+            record.actionName;
+            record.moduleName;
+            record.state;
+            expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
+            expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
+            return next(record);
+        };
         const store = createStore({ count, count2 }, {}, {
             middlewares: [
-                ({getMaps, getState, getStore}) => next => record => {
-                    expect(getStore()).toBe(store);
-                    expect(getMaps()).toEqual(store.getModule(record.moduleName as 'count').maps);
-                    expect(getState()).toBe(store.getModule(record.moduleName as 'count').state);
-                    return next(record);
-                },
+                mid1,
                 thunkMiddleware,
                 filterUndefinedMiddleware,
+            ],
+            interceptors: [
+                inter1
             ]
         });
         const countModule = store.getModule('count');
         
 		expect(countModule.maps.isOdd).toBe(false);
-        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 3);
         const count2Module = store.getModule('count2');
         
 		expect(count2Module.state).toBe(1);
@@ -92,7 +111,7 @@ describe('actions', () => {
         const countModule = store.getModule('count');
         
 		expect(countModule.maps.isOdd).toBe(false);
-        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 2);
+        expect(countModule.actions.thunkInc().count).toBe(countModule.state.count + 3);
         const count2Module = store.getModule('count2');
         
 		expect(count2Module.state).toBe(1);

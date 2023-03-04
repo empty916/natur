@@ -17,15 +17,7 @@ import hoistStatics from "hoist-non-react-statics";
 import {
 	// ModuleName,
 	Store,
-	Modules,
-	InjectStoreModules,
-	LazyStoreModules,
-	GenerateStoreType,
-	ConnectedComponent,
-	GetLibraryManagedProps,
-	GetProps,
-	ModuleDepDec,
-} from "./ts-utils";
+} from "./ts";
 import { arrayIsEqual, isEqualWithDepthLimit, supportRef } from "./utils";
 import {
 	isModuleDepDec,
@@ -33,6 +25,8 @@ import {
 } from "./injectCache";
 import { getDepValue } from "./useInject";
 import { NaturContext } from "./context";
+import { ConnectedComponent, GenerateStoreType, GetLibraryManagedProps, GetProps, ModuleDepDec } from "./ts/utils";
+import { InjectStoreModules, Modules, LazyStoreModules } from ".";
 
 type ModuleName = string;
 
@@ -80,7 +74,7 @@ const connect = <
 		const [loadErrorModules, setLoadErrorModules] = useState<string[]>([]);
 		const [_, notifyModuleHasLoad] = useState({});
 		const integralModulesName = moduleNames
-			.filter((mn) => store.getAllModuleName().includes(mn))
+			.filter((mn) => store.getAllModuleName().includes(mn as any))
 			.filter((mn) => !loadErrorModules.includes(mn));
 		const unLoadedModules = integralModulesName.filter(
 			(mn) => !store.hasModule(mn)
@@ -98,7 +92,7 @@ const connect = <
 		const injectModules = useSyncExternalStore(
 			(on) => {
 				return store.subscribeAll(({ moduleName }) => {
-					if (moduleNames.includes(moduleName)) {
+					if (moduleNames.includes(moduleName as string)) {
 						on();
 					}
 				});

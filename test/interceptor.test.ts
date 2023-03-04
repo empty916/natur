@@ -1,6 +1,6 @@
-import { createStore, Interceptor, MiddlewareParams, Store } from '../src';
+import { Store, Interceptor, createStore } from '../src';
 import {
-	promiseMiddleware, 
+	promiseMiddleware,
 	thunkMiddleware,
     ThunkParams,
 } from '../src/middlewares'
@@ -105,11 +105,16 @@ let store: Store<{
     count: typeof count;
     name: typeof name;
 }, {}>;
+
+const m = { count, name };
+const lm = {};
+type M = typeof m;
+type LM = typeof lm;
 type StoreType = typeof store.type;
 
 describe('interceptor', () => {
     const initCount = 1;
-    
+
 	test('interceptor base', () => {
         const countInitState = {
             ...count.state,
@@ -119,15 +124,19 @@ describe('interceptor', () => {
             ...count.state,
             count: 12345,
         }
-        const interceptor1: Interceptor = ({getState, setState, getMaps, dispatch}) => next => interceptorActionRecord => {
+        const interceptor1: Interceptor<M, LM> = ({getState, setState, getMaps, dispatch}) => next => interceptorActionRecord => {
             expect(interceptorActionRecord.actionArgs).toStrictEqual([store.getModule('count').state]);
-            expect(getState()).toBe(countInitState);
-            expect(getMaps()).toStrictEqual(store.getModule('count').maps);
+            expect(getState<'count'>()).toBe(countInitState);
+            expect(getMaps<'count'>()).toStrictEqual(store.getModule('count').maps);
             setState({
                 moduleName: interceptorActionRecord.moduleName,
-                actionName: interceptorActionRecord.actionName,
+                actionName: interceptorActionRecord.actionName as 'updateName',
                 state: countChangedState,
             });
+            interceptorActionRecord.actionArgs;
+            interceptorActionRecord.actionFunc;
+            interceptorActionRecord.actionName;
+            interceptorActionRecord.moduleName;
             expect(getState()).toBe(countChangedState);
             expect(getMaps()).toStrictEqual(store.getModule('count').maps);
             return next(interceptorActionRecord);
@@ -148,7 +157,6 @@ describe('interceptor', () => {
     });
 
     test('one more interceptor add action arg', () => {
-        
         const interceptor1: Interceptor = () => next => interceptorActionRecord => {
             return next({
                 ...interceptorActionRecord,
@@ -173,7 +181,7 @@ describe('interceptor', () => {
                 }
             }
         };
-		const _store = createStore({ 
+		const _store = createStore({
             count,
         }, {}, {
             interceptors: [
@@ -206,7 +214,7 @@ describe('interceptor', () => {
                 }
             }
         };
-		const _store = createStore({ 
+		const _store = createStore({
             count,
         }, {}, {
             interceptors: [
@@ -236,7 +244,7 @@ describe('interceptor', () => {
             }
         };
         type ST = Store<{count: typeof count}, {}>['type'];
-		const _store = createStore({ 
+		const _store = createStore({
             count: {
                 state: 'abc',
                 actions: {
@@ -249,6 +257,6 @@ describe('interceptor', () => {
             ],
 		});
         expect(_store.getModule('count').actions.updateState('222')).toBe('222');
-        
+
     });
 })

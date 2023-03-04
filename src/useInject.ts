@@ -5,16 +5,10 @@ import {
     useState,
     useSyncExternalStore,
 } from "react";
+import { InjectStoreModule, Modules, LazyStoreModules } from ".";
 import { NaturContext } from "./context";
 import MapCache from "./MapCache";
-import {
-    Modules,
-    LazyStoreModules,
-    Store,
-    Fun,
-    ModuleDepDec,
-    InjectStoreModule,
-} from "./ts-utils";
+import { Fun, ModuleDepDec, Store } from "./ts/utils";
 import { arrayIsEqual } from "./utils";
 
 export function getDepValue<
@@ -152,7 +146,7 @@ function createUseInject<
                             [moduleName]: true,
                         }));
                     }
-                    if (storeIns.getAllModuleName().includes(moduleName)) {
+                    if (storeIns.getAllModuleName().includes(moduleName as any)) {
                         storeIns
                             .loadModule(moduleName as keyof LM)
                             .catch((err) => {

@@ -7,7 +7,7 @@
  */
 
 import { isMemo } from "react-is";
-import { StoreModule, State } from "./ts-utils";
+import { State, StoreModule } from "./ts";
 
 const hasOwn = Object.prototype.hasOwnProperty;
 // export const ObjHasSameKeys = (obj1: Object, obj2: Object) => {
@@ -63,9 +63,18 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
 	if (!!obj.maps && !isMapsObj(obj.maps)) {
 		return false;
 	}
+	if (!!obj.watch && (!isFn(obj.watch) && !isFnObj(obj.watch))) {
+		return false;
+	}
 	return true;
 };
 
+export const isDefaultStoreModule = (obj: any): obj is {default: StoreModule} => {
+	if (obj?.default) {
+		return isStoreModule(obj.default);
+	}
+	return false;
+};
 /**
  * Composes single-argument functions from right to left. The rightmost
  * function can take multiple arguments as it provides the signature for
@@ -76,7 +85,6 @@ export const isStoreModule = (obj: any): obj is StoreModule => {
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
  */
-
 export function compose<A extends any[], R extends any>(
 	...funcs: anyFn[]
 ): (...arg: A) => R {

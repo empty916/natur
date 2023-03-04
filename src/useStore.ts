@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { NaturContext } from "./context";
-import { Modules, LazyStoreModules, Store } from "./ts-utils";
+import { Modules, LazyStoreModules, Store } from "./ts";
 
 export const createUseStore = <M extends Modules, LM extends LazyStoreModules>(
 	storeInsGetter: () => Store<M, LM>
