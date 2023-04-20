@@ -1,4 +1,5 @@
 import {
+    useCallback,
     useContext,
     useMemo,
     useRef,
@@ -8,6 +9,7 @@ import {
 import { InjectStoreModule, Modules, LazyStoreModules } from ".";
 import { NaturContext } from "./context";
 import MapCache from "./MapCache";
+import { AnyFun } from "./ts";
 import { Fun, ModuleDepDec, Store } from "./ts/utils";
 import { arrayIsEqual } from "./utils";
 
@@ -111,8 +113,9 @@ function createUseInject<
             (useContext(NaturContext) as Store<M, LM> | undefined) ||
             storeInsGetter();
         const [loading, setLoading] = useState<Partial<Record<K, boolean>>>({});
+        const suber = useCallback((on: AnyFun) => storeIns.subscribe(moduleName, on), [storeIns, moduleName])
         const res = useSyncExternalStore(
-            (on) => storeIns.subscribe(moduleName, on),
+            suber,
             () => {
                 if (storeIns.hasModule(moduleName)) {
                     if (loading[moduleName]) {
