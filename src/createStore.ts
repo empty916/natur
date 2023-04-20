@@ -403,8 +403,8 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			// 过滤不需要重制状态的模块
 			shouldResetModuleNames = shouldResetModuleNames.filter((mn) => {
 				return (
-					stringExclude.indexOf(mn as string) === -1 &&
-					!regExpExclude.some((reg) => reg.test(mn as string))
+					stringExclude.indexOf(mn) === -1 &&
+					!regExpExclude.some((reg) => reg.test(mn))
 				);
 			});
 		}
@@ -418,8 +418,8 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			// 如果存在include配置，则只重制include配置中的模块
 			shouldResetModuleNames = shouldResetModuleNames.filter((mn) => {
 				return (
-					stringInclude.indexOf(mn as string) > -1 ||
-					regExpInclude.some((reg) => reg.test(mn as string))
+					stringInclude.indexOf(mn) > -1 ||
+					regExpInclude.some((reg) => reg.test(mn))
 				);
 			});
 		}
@@ -428,7 +428,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			// 	createDispatch(mn);
 			// }
 			setStateProxyWithMiddlewareCache[mn]!({
-				moduleName: mn as string,
+				moduleName: mn,
 				actionName: "globalResetStates",
 				state: resetStateData[mn],
 			});
@@ -447,14 +447,14 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			const errMsg = `setModule: storeModule ${moduleName} is illegal!`;
 			throw new Error(errMsg);
 		}
-		const isModuleExist = hasModule(moduleName as keyof StoreType);
+		const isModuleExist = hasModule(moduleName);
 
 		currentModules = {
 			...currentModules,
 			[moduleName]: replaceModule(moduleName, storeModule),
 		};
 		if (isModuleExist) {
-			clearAllCache(moduleName as string);
+			clearAllCache(moduleName);
 		} else {
 			allModuleNames = undefined;
 		}
@@ -521,7 +521,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 		lazyModule: () => Promise<StoreModule>
 	) => {
 		allModuleNames = undefined;
-		(currentLazyModules as LM)[moduleName] = lazyModule as any;
+		(currentLazyModules)[moduleName] = lazyModule as any;
 		return currentStoreInstance;
 	};
 	/**
@@ -530,7 +530,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 	 */
 	const removeLazyModule = (moduleName: string) => {
 		allModuleNames = undefined;
-		delete (currentLazyModules as LazyStoreModules)[moduleName];
+		delete currentLazyModules[moduleName];
 		return currentStoreInstance;
 	};
 
@@ -561,7 +561,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 					} else {
 						mapCacheSecondParam = [() => undefined, targetMap];
 					}
-					(mapsCache[moduleName] as MapCacheValue)[key] =
+					mapsCache[moduleName][key] =
 						new MapCache(
 							() => currentModules[moduleName]!.state,
 							mapCacheSecondParam
@@ -592,7 +592,7 @@ const createStore = <M extends Modules, LM extends LazyStoreModules>(
 			(key) =>
 				(actionsProxy[key] = (...data: any[]) => dispatch(key, ...data))
 		);
-		actionsProxyCache[moduleName] = actionsProxy as any;
+		actionsProxyCache[moduleName] = actionsProxy;
 		return actionsProxy;
 	};
 

@@ -7,6 +7,7 @@
  */
 import React, {
 	ComponentType,
+	useCallback,
 	useContext,
 	useMemo,
 	useRef,
@@ -15,6 +16,7 @@ import React, {
 } from "react";
 import hoistStatics from "hoist-non-react-statics";
 import {
+	AnyFun,
 	// ModuleName,
 	Store,
 } from "./ts";
@@ -89,14 +91,16 @@ const connect = <
 		const injectModulesRef = useRef<InjectStoreModules>({});
 		const loadingModules = useRef<Record<string, boolean>>({});
 
+		const suber = useCallback((on: AnyFun) => {
+			return store.subscribeAll(({ moduleName }) => {
+				if (moduleNames.includes(moduleName as string)) {
+					on();
+				}
+			});
+		}, [store, moduleNames])
+
 		const injectModules = useSyncExternalStore(
-			(on) => {
-				return store.subscribeAll(({ moduleName }) => {
-					if (moduleNames.includes(moduleName as string)) {
-						on();
-					}
-				});
-			},
+			suber,
 			() => {
 				if (!integralModulesName.length) {
 					return;
