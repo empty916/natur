@@ -17,7 +17,6 @@ export default class MapCache {
 	constructor(
 		getState: () => State,
 		map: Array<string | Function>,
-		autoCollectDeps?: boolean
 	) {
 		this.getState = getState;
 		const copyMap = map.slice();
