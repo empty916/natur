@@ -16,12 +16,13 @@ export default class MapCache {
 
 	constructor(
 		getState: () => State,
-		map: Array<string | Function>
+		map: Array<string | Function>,
+		autoCollectDeps?: boolean
 	) {
 		this.getState = getState;
 		const copyMap = map.slice();
 		this.map = copyMap.pop() as Function;
-		copyMap.forEach(item => this.mapDepends.push(this.createGetDepByKeyPath(item)));
+		this.mapDepends = copyMap.map(item => this.createGetDepByKeyPath(item));
 	}
 	static resetMapDepParser() {
 		MapCache.getValueFromState = getValueFromObjByKeyPath;
