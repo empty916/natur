@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`actions creator 1`] = `
+{
+  "a1": [Function],
+  "a2": [Function],
+}
+`;
+
+exports[`actions creator 2`] = `
+{
+  "addAge": [Function],
+}
+`;
+
+exports[`create watch 1`] = `
+{
+  "ff": [Function],
+}
+`;
+
+exports[`map creator 1`] = `
+{
+  "f1": [
+    [Function],
+  ],
+  "f2": [
+    [Function],
+    [Function],
+  ],
+  "f3": [
+    [Function],
+    [Function],
+    [Function],
+  ],
+}
+`;
+
+exports[`watch creator 1`] = `
+{
+  "ff": [Function],
+}
+`;
