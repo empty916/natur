@@ -11,7 +11,6 @@ export default class MapCache {
 	private getState: () => State;
 	private shouldCheckDependsCache: boolean = true;
 	private value: any;
-	private autoCollectDeps = false;
 
 	static getValueFromState: MapDepParser = getValueFromObjByKeyPath;
 
@@ -24,7 +23,6 @@ export default class MapCache {
 		const copyMap = map.slice();
 		this.map = copyMap.pop() as Function;
 		this.mapDepends = copyMap.map(item => this.createGetDepByKeyPath(item));
-		this.autoCollectDeps = !!autoCollectDeps;
 	}
 	static resetMapDepParser() {
 		MapCache.getValueFromState = getValueFromObjByKeyPath;
