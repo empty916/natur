@@ -1,4 +1,4 @@
-import type { AllWatchAPI, AllWatchEvent, Maps, State, WatchAPI, WatchEvent } from './ts';
+import type { AllWatchAPI, AllWatchEvent, Maps, State, StoreModule, WatchAPI, WatchEvent } from './ts';
 import { ThunkParams } from './middlewares';
 
 export class NaturFactory {
@@ -188,10 +188,21 @@ export class NaturFactory {
 		}
 		return createMap;
 	}
-	static watchCreator() {
+	/**
+	 *
+	 * @param m natur module you want watch
+	 * @param state state of current module
+	 * @param maps maps of current module
+	 * @returns
+	 */
+	static watchCreator<SM extends StoreModule = StoreModule, S extends State = State, M extends Maps = Maps>(
+		m?: SM,
+		state?: S,
+		maps?: M,
+	) {
 		function createWatch<
 			W extends
-				| Record<string, (event: WatchEvent<any>, api: WatchAPI<any, any>) => any>
+				| Record<string, (event: WatchEvent<SM>, api: WatchAPI<S, M>) => any>
 				| ((event: AllWatchEvent, api: AllWatchAPI) => any),
 		>(w: W) {
 			return w;
