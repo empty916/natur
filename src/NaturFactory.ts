@@ -133,7 +133,7 @@ export class NaturFactory {
 				p6: ReturnType<MD6>,
 				p7: ReturnType<MD7>,
 				p8: ReturnType<MD8>,
-				p9: ReturnType<MD8>,
+				p9: ReturnType<MD9>,
 			) => any,
 		>(...m: [MD1, MD2, MD3, MD4, MD5, MD6, MD7, MD8, MD9, F]): F;
 		function createMap<
@@ -156,7 +156,8 @@ export class NaturFactory {
 				p6: ReturnType<MD6>,
 				p7: ReturnType<MD7>,
 				p8: ReturnType<MD8>,
-				p9: ReturnType<MD8>,
+				p9: ReturnType<MD9>,
+				p10: ReturnType<MD10>,
 			) => any,
 		>(...m: [MD1, MD2, MD3, MD4, MD5, MD6, MD7, MD8, MD9, MD10, F]): F;
 		function createMap<
@@ -180,7 +181,9 @@ export class NaturFactory {
 				p6: ReturnType<MD6>,
 				p7: ReturnType<MD7>,
 				p8: ReturnType<MD8>,
-				p9: ReturnType<MD8>,
+				p9: ReturnType<MD9>,
+				p10: ReturnType<MD10>,
+				p11: ReturnType<MD11>,
 			) => any,
 		>(...m: [MD1, MD2, MD3, MD4, MD5, MD6, MD7, MD8, MD9, MD10, MD11, F]): F;
 		function createMap(...m: any[]) {
