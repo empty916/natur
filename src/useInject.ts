@@ -167,7 +167,11 @@ function createUseInject<
                     }
                     return;
                 }
-            }
+            },
+            () => {
+                stateRef.current = storeIns.getModule(moduleName);
+                return stateRef.current;
+            },
         );
         const finalRes = useMemo(() => {
             if (flat && res) {

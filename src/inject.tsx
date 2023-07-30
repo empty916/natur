@@ -164,6 +164,13 @@ const connect = <
 				}
 
 				return injectModulesRef.current;
+			},
+			() => {
+				injectModulesRef.current = integralModulesName.reduce((res, mn: ModuleName) => {
+					res[mn] = store.getModule(mn);
+					return res;
+				}, {} as Modules);
+				return injectModulesRef.current;
 			}
 		);
 
