@@ -1,4 +1,4 @@
-import { NaturFactory } from './../src/NaturFactory';
+import { NaturBaseFactory } from './../src/NaturBaseFactory';
 
 
 
@@ -17,7 +17,7 @@ const state = {
 }
 
 test('map creator', () => {
-    const createMap = NaturFactory.mapCreator(state);
+    const createMap = NaturBaseFactory.mapCreator(state);
 
     const maps = {
         f1: createMap(
@@ -38,7 +38,7 @@ test('map creator', () => {
 })
 
 test('actions creator', () => {
-    const createMap = NaturFactory.mapCreator(state);
+    const createMap = NaturBaseFactory.mapCreator(state);
 
     const maps = {
         f1: createMap(
@@ -54,7 +54,7 @@ test('actions creator', () => {
             (a, id) => a + id
         ),
     };
-    const createActions = NaturFactory.actionsCreator(state);
+    const createActions = NaturBaseFactory.actionsCreator(state);
 
     const actions1 = createActions({
         a1: (name: string) => ({
@@ -69,7 +69,7 @@ test('actions creator', () => {
     });
     expect(actions1).toMatchSnapshot();
 
-    const createActions2 = NaturFactory.actionsCreator(state, maps);
+    const createActions2 = NaturBaseFactory.actionsCreator(state, maps);
     const actions2 = createActions2({
         addAge: () => (api) => ({
             data: {
@@ -82,7 +82,7 @@ test('actions creator', () => {
 });
 
 test('watch creator', () => {
-    const createWatch = NaturFactory.watchCreator();
+    const createWatch = NaturBaseFactory.watchCreator();
     expect(createWatch({
         ff: (event, api) => {
             if (event.type === 'init') {
@@ -94,7 +94,7 @@ test('watch creator', () => {
 
 
 test('create watch', () => {
-    expect(NaturFactory.createWatch({
+    expect(NaturBaseFactory.createWatch({
         ff: (event, api) => {
             if (event.type === 'init') {
                 event.oldModule;

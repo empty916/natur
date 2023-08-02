@@ -1,7 +1,7 @@
 import type { AllWatchAPI, AllWatchEvent, Maps, State, StoreModule, WatchAPI, WatchEvent } from './ts';
 import { ThunkParams } from './middlewares';
 
-export class NaturFactory {
+export class NaturBaseFactory {
 	/**
 	 * build a actions creator
 	 * @param state state of module
