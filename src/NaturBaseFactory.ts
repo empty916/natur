@@ -1,4 +1,4 @@
-import type { AllWatchAPI, AllWatchEvent, Maps, State, StoreModule, WatchAPI, WatchEvent } from './ts';
+import type { AllModuleEvent, AllWatchAPI, AllWatchEvent, CreateMap, Maps, State, StoreModule, WatchAPI, WatchEvent } from './ts';
 import { ThunkParams } from './middlewares';
 
 export class NaturBaseFactory {
@@ -223,5 +223,30 @@ export class NaturBaseFactory {
 			| ((event: AllWatchEvent, api: AllWatchAPI) => any),
 	>(w: W) {
 		return w;
+	}
+	static createWatchAll<S extends State, M extends Maps>(w: (allEvent: AllModuleEvent, api: WatchAPI<S, M>) => any) {
+		return w;
+	}
+	static createModule<
+		S extends State,
+		M extends Record<string, (...args: any[]) => any> | undefined,
+		A extends Record<
+			string,
+			| ((...args: any[]) => (p: ThunkParams<S, M extends undefined ? Maps : M>) => Partial<S> | void | Promise<Partial<S> | void>)
+			| ((...args: any[]) => Partial<S> | void | Promise<Partial<S> | void>)
+		>,
+		W extends
+			| Record<string, (event: WatchEvent<any>, api: WatchAPI<S,  M extends undefined ? Maps : M>) => any>
+			| ((event: AllWatchEvent, api: WatchAPI<S,  M extends undefined ? Maps : M>) => any),
+	>(cm: (createMap: CreateMap<S>) => ({
+		state: S,
+		maps?: M,
+		actions: A,
+		watch?: W
+	})) {
+		function createMap(...m: any[]) {
+			return m;
+		}
+		return cm(createMap)
 	}
 }

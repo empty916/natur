@@ -37,6 +37,28 @@ test('map creator', () => {
     expect(maps).toMatchSnapshot();
 })
 
+
+test('create module', () => {
+    const m = NaturBaseFactory.createModule((createMap) => ({
+        state: {
+            name: '',
+            body: {
+                leg: 1,
+                finger: 5,
+            }
+        },
+        actions: {
+            updateName: (newName: string) => ({
+                name: newName
+            }),
+            updateName2: (newName: string) => (api) => {
+                api.getState();
+            },
+            
+        }
+    }))
+})
+
 test('actions creator', () => {
     const createMap = NaturBaseFactory.mapCreator(state);
 
