@@ -198,6 +198,7 @@ export interface StoreBase {
 	getAllModuleName: () => string[];
 	destroy: () => void;
 	dispatch: (...arg: any) => any;
+
 	globalSetStates: (s: States) => void;
 	globalResetStates: (option?: GlobalResetStatesOption) => void;
 	getAllStates: () => States;

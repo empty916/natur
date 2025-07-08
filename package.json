@@ -10,7 +10,7 @@
 		"pub:alpha": "yarn publish --tag alpha",
 		"pub:release": "yarn publish",
 		"prepublish": "yarn test && yarn build",
-		"test": "jest --silent",
+		"test": "jest",
 		"dev:test": "jest",
 		"test:report": "jest --coverage  --silent"
 	},
